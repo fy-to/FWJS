@@ -1,0 +1,16 @@
+{
+    "name": "fwsjs-main",
+    "private": true,
+    "workspaces": [
+        "packages/fws-types",
+        "packages/fws-js",
+        "packages/fws-vue",
+        "packages/playground"
+    ],
+    "scripts": {
+        "build:types": "pnpm -C packages/fws-types build",
+        "build:js": "pnpm -C packages/fws-js build",
+        "build:vue": "pnpm -C packages/fws-vue lint:check --fix && pnpm -C packages/fws-vue build",
+        "build": "pnpm run build:types && pnpm run build:js && pnpm run build:vue"
+    }
+}

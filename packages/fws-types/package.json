@@ -1,0 +1,18 @@
+{
+    "name": "@fy-/fws-types",
+    "version": "0.0.1",
+    "description": "Types for FWS - https://fy.to/@G",
+    "types": "./src/index.d.ts",
+    "scripts": {
+        "clean": "rimraf dist",
+        "type-check": "tsc --noEmit",
+        "copy": "pnpm run clean && cp -r src/ dist/ && node copyPackage.js",
+        "build": "pnpm run type-check && pnpm run copy"
+    },
+    "author": "Florian 'Fy' Gasquez <m@fy.to>",
+    "license": "MIT",
+    "devDependencies": {
+        "rimraf": "^5.0.5",
+        "typescript": "^5.2.2"
+    }
+}

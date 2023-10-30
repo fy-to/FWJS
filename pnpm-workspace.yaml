@@ -1,0 +1,5 @@
+packages:
+  - 'packages/fws-types'
+  - 'packages/fws-js'
+  - 'packages/fws-vue'
+  - 'packages/playground'
