@@ -32,3 +32,13 @@ export const getMode = (): "client"|"ssr" =>
 export const getUUID = (): string =>
     FW?.UUID ?? "";
 
+export const getLocales = (): string[] =>
+    FW?.Locales ?? [];
+
+export const getCookies = (): {[key: string]: string} =>
+    FW?.Cookies ?? {};
+
+export const getCookiesString = (): string =>
+    Object.entries(getCookies())
+    .map(([name, value]) => `${encodeURIComponent(name)}=${encodeURIComponent(value)}`)
+    .join("; ");

@@ -1,6 +1,7 @@
-import type { TFunction, BackendModule } from "i18next";
+import type { TFunction } from "i18next";
 import i18next from "i18next";
 import { inject } from "vue";
+import { I18nBackend } from "@fy-/fws-js";
 
 export type I18nextTranslate = typeof i18next.t;
 
@@ -12,7 +13,7 @@ export function useTranslation() {
 }
 
 export function i18nextPromise(
-  backend: BackendModule,
+  backend: typeof I18nBackend,
   locale: string = "en-US",
   debug: boolean = false,
   ns: string = "translation",

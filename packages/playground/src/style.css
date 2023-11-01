@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.main-nav a {
+    @apply block py-2 px-5 text-right lg:text-center hover:text-fv-primary-600 focus:text-fv-primary-600 dark:hover:text-gray-100 dark:focus:text-gray-100 relative;
+    &.router-link-exact-active {
+        @apply text-fv-primary-600 font-bold;
+        .bd {
+            @apply opacity-100 w-10;
+        }
+    }
+}
+.main-nav .bd {
+    @apply hidden lg:block lg:absolute bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-0.5 bg-fv-primary-600 transition-all	 duration-500 ease-in-out opacity-0;
+}
+
+.nav-website {
+    @apply fixed items-start lg:relative flex-col lg:flex lg:flex-row justify-end lg:justify-between lg:items-center gap-4;
+    @apply bg-white right-0 w-56  lg:w-auto h-screen lg:h-auto bottom-0 top-[4.5rem] lg:top-0 transition	 duration-500 ease-in-out;
+    @apply lg:translate-x-0 !important;
+    @apply translate-x-full;
+}
+
+.tx0 {
+    @apply translate-x-0 !important;
+}

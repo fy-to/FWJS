@@ -29,6 +29,7 @@
     "peerDependencies": {
         "@fy-/fws-js": "^0.0.x",
         "@fy-/fws-types": "^0.0.x",
+        "@fy-/head": "^0.0.x",
         "@headlessui/vue": "^1.7.x",
         "@vuelidate/core": "^2.0.x",
         "@vuelidate/validators": "^2.0.x",
@@ -44,6 +45,7 @@
     "devDependencies": {
         "@fy-/fws-js": "workspace:*",
         "@fy-/fws-types": "workspace:*",
+        "@fy-/head": "^0.0.39",
         "@headlessui/vue": "^1.7.16",
         "@heroicons/vue": "^2.0.18",
         "@rushstack/eslint-patch": "^1.5.1",

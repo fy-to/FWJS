@@ -1,4 +1,6 @@
 import { hasFW, getPrefix } from './fws-wrapper';
+import type { BackendModule, TOptions } from 'i18next';
+
 interface BackendOptions {
     allowMultiLoading?: boolean;
 }
@@ -9,27 +11,23 @@ interface Services {
     [key: string]: any;
 }
 
-const defaults: BackendOptions = {
+const defaults: TOptions = {
     allowMultiLoading: false,
 };
 
-class Backend {
+class I18nBackend implements BackendModule<BackendOptions> {
     private options: BackendOptions;
 
-    public static type = 'backend';
-    public type: string;
-
+    type: 'backend';
+    static type: string = 'backend';
+    
     constructor(services: Services, options?: BackendOptions) {
         this.init(services, options);
-        this.type = 'backend';
-        this.options = {
-            ...defaults,
-            ...options,
-        };
+        this.type = "backend";
+        this.options = options || {};
     }
 
     init(services: Services, options: BackendOptions = {}): void {
-
         this.options = {
             ...defaults,
             ...this.options,
@@ -68,4 +66,4 @@ class Backend {
     }
 }
 
-export { Backend };
+export { I18nBackend };

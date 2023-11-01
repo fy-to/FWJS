@@ -1,0 +1,41 @@
+token,en-US,fr-FR
+user_flow_input_email,Please input your email address to log in,Veuillez saisir votre adresse électronique pour vous connecter
+user_flow_first_time_or_user_email_label,"If this is your first time, please input your email to create an account. If not, you will be prompted to input your password to log in.","S'il s'agit de votre première visite, veuillez saisir votre adresse électronique pour créer un compte. Si ce n'est pas le cas, vous serez invité à saisir votre mot de passe pour vous connecter."
+user_flow_email_label,Email,Email
+user_flow_input_password,Please input your password,Veuillez saisir votre mot de passe
+user_flow_password_label,Password,Mot de passe
+user_flow_input_register,Register new account,Enregistrement d'un nouveau compte
+userflow_please_fillout_information,Please fill out the following information,Veuillez remplir les informations suivantes
+user_flow_username_label,Username,Nom d'utilisateur
+user_flow_password_confirm_label,Please confirm your password,Confirmez votre mot de passe
+user_flow_or_label,Or login using one of the following,Ou connectez-vous en utilisant l'un des éléments suivants
+user_flow_input_email_oauth,Please input your email address to log in,Veuillez saisir votre adresse électronique pour vous connecter
+user_flow_need_email_label,We need your email address to log you in,Nous avons besoin de votre adresse électronique pour vous connecter
+cta_login_next,Next,Suivant
+404_page_title,404: Page not found.,404 : Page non trouvée.
+no_table_data,No data available in table,Aucune donnée disponible dans le tableau
+global_table_empty_cell,No data available,Aucune donnée disponible
+global_loading,Loading,Chargement
+global_paging,"Showing {{start, number}} to {{end, number}} of {{total}} results","Affichage de {{start, number}} à {{end, number}} sur {{total}} résultats"
+global_datetime,"{{val, datetime}}","{{val, datetime}}"
+global_timeago,"{{val, relativetime}}","{{val, relativetime}}"
+filters_search_cta,Search,Rechercher
+filters_clear_cta,Reset,Réinitialiser
+global_table_export,Export,Exporter
+rest_global_error,An error occurred while processing your request.,Une erreur s'est produite lors du traitement de votre demande.
+confirm_modal_cta_cancel,Cancel,Annuler
+confirm_modal_cta_confirm,Confirm,Confirmer
+user_flow_complete,Welcome!,Bienvenue !
+user_flow_code_label,Input the verification code,Veuillez saisir le code de vérification
+user_flow_code_input_label,Code,Code
+user_flow_code_step,Please input the code you received by email,Veuillez saisir le code que vous avez reçu par courrier électronique
+user_flow_password_error,Password is incorrect,Le mot de passe est incorrect
+user_flow_code_error,Code is incorrect,Le code est incorrect
+user_flow_input_code,Please input the code you received by email,Veuillez saisir le code que vous avez reçu par courrier électronique
+user_flow_reset_code_label,Reset your password,Réinitialisez votre mot de passe
+user_flow_pwd_reset_input_email,Please input your email address to reset your password,Veuillez saisir votre adresse électronique pour réinitialiser votre mot de passe
+reset_password_email_input_help,Email address associated with your account,Adresse électronique associée à votre compte
+user_flow_reset_code_input_label,Code (received by email),Code (reçu par courrier électronique)
+user_flow_reset_password_input_label,New password,Nouveau mot de passe
+user_flow_reset_password_confirm_input_label,Confirm new password,Confirmer le nouveau mot de passe
+user_flow_reset_password_link,Reset password,Réinitialiser le mot de passe
