@@ -1,14 +1,8 @@
 import { hasFW, getPrefix } from './fws-wrapper';
-import type { BackendModule, TOptions } from 'i18next';
+import type { BackendModule, Services, TOptions } from 'i18next';
 
 interface BackendOptions {
     allowMultiLoading?: boolean;
-}
-
-interface Services {
-    // You might want to define the structure of services here
-    // or you can use 'any' for now and specify it later.
-    [key: string]: any;
 }
 
 const defaults: TOptions = {
@@ -40,17 +34,12 @@ class I18nBackend implements BackendModule<BackendOptions> {
             callback(null, {});
             return;
         }
-        /*
-        if ((typeof FW !== "undefined") && (language === FW.Locale) && (typeof FW.i18n !== "undefined")) {
-          callback(null, FW.i18n);
-          return;
-        }*/
 
         let pfx = hasFW() ? getPrefix() : "";
         const newpfx = pfx.replace(/\/l\/[a-z]{2}-[A-Z]{2}/, "/l/" + language) || "/l/" + language;
 
         fetch(newpfx + "/_special/locale.json")
-            .catch(err => fetch("/_special/locale/" + language + ".json"))
+            .catch(() => fetch("/_special/locale/" + language + ".json"))
             .then(res => {
                 if (!res.ok) {
                     const retry = res.status >= 500 && res.status < 600;

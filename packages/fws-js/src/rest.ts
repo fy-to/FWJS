@@ -1,9 +1,9 @@
 export type RestMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 export interface RestParams {
-  [key: string]: string | number | boolean;
+    [key: string]: string | number | boolean;
 }
 export interface RestContext {
-  [key: string]: string | number | boolean;
+    [key: string]: string | number | boolean;
 }
 
 function getRestURL(path: string): string {
@@ -19,7 +19,7 @@ function getTzPad(number: number, length: number): string {
 
 }
 
-function getTimezoneData() : string {
+function getTimezoneData(): string {
     let offset = new Date().getTimezoneOffset();
     let offsetTz = ((offset < 0 ? '+' : '-') + getTzPad(Math.abs(offset / 60), 2) + getTzPad(Math.abs(offset % 60), 2));
 
@@ -30,17 +30,17 @@ function getTimezoneData() : string {
     return offsetTz;
 }
 
-function parseRestResponse(response: Response, resolve: (value: any) => void, reject: (reason?: any) => void) : void {
+function parseRestResponse(response: Response, resolve: (value: any) => void, reject: (reason?: any) => void): void {
     var contentType = response.headers.get("content-type");
     if (!contentType || contentType.indexOf("application/json") == -1) {
-        response.text().then(function(text: string) {
-            reject({message: "Not JSON", body: text, headers: response.headers});
+        response.text().then(function (text: string) {
+            reject({ message: "Not JSON", body: text, headers: response.headers });
         }).catch(reject);
 
         return;
     }
 
-    response.json().then(function(json: any) {
+    response.json().then(function (json: any) {
         if (json.result != "success" && json.result != "redirect") {
             json.headers = response.headers;
             reject(json);
@@ -51,35 +51,37 @@ function parseRestResponse(response: Response, resolve: (value: any) => void, re
 }
 
 export async function rest(
-  path: string,
-  method: RestMethod,
-  params?: RestParams,
+    path: string,
+    method: RestMethod,
+    params?: RestParams,
 ): Promise<any> {
     let callUrl = getRestURL(path);
+    let body: string | null = null;
+
     params = params ?? {};
     params['__tz'] = getTimezoneData();
-    if (method == 'GET' && params) {
-        callUrl = callUrl+"?_=" + encodeURIComponent(JSON.stringify(params));
+    if (params && (method === 'GET' || method === 'DELETE')) {
+        callUrl = callUrl + "?_=" + encodeURIComponent(JSON.stringify(params));
+    } else if (params && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {
+        body = JSON.stringify(params);
     }
-    
-    const restResolved = function(data : Response) {
+
+    const restResolved = function (data: Response) {
         return new Promise((resolve, reject) => {
             parseRestResponse(data, resolve, reject);
         });
     }
     const restRejected = restResolved;
-    const restCatch = function(data: Response) {
+    const restCatch = function (data: Response) {
         console.log(data);
     }
 
-    return new Promise((resolve, reject) => {
-        fetch(callUrl, {
-            method: method,
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-            }).then(restResolved, restRejected).catch(restCatch)
-        }
-    );
+    return fetch(callUrl, {
+        method: method,
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: body,
+    }).then(restResolved, restRejected).catch(restCatch)
 }

@@ -55,6 +55,7 @@ const config: UserConfig = {
         "pinia",
         "@fy-/fws-types",
         "@fy-/fws-js",
+        "mitt",
       ],
       output: {
         exports: "named",
@@ -70,6 +71,7 @@ const config: UserConfig = {
           pinia: "pinia",
           "@fy-/fws-types": "fwsTypes",
           "@fy-/fws-js": "fwsJs",
+          mitt: "mitt",
         },
       },
     },

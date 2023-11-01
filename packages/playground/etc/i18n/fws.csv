@@ -39,3 +39,4 @@ user_flow_reset_code_input_label,Code (received by email),Code (reçu par courri
 user_flow_reset_password_input_label,New password,Nouveau mot de passe
 user_flow_reset_password_confirm_input_label,Confirm new password,Confirmer le nouveau mot de passe
 user_flow_reset_password_link,Reset password,Réinitialiser le mot de passe
+or_text_label,or,ou

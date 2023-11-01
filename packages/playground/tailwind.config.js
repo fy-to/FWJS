@@ -6,7 +6,7 @@ module.exports = {
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
-    "./node_modules/@fy-/components/**/*.js",
+    "./node_modules/@fy-/fws-vue/**/*.js",
   ],
 
   darkMode: "class",
@@ -18,7 +18,7 @@ module.exports = {
         inter: ["Inter", ...defaultTheme.fontFamily.sans],
       },
       colors: {
-        "fv-primary": colors.green,
+        "fv-primary": colors.slate,
         "fv-neutral": colors.neutral,
         "fv-accent": colors.orange,
       },

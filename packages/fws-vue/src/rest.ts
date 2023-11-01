@@ -26,40 +26,47 @@ export interface APIResult {
   status?: number;
 }
 
-export async function useRest<ResultType extends APIResult>(
+export function useRest(): <ResultType extends APIResult>(
   url: string,
   method: RestMethod,
   params?: RestParams,
-): Promise<ResultType> {
+) => Promise<ResultType> {
   const restStore = useRestStore();
   const eventBus = useEventBus();
-  const requestHash = stringHash(url + method + JSON.stringify(params));
-  if (isServerRendered()) {
-    const hasResult = restStore.getResult(requestHash);
-    if (hasResult !== undefined) {
-      const result = { ...hasResult } as ResultType;
-      restStore.removeResult(requestHash);
-      if (result.result === "error") {
-        eventBus.emit("rest-error", result);
-        return Promise.reject(result);
+
+  return async <ResultType extends APIResult>(
+    url: string,
+    method: RestMethod,
+    params?: RestParams,
+  ): Promise<ResultType> => {
+    const requestHash = stringHash(url + method + JSON.stringify(params));
+    if (isServerRendered()) {
+      const hasResult = restStore.getResult(requestHash);
+      if (hasResult !== undefined) {
+        const result = { ...hasResult } as ResultType;
+        restStore.removeResult(requestHash);
+        if (result.result === "error") {
+          eventBus.emit("rest-error", result);
+          return Promise.reject(result);
+        }
+        return Promise.resolve(result);
       }
-      return Promise.resolve(result);
-    }
-  }
-
-  try {
-    const restResult: ResultType = await rest(url, method, params);
-    if (getMode() === "ssr") {
-      restStore.addResult(requestHash, restResult);
-    }
-    return Promise.resolve(restResult);
-  } catch (error) {
-    const restError: ResultType = error as ResultType;
-    if (getMode() === "ssr") {
-      restStore.addResult(requestHash, restError);
     }
 
-    eventBus.emit("rest-error", restError);
-    return Promise.resolve(restError);
-  }
+    try {
+      const restResult: ResultType = await rest(url, method, params);
+      if (getMode() === "ssr") {
+        restStore.addResult(requestHash, restResult);
+      }
+      return Promise.resolve(restResult);
+    } catch (error) {
+      const restError: ResultType = error as ResultType;
+      if (getMode() === "ssr") {
+        restStore.addResult(requestHash, restError);
+      }
+
+      eventBus.emit("rest-error", restError);
+      return Promise.resolve(restError);
+    }
+  };
 }

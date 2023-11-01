@@ -13,7 +13,23 @@ const userStore = useUserStore();
 const navOpen = ref(false);
 const isAuth = computed(() => userStore.isAuth);
 const translate = useTranslation();
-const links = [{ name: translate("nav_home"), url: "/" }];
+const links = computed(() => {
+  const _links: any[] = [{ name: translate("nav_home"), url: "/" }];
+  if (!isAuth.value) {
+    _links.push({
+      name: translate("nav_login"),
+      url: "/login",
+    });
+  } else {
+    _links.push({
+      name: translate("nav_logout"),
+      action: () => {
+        userStore.logout();
+      },
+    });
+  }
+  return _links;
+});
 useSeo(
   ref({
     name: translate("website_name"),
@@ -90,12 +106,19 @@ if (!import.meta.env.SSR) {
             <RouterLink
               @click="navOpen = !navOpen"
               :to="l.url"
+              v-if="l.url"
               itemprop="url"
               class="group"
               href="/"
               >{{ l.name
               }}<span class="bd group-hover:opacity-100 group-hover:w-10"></span
             ></RouterLink>
+            <button v-else-if="l.action" @click="l.action" class="group">
+              {{ l.name
+              }}<span
+                class="bd group-hover:opacity-100 group-hover:w-10"
+              ></span>
+            </button>
           </li>
         </ul>
       </div>

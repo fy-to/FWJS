@@ -1,13 +1,12 @@
 import { inject } from "vue";
 import type { Emitter } from "mitt";
 
-export type EventBus = Emitter<Events>;
-
 export type Events = {
   [key: string]: any;
 };
-export function useEventBus() {
-  const eventBus = inject<EventBus>("fws-event-bus");
+
+export function useEventBus(): Emitter<Events> {
+  const eventBus = inject<Emitter<Events>>("fwsVueEventBus");
 
   if (!eventBus) throw new Error("Did you apply app.use(fwsVue)?");
 

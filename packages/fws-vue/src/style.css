@@ -1,0 +1,42 @@
+.fws-error-text {
+    @apply text-red-700 dark:text-red-500;
+}
+.fws-helper-text {
+    @apply text-fv-neutral-500 dark:text-fv-neutral-400;
+}
+
+.fws-link {
+    @apply text-fv-primary-700 dark:text-fv-primary-300 inline-flex items-center underline hover:no-underline;
+}
+
+.btn {
+    @apply text-white bg-gradient-to-br  hover:bg-gradient-to-bl focus:ring-4 focus:outline-none font-medium rounded-lg text-center transition-colors ease-in-out motion-reduce:transition-none;
+    &.primary {
+        @apply from-fv-primary-600 to-fv-primary-500 focus:ring-fv-primary-300 dark:focus:ring-fv-primary-800;
+    }
+    &.accent {
+        @apply from-fv-accent-600 to-fv-accent-500 focus:ring-fv-accent-300 dark:focus:ring-fv-accent-800;
+    }
+    &.success,&.valid {
+        @apply from-green-600 to-green-500 focus:ring-green-300 dark:focus:ring-green-800;
+    }
+    &.error,&.danger {
+        @apply from-red-600 to-red-500 focus:ring-red-300 dark:focus:ring-red-800;
+    }
+    &.neutral {
+        @apply from-fv-neutral-600 to-fv-neutral-500 focus:ring-fv-neutral-300 dark:focus:ring-fv-neutral-800;
+    }
+
+    &.defaults {
+        @apply px-5 py-2.5 text-sm;
+    }
+    &.small {
+        @apply px-2.5 py-1.5 text-xs;
+    }
+    &.medium {
+        @apply px-4 py-2 text-sm;
+    }
+    &.large {
+        @apply px-6 py-3 text-base;
+    }
+}

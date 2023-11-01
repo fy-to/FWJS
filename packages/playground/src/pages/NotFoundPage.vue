@@ -14,4 +14,6 @@ useSeo(
   }),
 );
 </script>
-<template><div>Not found</div></template>
+<template>
+  <div class="container xl:max-w-6xl mx-auto px-4 mt-8">Not found</div>
+</template>

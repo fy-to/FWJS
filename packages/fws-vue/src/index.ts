@@ -1,8 +1,9 @@
 import type { Plugin, App } from "vue";
 import i18next from "i18next";
 import mitt from "mitt";
+import { Emitter } from "mitt";
 import { useServerRouter } from "./stores/serverRouter";
-import { useEventBus, EventBus, Events } from "./event-bus";
+import { useEventBus, Events } from "./event-bus";
 import { i18nextPromise, useTranslation } from "./translations";
 import { initVueClient, initVueServer, isServerRendered } from "./ssr";
 import { useSeo } from "./seo";
@@ -17,18 +18,28 @@ import CollapseTransition from "./components/ui/transitions/CollapseTransition.v
 import ScaleTransition from "./components/ui/transitions/ScaleTransition.vue";
 import FadeTransition from "./components/ui/transitions/FadeTransition.vue";
 
+// Components/UI
+import DefaultInput from "./components/ui/DefaultInput.vue";
+import DefaultModal from "./components/ui/DefaultModal.vue";
+import DefaultConfirm from "./components/ui/DefaultConfirm.vue";
+
+// Components/FWS
+import UserFlow from "./components/fws/UserFlow.vue";
+
+import "./style.css";
+
 function createFWS(): Plugin {
-  const eventBus: EventBus = mitt<Events>();
+  const eventBus: Emitter<Events> = mitt<Events>();
 
   return {
     install(app: App) {
       if (app.config.globalProperties) {
         app.config.globalProperties.$eventBus = eventBus;
-        app.provide("fws-event-bus", eventBus);
+        app.provide("fwsVueEventBus", eventBus);
 
         // i18next
         app.config.globalProperties.$t = i18next.t;
-        app.provide("fws-translate", i18next.t);
+        app.provide("fwsVueTranslate", i18next.t);
 
         app.component("ClientOnly", ClientOnly);
       }
@@ -39,7 +50,7 @@ function createFWS(): Plugin {
 declare module "vue" {
   export interface ComponentCustomProperties {
     $t: typeof i18next.t;
-    $eventBus: EventBus;
+    $eventBus: Emitter<Events>;
   }
   export interface GlobalComponents {
     ClientOnly: typeof ClientOnly;
@@ -66,4 +77,10 @@ export {
   CollapseTransition,
   ScaleTransition,
   FadeTransition,
+  // UI
+  DefaultInput,
+  DefaultModal,
+  DefaultConfirm,
+  // FWS
+  UserFlow,
 };

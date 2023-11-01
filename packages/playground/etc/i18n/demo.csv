@@ -5,3 +5,5 @@ open_main_menu,Open main menu,Ouvrir le menu principal
 nav_home,Home,Accueil
 footer_copyright,© 2023 Fy Web Server,© 2023 Fy Web Server
 nav_privacy,Privacy Policy,Politique de confidentialité
+nav_login,Login,Connexion
+nav_logout,Logout,Déconnexion

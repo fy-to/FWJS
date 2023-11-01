@@ -30,7 +30,6 @@
         "@fy-/fws-js": "^0.0.x",
         "@fy-/fws-types": "^0.0.x",
         "@fy-/head": "^0.0.x",
-        "@headlessui/vue": "^1.7.x",
         "@vuelidate/core": "^2.0.x",
         "@vuelidate/validators": "^2.0.x",
         "@vueuse/core": "^10.x.x",

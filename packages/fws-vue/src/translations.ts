@@ -6,7 +6,7 @@ import { I18nBackend } from "@fy-/fws-js";
 export type I18nextTranslate = typeof i18next.t;
 
 export function useTranslation() {
-  const translate = inject<TFunction>("fws-translate");
+  const translate = inject<TFunction>("fwsVueTranslate");
   if (!translate) throw new Error("Did you apply app.use(fwsVue)?");
 
   return translate;
