@@ -209,22 +209,22 @@ defineExpose({ focus, getInputRef });
   @apply mt-2 text-sm text-fv-neutral-500 dark:text-fv-neutral-400;
 }
 .fws-input {
-  @apply shadow-sm bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-lg focus:ring-fv-primary-500 focus:border-fv-primary-500 block w-full p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500;
+  @apply shadow-sm bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-sm focus:ring-fv-primary-500 focus:border-fv-primary-500 block w-full p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500;
   &.error {
-    @apply bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-red-100 dark:border-red-400;
+    @apply bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-sm focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-red-100 dark:border-red-400;
   }
 }
 .fws-textarea {
-  @apply block p-2.5 w-full text-sm text-fv-neutral-900 bg-fv-neutral-50 rounded-lg border border-fv-neutral-300 focus:ring-fv-primary-500 focus:border-fv-primary-500 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500;
+  @apply block p-2.5 w-full text-sm text-fv-neutral-900 bg-fv-neutral-50 rounded-sm border border-fv-neutral-300 focus:ring-fv-primary-500 focus:border-fv-primary-500 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500;
   &.error {
-    @apply bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-red-100 dark:border-red-400;
+    @apply bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-sm focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-red-100 dark:border-red-400;
   }
 }
 
 .fws-select {
-  @apply bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-lg focus:ring-fv-primary-500 focus:border-fv-primary-500 block w-full p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500;
+  @apply bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-sm focus:ring-fv-primary-500 focus:border-fv-primary-500 block w-full p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500;
   &.error {
-    @apply bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-red-100 dark:border-red-400;
+    @apply bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-sm focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-red-100 dark:border-red-400;
   }
 }
 .fws-checkbox {
@@ -234,7 +234,7 @@ defineExpose({ focus, getInputRef });
 .fws-checkbox input {
   @apply w-4 h-4 text-fv-primary-600 bg-fv-neutral-100 border-fv-neutral-300 rounded focus:ring-fv-primary-500 dark:focus:ring-fv-primary-600 dark:ring-offset-fv-neutral-800 dark:focus:ring-offset-fv-neutral-800 focus:ring-2 dark:bg-fv-neutral-700 dark:border-fv-neutral-600;
   &.error {
-    @apply bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-red-100 dark:border-red-400;
+    @apply bg-red-50 border border-red-500 text-red-900 placeholder-red-700 text-sm rounded-sm focus:ring-red-500 focus:border-red-500 block w-full p-2.5 dark:bg-red-100 dark:border-red-400;
   }
 }
 .fws-checkbox label {

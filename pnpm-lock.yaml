@@ -33,6 +33,10 @@ importers:
         version: 5.2.2
 
   packages/fws-vue:
+    dependencies:
+      timeago.js:
+        specifier: ^4.0.2
+        version: 4.0.2
     devDependencies:
       '@fy-/fws-js':
         specifier: workspace:*

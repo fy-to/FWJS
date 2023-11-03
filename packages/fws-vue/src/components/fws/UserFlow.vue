@@ -18,7 +18,6 @@ const props = withDefaults(
     returnDefault?: string;
     forceAction?: string;
     onSuccess?: Function;
-    mode?: "klb" | "fy";
   }>(),
   {
     mode: "klb",
@@ -106,7 +105,6 @@ const userFlow = async (params: paramsType = { initial: false }) => {
   formData.value.return_to = returnTo.value;
   response.value = (await rest("User:flow", "POST", formData.value).catch(
     (err: APIResult) => {
-      console.log(err);
       if (err.token && err.token == "invalid_request_token") {
         window.location.reload();
       }
@@ -119,7 +117,6 @@ const userFlow = async (params: paramsType = { initial: false }) => {
       return;
     },
   )) as UserFlow;
-  console.log(response.value);
   if (response.value?.result == "success") {
     if (props.onSuccess) {
       await props.onSuccess();

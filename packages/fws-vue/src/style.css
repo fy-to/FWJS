@@ -10,21 +10,21 @@
 }
 
 .btn {
-    @apply text-white bg-gradient-to-br  hover:bg-gradient-to-bl focus:ring-4 focus:outline-none font-medium rounded-lg text-center transition-colors ease-in-out motion-reduce:transition-none;
+    @apply text-white focus:ring-4 font-medium rounded-lg text-sm focus:outline-none transition-colors ease-in-out motion-reduce:transition-none;
     &.primary {
-        @apply from-fv-primary-600 to-fv-primary-500 focus:ring-fv-primary-300 dark:focus:ring-fv-primary-800;
+        @apply bg-fv-primary-700 hover:bg-fv-primary-800 focus:ring-fv-primary-300 dark:bg-fv-primary-600 dark:hover:bg-fv-primary-700 dark:focus:ring-fv-primary-800;
     }
     &.accent {
-        @apply from-fv-accent-600 to-fv-accent-500 focus:ring-fv-accent-300 dark:focus:ring-fv-accent-800;
+        @apply bg-fv-accent-700 hover:bg-fv-accent-800 focus:ring-fv-accent-300 dark:bg-fv-accent-600 dark:hover:bg-fv-accent-700 dark:focus:ring-fv-accent-800;
     }
     &.success,&.valid {
-        @apply from-green-600 to-green-500 focus:ring-green-300 dark:focus:ring-green-800;
+        @apply bg-green-700 hover:bg-green-800 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800;
     }
     &.error,&.danger {
-        @apply from-red-600 to-red-500 focus:ring-red-300 dark:focus:ring-red-800;
+        @apply bg-red-700 hover:bg-red-800 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800;
     }
     &.neutral {
-        @apply from-fv-neutral-600 to-fv-neutral-500 focus:ring-fv-neutral-300 dark:focus:ring-fv-neutral-800;
+        @apply bg-fv-neutral-700 hover:bg-fv-neutral-800 focus:ring-fv-neutral-300 dark:bg-fv-neutral-600 dark:hover:bg-fv-neutral-700 dark:focus:ring-fv-neutral-800;
     }
 
     &.defaults {
@@ -40,3 +40,4 @@
         @apply px-6 py-3 text-base;
     }
 }
+

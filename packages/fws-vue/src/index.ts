@@ -9,6 +9,14 @@ import { initVueClient, initVueServer, isServerRendered } from "./ssr";
 import { useSeo } from "./seo";
 import { useUserStore, useUserCheck } from "./stores/user";
 import { ClientOnly } from "./components/ssr/ClientOnly";
+import {
+  cropText,
+  formatBytes,
+  formatDate,
+  formatDatetime,
+  formatTimeago,
+} from "./templating";
+import { useRest } from "./rest";
 export * from "./stores/serverRouter";
 
 // Components/UI/Transitions
@@ -22,9 +30,16 @@ import FadeTransition from "./components/ui/transitions/FadeTransition.vue";
 import DefaultInput from "./components/ui/DefaultInput.vue";
 import DefaultModal from "./components/ui/DefaultModal.vue";
 import DefaultConfirm from "./components/ui/DefaultConfirm.vue";
+import DefaultPaging from "./components/ui/DefaultPaging.vue";
+import DefaultBreadcrumb from "./components/ui/DefaultBreadcrumb.vue";
+import DefaultLoader from "./components/ui/DefaultLoader.vue";
 
 // Components/FWS
 import UserFlow from "./components/fws/UserFlow.vue";
+import DataTable from "./components/fws/DataTable.vue";
+import FilterData from "./components/fws/FilterData.vue";
+import CmsArticleBoxed from "./components/fws/CmsArticleBoxed.vue";
+import CmsArticleSingle from "./components/fws/CmsArticleSingle.vue";
 
 import "./style.css";
 
@@ -41,6 +56,13 @@ function createFWS(): Plugin {
         app.config.globalProperties.$t = i18next.t;
         app.provide("fwsVueTranslate", i18next.t);
 
+        // Templating
+        app.config.globalProperties.$cropText = cropText;
+        app.config.globalProperties.$formatBytes = formatBytes;
+        app.config.globalProperties.$formatTimeago = formatTimeago;
+        app.config.globalProperties.$formatDatetime = formatDatetime;
+        app.config.globalProperties.$formatDate = formatDate;
+
         app.component("ClientOnly", ClientOnly);
       }
     },
@@ -51,6 +73,11 @@ declare module "vue" {
   export interface ComponentCustomProperties {
     $t: typeof i18next.t;
     $eventBus: Emitter<Events>;
+    $cropText: typeof cropText;
+    $formatBytes: typeof formatBytes;
+    $formatTimeago: typeof formatTimeago;
+    $formatDatetime: typeof formatDatetime;
+    $formatDate: typeof formatDate;
   }
   export interface GlobalComponents {
     ClientOnly: typeof ClientOnly;
@@ -69,6 +96,7 @@ export {
   useSeo,
   useUserStore,
   useUserCheck,
+  useRest,
 
   // Components
   // UI/Transitions
@@ -77,10 +105,19 @@ export {
   CollapseTransition,
   ScaleTransition,
   FadeTransition,
+
   // UI
   DefaultInput,
   DefaultModal,
   DefaultConfirm,
+  DefaultPaging,
+  DefaultBreadcrumb,
+  DefaultLoader,
+
   // FWS
   UserFlow,
+  DataTable,
+  FilterData,
+  CmsArticleBoxed,
+  CmsArticleSingle,
 };
