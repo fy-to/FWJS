@@ -7,7 +7,7 @@ import { useEventBus, Events } from "./event-bus";
 import { i18nextPromise, useTranslation } from "./translations";
 import { initVueClient, initVueServer, isServerRendered } from "./ssr";
 import { useSeo } from "./seo";
-import { useUserStore, useUserCheck } from "./stores/user";
+import { useKlbStore, useUserCheck } from "./stores/user";
 import { ClientOnly } from "./components/ssr/ClientOnly";
 import {
   cropText,
@@ -18,6 +18,7 @@ import {
 } from "./templating";
 import { useRest } from "./rest";
 export * from "./stores/serverRouter";
+export * from "./klb";
 
 // Components/UI/Transitions
 import SlideTransition from "./components/ui/transitions/SlideTransition.vue";
@@ -35,27 +36,22 @@ import DefaultBreadcrumb from "./components/ui/DefaultBreadcrumb.vue";
 import DefaultLoader from "./components/ui/DefaultLoader.vue";
 import DefaultSidebar from "./components/ui/DefaultSidebar.vue";
 
-// Components/FWS
-import UserFlow from "./components/fws/UserFlow.vue";
-import DataTable from "./components/fws/DataTable.vue";
-import FilterData from "./components/fws/FilterData.vue";
-import CmsArticleBoxed from "./components/fws/CmsArticleBoxed.vue";
-import CmsArticleSingle from "./components/fws/CmsArticleSingle.vue";
+// Components/KLB
 
 import "./style.css";
 
-function createFWS(): Plugin {
+function createKLB(): Plugin {
   const eventBus: Emitter<Events> = mitt<Events>();
 
   return {
     install(app: App) {
       if (app.config.globalProperties) {
         app.config.globalProperties.$eventBus = eventBus;
-        app.provide("fwsVueEventBus", eventBus);
+        app.provide("klbVueEventBus", eventBus);
 
         // i18next
         app.config.globalProperties.$t = i18next.t;
-        app.provide("fwsVueTranslate", i18next.t);
+        app.provide("klbVueTranslate", i18next.t);
 
         // Templating
         app.config.globalProperties.$cropText = cropText;
@@ -88,14 +84,14 @@ declare module "vue" {
 export {
   i18nextPromise,
   useTranslation,
-  createFWS,
+  createKLB as createFWS,
   useServerRouter,
   useEventBus,
   initVueClient,
   initVueServer,
   isServerRendered,
   useSeo,
-  useUserStore,
+  useKlbStore,
   useUserCheck,
   useRest,
 
@@ -116,10 +112,5 @@ export {
   DefaultLoader,
   DefaultSidebar,
 
-  // FWS
-  UserFlow,
-  DataTable,
-  FilterData,
-  CmsArticleBoxed,
-  CmsArticleSingle,
+  // KLB
 };

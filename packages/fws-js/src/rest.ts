@@ -1,9 +1,6 @@
 export type RestMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 export interface RestParams {
-    [key: string]: string | number | boolean;
-}
-export interface RestContext {
-    [key: string]: string | number | boolean;
+    [key: string]: any;
 }
 
 function getRestURL(path: string): string {

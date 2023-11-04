@@ -184,7 +184,7 @@ onUnmounted(() => {
     >
       <DefaultPaging :items="paging" v-if="paging" :id="`${props.id}Pages`" />
       <button
-        class="btn primary defaults"
+        class="btn primary small"
         @click="exportToCsv"
         v-if="exportableColumns.length && data.length"
       >

@@ -3,10 +3,11 @@ import useVuelidate from "@vuelidate/core";
 import { reactive } from "vue";
 import { onMounted } from "vue";
 import { onUnmounted } from "vue";
-import DefaultInput from "../ui/DefaultInput.vue";
 import { useTranslation } from "../../translations";
 import { useEventBus } from "../../event-bus";
 import DefaultDateSelection from "../ui/DefaultDateSelection.vue";
+import DefaultInput from "../ui/DefaultInput.vue";
+
 interface FilterData {
   label: string;
   req: boolean;

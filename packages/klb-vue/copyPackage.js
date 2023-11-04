@@ -7,6 +7,11 @@ const targetPath = path.resolve(__dirname, "dist", "package.json");
 const packageData = require(sourcePath);
 delete packageData.scripts;
 delete packageData.devDependencies;
+/*packageData.types = "index.d.ts";
+    "main": "index.ts",
+    "module": "src/index.ts",
+    "typings": "src/index.ts",
+    "types": "src/index.ts",*/
 packageData.main = "index.ts";
 packageData.module = "index.ts";
 packageData.typings = "index.ts";
