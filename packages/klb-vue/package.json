@@ -1,6 +1,6 @@
 {
     "name": "@fy-/klb-vue",
-    "version": "0.0.001",
+    "version": "0.0.006",
     "author": "Florian 'Fy' Gasquez <m@fy.to>",
     "license": "MIT",
     "repository": {
@@ -37,7 +37,7 @@
         "vue": "^3.2.x",
         "vue-router": "^4.1.x",
         "@karpeleslab/klbfw": "^0.1.x",
-        "@karpleslab/i18next-klb-backend": "^0.1.x"
+        "@karpeleslab/i18next-klb-backend": "^0.1.x"
     },
     "scripts": {
         "clean": "rimraf dist",

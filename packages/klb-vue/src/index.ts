@@ -18,7 +18,7 @@ import {
 } from "./templating";
 import { useRest } from "./rest";
 export * from "./stores/serverRouter";
-export * from "./klb";
+export * from "./klb.d";
 
 // Components/UI/Transitions
 import SlideTransition from "./components/ui/transitions/SlideTransition.vue";
@@ -37,6 +37,7 @@ import DefaultLoader from "./components/ui/DefaultLoader.vue";
 import DefaultSidebar from "./components/ui/DefaultSidebar.vue";
 
 // Components/KLB
+import UserFlow from "./components/klb/UserFlow.vue";
 
 import "./style.css";
 
@@ -84,7 +85,7 @@ declare module "vue" {
 export {
   i18nextPromise,
   useTranslation,
-  createKLB as createFWS,
+  createKLB,
   useServerRouter,
   useEventBus,
   initVueClient,
@@ -113,4 +114,5 @@ export {
   DefaultSidebar,
 
   // KLB
+  UserFlow,
 };

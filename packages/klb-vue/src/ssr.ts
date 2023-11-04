@@ -19,11 +19,13 @@ export interface SSRResult {
   redirect?: string;
 }
 export function isServerRendered() {
-  return getInitialState().isSSR;
+  const state = getInitialState();
+  if (state && state.isSSR) return true;
+  return false;
 }
 export function initVueClient(router: Router, pinia: Pinia) {
   const state = getInitialState();
-  if (state.isSSR && state && state.pinia) {
+  if (state && state.isSSR && state.pinia) {
     pinia.state.value = state.pinia;
   }
   useServerRouter(pinia)._setRouter(router);
