@@ -2,7 +2,7 @@
 import type { Ref } from "vue";
 import { useFyHead } from "@fy-/head";
 import { computed } from "vue";
-import { getURL, getLocale } from "@fy-/fws-js";
+import { getURL, getLocale, getPrefix } from "@fy-/fws-js";
 
 export interface LazyHead {
   name?: string;
@@ -38,7 +38,7 @@ export const useSeo = (seo: Ref<LazyHead>, initial: boolean = false) => {
 
       links.push({
         rel: "canonical",
-        href: seo.value.canonical || currentUrl,
+        href: currentUrl,
         key: "canonical",
       });
 
@@ -57,7 +57,9 @@ export const useSeo = (seo: Ref<LazyHead>, initial: boolean = false) => {
           links.push({
             rel: "alternate",
             hreflang: locale,
-            href: `${currentUrl}/l/${locale}${getURL().Path}`,
+            href: `${getURL().Scheme}://${
+              getURL().Host
+            }/l/${locale}${getURL().Path.replace(getPrefix(), "")}`,
             key: `alternate-${locale}`,
           });
         }

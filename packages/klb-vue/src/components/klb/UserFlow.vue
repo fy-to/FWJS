@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import type { KlbFlowData, KlbUserFlowField } from "../../klb";
+import type { KlbFlowData, KlbUserFlowField } from "../../types/klb";
 import { useRoute, useRouter } from "vue-router";
-import { useTranslation } from "../../translations";
-import { useEventBus } from "../../event-bus";
+import { useTranslation } from "../../composables/translations";
+import { useEventBus } from "../../composables/event-bus";
 import { useKlbStore } from "../../stores/user";
-import { useRest, APIResult } from "../../rest";
+import { useRest, APIResult } from "../../composables/rest";
 import DefaultInput from "../ui/DefaultInput.vue";
 import { ClientOnly } from "../ssr/ClientOnly";
 const rest = useRest();
@@ -117,11 +117,11 @@ const userFlow = async (params: paramsType = { initial: false }) => {
     },
   )) as UserFlow;
   if (response.value?.result == "success") {
-    if (props.onSuccess) {
-      await props.onSuccess();
-    }
     if (response.value.data.complete == true && response.value.data.user) {
       store.setUser(response.value.data.user);
+      if (props.onSuccess) {
+        await props.onSuccess();
+      }
       if (isExternalUrl(returnTo.value)) {
         window.location.href = returnTo.value;
       } else {

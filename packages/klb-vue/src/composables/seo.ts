@@ -2,8 +2,12 @@
 import type { Ref } from "vue";
 import { useFyHead } from "@fy-/head";
 import { computed } from "vue";
-import { getUrl, getLocale } from "@karpeleslab/klbfw";
+import { getUrl, getLocale, getPrefix } from "@karpeleslab/klbfw";
 
+export interface HeadScript {
+  src: string;
+  id?: string;
+}
 export interface LazyHead {
   name?: string;
   title?: string;
@@ -25,6 +29,7 @@ export interface LazyHead {
   url?: string;
   isAdult?: boolean;
   alternateLocales?: string[];
+  scripts?: HeadScript[] | undefined;
 }
 
 export const useSeo = (seo: Ref<LazyHead>, initial: boolean = false) => {
@@ -33,12 +38,13 @@ export const useSeo = (seo: Ref<LazyHead>, initial: boolean = false) => {
 
   useFyHead({
     title: computed(() => seo.value.title),
+    scripts: computed(() => seo.value.scripts),
     links: computed(() => {
       const links = [];
 
       links.push({
         rel: "canonical",
-        href: seo.value.canonical || currentUrl,
+        href: currentUrl,
         key: "canonical",
       });
 
@@ -57,7 +63,9 @@ export const useSeo = (seo: Ref<LazyHead>, initial: boolean = false) => {
           links.push({
             rel: "alternate",
             hreflang: locale,
-            href: `${currentUrl}/l/${locale}${getUrl().Path}`,
+            href: `${getUrl().scheme}://${
+              getUrl().host
+            }/l/${locale}${getUrl().path.replace(getPrefix(), "")}`,
             key: `alternate-${locale}`,
           });
         }

@@ -1,5 +1,5 @@
 import { format as formatDateTimeago } from "timeago.js";
-import { useTranslation } from "./translations";
+import { useTranslation } from "../composables/translations";
 import { getLocale } from "@karpeleslab/klbfw";
 
 const cropText = (str: string, ml = 100, end = "...") => {

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
-import type { Component } from "vue";
-import { useEventBus } from "../../event-bus";
+import { useEventBus } from "../../composables/event-bus";
 
 const props = withDefaults(
   defineProps<{
@@ -32,18 +31,16 @@ onUnmounted(() => {
 <template>
   <div
     v-if="loading || force"
-    class="flex-grow flex flex-col bg-fv-neutral-800/[.8] items-center justify-center absolute inset-0 z-50"
+    class="flex-grow flex flex-col bg-fv-neutral-200/[.8] dark:bg-fv-neutral-800/[.8] items-center justify-center absolute inset-0 z-50"
   >
-    <div class="text-center animate-pulse w-40 h-40 p-4 rounded-full shadow">
-      <div class="relative flex flex-col items-center">
-        <div class="flex items-center justify-center flex-col">
-          <img
-            :src="image"
-            :alt="$t('global_loading')"
-            class="w-full h-full relative"
-          />
-        </div>
-      </div>
+    <div
+      class="text-center animate-pulse w-40 h-40 p-6 rounded-full shadow bg-fv-neutral-50 dark:bg-fv-neutral-900 flex items-center justify-center"
+    >
+      <img
+        :src="image"
+        :alt="$t('global_loading')"
+        class="w-full h-full relative"
+      />
     </div>
   </div>
 </template>

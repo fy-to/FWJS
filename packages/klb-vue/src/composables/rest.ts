@@ -1,7 +1,7 @@
-import { useRestStore } from "./stores/rest";
-import { isServerRendered } from "./ssr";
+import { useRestStore } from "../stores/rest";
+import { isServerRendered } from "../misc/ssr";
 import { useEventBus } from "./event-bus";
-import { stringHash } from "./utils";
+import { stringHash } from "../misc/utils";
 import { getMode, rest } from "@karpeleslab/klbfw";
 
 export interface APIPaging {

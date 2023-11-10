@@ -90,7 +90,7 @@ export async function initVueServer(
     result.statusCode = 500;
     const err =
       error instanceof Error ? `${error.message}\n${error.stack}` : error;
-    const errorResult = `<div id="app"><h1>500 Internal Server Error</h1><pre>${err}</pre></div>`;
+    result.app = `<pre>${err}</pre>`;
     callback(result);
     return result;
   }

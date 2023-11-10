@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { ExclamationCircleIcon } from "@heroicons/vue/24/solid";
-import { useEventBus } from "../../event-bus";
+import { useEventBus } from "../../composables/event-bus";
 import DefaultModal from "./DefaultModal.vue";
 
 const eventBus = useEventBus();

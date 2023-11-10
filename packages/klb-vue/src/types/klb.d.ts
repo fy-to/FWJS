@@ -102,6 +102,9 @@ export interface KlbAPISetupIntent extends KlbAPIResult {
 export interface KlbAPICatalog extends KlbAPIResult {
   data: { data: Array<KlbCatalogProduct> };
 }
+export interface KlbAPIProduct extends KlbAPIResult {
+  data: KlbCatalogProduct;
+}
 export interface KlbAPICatalogCart extends KlbAPIResult {
   data: KlbCatalogCart;
 }

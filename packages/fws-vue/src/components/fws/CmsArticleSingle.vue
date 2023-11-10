@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watchEffect } from "vue";
 import { useRoute } from "vue-router";
 import type { Component } from "vue";
 import { useRest } from "../../rest";
@@ -59,6 +59,9 @@ const getBlogPost = async () => {
   }
 };
 await getBlogPost();
+watchEffect(() => {
+  getBlogPost();
+});
 useSeo(seo);
 </script>
 <template>

@@ -3,22 +3,25 @@ import i18next from "i18next";
 import mitt from "mitt";
 import { Emitter } from "mitt";
 import { useServerRouter } from "./stores/serverRouter";
-import { useEventBus, Events } from "./event-bus";
-import { i18nextPromise, useTranslation } from "./translations";
-import { initVueClient, initVueServer, isServerRendered } from "./ssr";
-import { useSeo } from "./seo";
+import { useEventBus, Events } from "./composables/event-bus";
+import { i18nextPromise, useTranslation } from "./composables/translations";
+import { initVueClient, initVueServer, isServerRendered } from "./misc/ssr";
+import { useSeo } from "./composables/seo";
 import { useKlbStore, useUserCheck } from "./stores/user";
 import { ClientOnly } from "./components/ssr/ClientOnly";
+import { useCart } from "./composables/cart";
 import {
   cropText,
   formatBytes,
   formatDate,
   formatDatetime,
   formatTimeago,
-} from "./templating";
-import { useRest } from "./rest";
+} from "./misc/templating";
+import { useRest } from "./composables/rest";
+export * from "./stores/catalog";
 export * from "./stores/serverRouter";
-export * from "./klb.d";
+export * from "./types/klb.d";
+export * from "./composables/countries";
 
 // Components/UI/Transitions
 import SlideTransition from "./components/ui/transitions/SlideTransition.vue";
@@ -38,6 +41,7 @@ import DefaultSidebar from "./components/ui/DefaultSidebar.vue";
 
 // Components/KLB
 import UserFlow from "./components/klb/UserFlow.vue";
+import CmsPage from "./components/klb/CmsPage.vue";
 
 import "./style.css";
 
@@ -95,6 +99,7 @@ export {
   useKlbStore,
   useUserCheck,
   useRest,
+  useCart,
 
   // Components
   // UI/Transitions
@@ -115,4 +120,5 @@ export {
 
   // KLB
   UserFlow,
+  CmsPage,
 };
