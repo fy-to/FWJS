@@ -53,11 +53,26 @@ const checkErrors = computed(() => {
 const focus = () => {
   if (inputRef.value) inputRef.value.focus();
 };
+const blur = () => {
+  if (inputRef.value) inputRef.value.blur();
+};
 const getInputRef = () => {
   if (inputRef.value) return inputRef.value;
 };
 
-const emit = defineEmits(["update:modelValue", "update:checkboxValue"]);
+const handleFocus = () => {
+  emit("focus", props.id);
+};
+
+const handleBlur = () => {
+  emit("blur", props.id);
+};
+const emit = defineEmits([
+  "update:modelValue",
+  "update:checkboxValue",
+  "focus",
+  "blur",
+]);
 const model = computed({
   get: () => props.modelValue,
   set: (items) => {
@@ -70,10 +85,10 @@ const modelCheckbox = computed({
     emit("update:checkboxValue", items);
   },
 });
-defineExpose({ focus, getInputRef });
+defineExpose({ focus, blur, getInputRef });
 </script>
 <template>
-  <div>
+  <div class="relative">
     <template
       v-if="
         [
@@ -125,6 +140,8 @@ defineExpose({ focus, getInputRef });
         :disabled="disabled"
         :required="req"
         :placeholder="placeholder"
+        @focus="handleFocus"
+        @blur="handleBlur"
       />
       <textarea
         :aria-describedby="label"
@@ -140,6 +157,8 @@ defineExpose({ focus, getInputRef });
         :disabled="disabled"
         :required="req"
         :placeholder="placeholder"
+        @focus="handleFocus"
+        @blur="handleBlur"
       ></textarea>
       <select
         :aria-describedby="label"
@@ -152,6 +171,8 @@ defineExpose({ focus, getInputRef });
         :class="{
           error: checkErrors,
         }"
+        @focus="handleFocus"
+        @blur="handleBlur"
         class="fws-select"
       >
         <option v-for="opt in options" :value="opt[0]" :key="opt[0].toString()">
@@ -195,6 +216,8 @@ defineExpose({ focus, getInputRef });
     >
       {{ help }}
     </p>
+
+    <slot></slot>
   </div>
 </template>
 <style scoped>

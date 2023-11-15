@@ -17,8 +17,10 @@ interface FilterData {
   isHidden?: boolean;
   default?: any | undefined;
   formats?: Record<string, (value: any) => any>;
+  autocomplete?: (value: string) => Promise<any[]>;
   formatRestValue?: (value: any) => any;
   onChangeValue?: (form: any, value: any) => void;
+  focused: boolean;
 }
 const emit = defineEmits(["update:modelValue"]);
 const state = reactive<any>({ formData: {} });
@@ -126,18 +128,24 @@ onUnmounted(() => {
 <template>
   <form @submit.prevent="() => submitForm()">
     <div :class="css">
-      <div v-for="(g, i) in data" :key="`index_${i}`">
+      <div v-for="(g, i) in data" :key="`index_${i}`" class="relative">
         <template v-for="f in g" :key="f.uid">
           <template v-if="!f.isHidden">
             <DefaultInput
-              :type="f.type"
+              :type="f.type == 'autocomplete' ? 'text' : f.type"
               :label="f.label"
               :id="f.uid"
-              v-if="['text', 'select', 'date', 'email'].includes(f.type)"
+              v-if="
+                ['text', 'select', 'date', 'email', 'autocomplete'].includes(
+                  f.type,
+                )
+              "
               :options="f.options ? f.options : [[]]"
               v-model="state.formData[f.uid]"
               :errorVuelidate="v$.formData[f.uid].$errors"
               class="mb-2"
+              @focus="f.focused = true"
+              @blur="f.focused = false"
               @change="
                 (ev: any) => {
                   if (f.onChangeValue) {
@@ -145,7 +153,42 @@ onUnmounted(() => {
                   }
                 }
               "
-            />
+              @update:modelValue="
+                (v) => {
+                  if (f.autocomplete && v.length > 2) {
+                    f.autocomplete(v).then((r) => {
+                      f.options = r;
+                    });
+                  }
+                }
+              "
+            >
+              <div
+                v-if="
+                  f.type == 'autocomplete' &&
+                  f.options &&
+                  f.options.length &&
+                  f.focused
+                "
+                class="absolute flex flex-col gap-2 p-2 bottom-0 translate-y-full inset-x-0 bg-fv-neutral-200 dark:bg-fv-neutral-800 border border-fv-neutral-700 z-10"
+              >
+                <button
+                  v-for="o in f.options"
+                  :key="o[0]"
+                  class="flex items-center justify-between btn defaults neutral"
+                  type="button"
+                  @click.prevent="
+                    () => {
+                      f.focused = false;
+                      state.formData[f.uid] = o[0];
+                    }
+                  "
+                >
+                  {{ o[1] }} <small v-if="o[0] != ''">({{ o[0] }})</small>
+                </button>
+              </div></DefaultInput
+            >
+
             <DefaultDateSelection
               :id="f.uid"
               :label="f.label"

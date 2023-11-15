@@ -48,8 +48,12 @@ const props = withDefaults(
     filtersData: DefaultAnyObject;
     apiPath: string;
     defaultSort?: SortingField;
+    subData?: boolean;
+    errorMessage?: string;
   }>(),
   {
+    errorMessage: "no_data_found",
+    subData: false,
     showHeaders: true,
     sortables: () => ({}),
     exportableColumns: () => [],
@@ -67,20 +71,25 @@ const currentSort = useStorage<SortingField>(
 const getData = async (page: number = 1) => {
   eventBus.emit("main-loading", true);
   if (route.query.page) page = parseInt(route.query.page.toString());
-  const sort: any = {};
-  sort[currentSort.value.field] = currentSort.value.direction;
+  let sort: any = {};
+  if (!props.subData) {
+    sort[currentSort.value.field] = currentSort.value.direction;
+  } else {
+    sort = `${currentSort.value.field}:${currentSort.value.direction}`;
+  }
   const requestParams = {
     ...props.filtersData,
     sort: sort,
     results_per_page: perPage.value,
     page_no: page,
   };
+  eventBus.emit("dataTableRequestParams", requestParams);
   const r = await rest(props.apiPath, "GET", requestParams);
   currentPage.value = page;
   data.value = [];
   paging.value = undefined;
   if (r && r.result == "success") {
-    data.value = r.data;
+    data.value = props.subData ? r.data.data : r.data;
     paging.value = r.paging;
     eventBus.emit(`${props.id}NewData`, data.value);
   }
@@ -250,6 +259,12 @@ onUnmounted(() => {
           </tr>
         </tbody>
       </table>
+    </div>
+    <div
+      v-else
+      class="text-center text-fv-neutral-600 dark:text-fv-neutral-300 italic p-2"
+    >
+      {{ $t(errorMessage) }}
     </div>
   </div>
 </template>

@@ -38,7 +38,7 @@ import DefaultPaging from "./components/ui/DefaultPaging.vue";
 import DefaultBreadcrumb from "./components/ui/DefaultBreadcrumb.vue";
 import DefaultLoader from "./components/ui/DefaultLoader.vue";
 import DefaultSidebar from "./components/ui/DefaultSidebar.vue";
-
+import DefaultDateSelection from "./components/ui/DefaultDateSelection.vue";
 // Components/KLB
 import UserFlow from "./components/klb/UserFlow.vue";
 import CmsPage from "./components/klb/CmsPage.vue";
@@ -119,6 +119,7 @@ export {
   DefaultBreadcrumb,
   DefaultLoader,
   DefaultSidebar,
+  DefaultDateSelection,
 
   // KLB
   UserFlow,
