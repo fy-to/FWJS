@@ -155,7 +155,7 @@ onUnmounted(() => {
               "
               @update:modelValue="
                 (v) => {
-                  if (f.autocomplete && v.length > 2) {
+                  if (f.autocomplete && v.length >= 2) {
                     f.autocomplete(v).then((r) => {
                       f.options = r;
                     });
