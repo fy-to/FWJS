@@ -3,10 +3,14 @@ import i18next from "i18next";
 import mitt from "mitt";
 import { Emitter } from "mitt";
 import { useServerRouter } from "./stores/serverRouter";
-import { useEventBus, Events } from "./event-bus";
-import { i18nextPromise, useTranslation } from "./translations";
-import { initVueClient, initVueServer, isServerRendered } from "./ssr";
-import { useSeo } from "./seo";
+import { useEventBus, Events } from "./composables/event-bus";
+import { i18nextPromise, useTranslation } from "./composables/translations";
+import {
+  initVueClient,
+  initVueServer,
+  isServerRendered,
+} from "./composables/ssr";
+import { useSeo } from "./composables/seo";
 import { useUserStore, useUserCheck } from "./stores/user";
 import { ClientOnly } from "./components/ssr/ClientOnly";
 import {
@@ -15,8 +19,8 @@ import {
   formatDate,
   formatDatetime,
   formatTimeago,
-} from "./templating";
-import { useRest } from "./rest";
+} from "./composables/templating";
+import { useRest } from "./composables/rest";
 export * from "./stores/serverRouter";
 
 // Components/UI/Transitions

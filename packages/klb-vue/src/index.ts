@@ -42,6 +42,8 @@ import DefaultSidebar from "./components/ui/DefaultSidebar.vue";
 // Components/KLB
 import UserFlow from "./components/klb/UserFlow.vue";
 import CmsPage from "./components/klb/CmsPage.vue";
+import DataTable from "./components/klb/DataTable.vue";
+import FilterData from "./components/klb/FilterData.vue";
 
 import "./style.css";
 
@@ -121,4 +123,6 @@ export {
   // KLB
   UserFlow,
   CmsPage,
+  DataTable,
+  FilterData,
 };

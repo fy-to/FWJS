@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { APIResult } from "../rest";
+import { APIResult } from "../composables/rest";
 
 type SharedState = {
   results: Record<number, APIResult | undefined>;

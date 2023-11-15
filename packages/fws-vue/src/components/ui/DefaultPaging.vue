@@ -8,8 +8,8 @@ import {
   onMounted,
   computed,
 } from "vue";
-import type { APIPaging } from "../../rest";
-import { useEventBus } from "../../event-bus";
+import type { APIPaging } from "../../composables/rest";
+import { useEventBus } from "../../composables/event-bus";
 import { useServerRouter } from "../../stores/serverRouter";
 import { useRoute } from "vue-router";
 import { useFyHead } from "@fy-/head";

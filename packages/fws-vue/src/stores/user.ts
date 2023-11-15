@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import type { User } from "@fy-/fws-types";
-import { APIResult } from "../rest";
+import { APIResult } from "../composables/rest";
 import { rest } from "@fy-/fws-js";
 import { computed } from "vue";
 import { RouteLocation, useRouter } from "vue-router";

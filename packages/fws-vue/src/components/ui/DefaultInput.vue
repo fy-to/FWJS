@@ -2,7 +2,7 @@
 import { LinkIcon } from "@heroicons/vue/24/solid";
 import { computed, ref, toRef } from "vue";
 import type { ErrorObject } from "@vuelidate/core";
-import { useTranslation } from "../../translations";
+import { useTranslation } from "../../composables/translations";
 type modelValueType = string | number | string[] | undefined;
 type checkboxValueType = any[] | Set<any> | undefined | boolean;
 const props = withDefaults(

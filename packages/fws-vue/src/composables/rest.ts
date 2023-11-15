@@ -1,5 +1,5 @@
 import { RestMethod, RestParams, getMode, rest, stringHash } from "@fy-/fws-js";
-import { useRestStore } from "./stores/rest";
+import { useRestStore } from "../stores/rest";
 import { isServerRendered } from "./ssr";
 import { useEventBus } from "./event-bus";
 

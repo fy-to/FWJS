@@ -2,7 +2,7 @@ import { Router } from "vue-router";
 import { Pinia } from "pinia";
 import { renderToString } from "@vue/server-renderer";
 import { getInitialState, getPath, getURL, getUUID } from "@fy-/fws-js";
-import { useServerRouter } from "./stores/serverRouter";
+import { useServerRouter } from "../stores/serverRouter";
 
 export interface SSRResult {
   initial: {

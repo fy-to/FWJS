@@ -27,6 +27,7 @@ interface SortingField {
 const eventBus = useEventBus();
 const currentPage = ref<number>(1);
 const route = useRoute();
+const rest = useRest();
 const data = ref<any[]>([]);
 const paging = ref<any>(undefined);
 const perPageOptions = [
@@ -47,7 +48,6 @@ const props = withDefaults(
     filtersData: DefaultAnyObject;
     apiPath: string;
     defaultSort?: SortingField;
-    restFunction?: Function | null;
   }>(),
   {
     showHeaders: true,
@@ -57,11 +57,8 @@ const props = withDefaults(
     exportableName: "default",
     defaultPerPage: 25,
     defaultSort: () => ({ field: "Created", direction: "DESC" }),
-    restFunction: null,
   },
 );
-const rest = useRest();
-const restFunction = props.restFunction ?? rest;
 const perPage = useStorage<number>(`${props.id}PerPage`, props.defaultPerPage);
 const currentSort = useStorage<SortingField>(
   `${props.id}CurrentSort`,
@@ -78,9 +75,7 @@ const getData = async (page: number = 1) => {
     results_per_page: perPage.value,
     page_no: page,
   };
-  const r = await restFunction(props.apiPath, "GET", requestParams, {
-    getBody: true,
-  });
+  const r = await rest(props.apiPath, "GET", requestParams);
   currentPage.value = page;
   data.value = [];
   paging.value = undefined;
@@ -184,7 +179,7 @@ onUnmounted(() => {
     >
       <DefaultPaging :items="paging" v-if="paging" :id="`${props.id}Pages`" />
       <button
-        class="btn primary small"
+        class="btn primary defaults"
         @click="exportToCsv"
         v-if="exportableColumns.length && data.length"
       >

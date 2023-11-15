@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
-import type { Component } from "vue";
-import { useEventBus } from "../../event-bus";
+import { useEventBus } from "../../composables/event-bus";
 
 const props = withDefaults(
   defineProps<{

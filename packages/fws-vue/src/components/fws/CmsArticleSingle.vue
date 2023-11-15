@@ -2,8 +2,8 @@
 import { ref, watchEffect } from "vue";
 import { useRoute } from "vue-router";
 import type { Component } from "vue";
-import { useRest } from "../../rest";
-import { LazyHead, useSeo } from "../../seo";
+import { useRest } from "../../composables/rest";
+import { LazyHead, useSeo } from "../../composables/seo";
 import type { BreadcrumbLink } from "../../types";
 import DefaultBreadcrumb from "../ui/DefaultBreadcrumb.vue";
 
@@ -15,11 +15,17 @@ const props = withDefaults(
     baseBreadcrumb?: BreadcrumbLink[];
     showImage?: boolean;
     showPreview?: boolean;
+    showTitle?: boolean;
+    postValue?: any;
+    passData?: boolean;
   }>(),
   {
     baseBreadcrumb: () => [],
     showImage: true,
     showPreview: true,
+    showTitle: true,
+    postValue: () => undefined,
+    passData: false,
   },
 );
 
@@ -29,10 +35,12 @@ const route = useRoute();
 const seo = ref<LazyHead>({});
 const is404 = ref(false);
 const getBlogPost = async () => {
-  const data = await rest(
-    `Cms/${props.cmsAlias}/Post/${route.params.slug}`,
-    "GET",
-  );
+  let data: any = undefined;
+  if (!props.passData) {
+    data = await rest(`Cms/${props.cmsAlias}/Post/${route.params.slug}`, "GET");
+  } else {
+    data = props.postValue;
+  }
   if (data && data.result == "success") {
     post.value = data.data;
     seo.value.title = post.value.Title;
@@ -55,7 +63,9 @@ const getBlogPost = async () => {
       seo.value.alternateLocales = post.value.Locales;
     }
   } else {
-    is404.value = true;
+    if (!props.passData) {
+      is404.value = true;
+    }
   }
 };
 await getBlogPost();
@@ -86,7 +96,7 @@ useSeo(seo);
           v-if="post.CoverUUID"
           :content="`https://s.nocachenocry.com/${post.CoverUUID}?vars=format=webp:resize=512x512`"
         />
-        <div class="py-4 px-4 max-w-6xl mx-auto">
+        <div class="py-4 px-4 max-w-6xl mx-auto" v-if="showTitle">
           <h1
             class="mb-4 text-4xl tracking-tight font-extrabold text-center text-fv-neutral-900 dark:text-white"
           >

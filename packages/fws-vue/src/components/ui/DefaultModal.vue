@@ -7,7 +7,7 @@ import {
 } from "@headlessui/vue";
 import { ref, onMounted, onUnmounted, h } from "vue";
 import { XCircleIcon } from "@heroicons/vue/24/solid";
-import { useEventBus } from "../../event-bus";
+import { useEventBus } from "../../composables/event-bus";
 const props = withDefaults(
   defineProps<{
     id: string;
