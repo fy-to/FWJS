@@ -25,9 +25,9 @@ jobs:
     - run: pnpm install --no-frozen-lockfile
     - run: pnpm run build:play
     - run: sudo apt-get update -qq && DEBIAN_FRONTEND=noninteractive sudo apt-get -y install zip
-    - run: pushd packages/playground
-    - run: zip -9r ../../final.zip dist etc views
-    - run: popd
+    - run: mkdir temp && cp -R packages/playground/dist temp/dist && cp -R packages/playground/etc temp/etc && cp -R packages/playground/views temp/views
+    - run: zip -9r final.zip temp/*
+    - run: rm -rf temp
 
       working-directory: .
     - uses: actions/upload-artifact@v1
