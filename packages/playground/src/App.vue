@@ -1,20 +1,40 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from "vue";
+import { computed, ref } from "vue";
 import {
   i18nextPromise,
   useTranslation,
   useSeo,
   useUserStore,
   useUserCheck,
+  DefaultLoader,
 } from "@fy-/fws-vue";
+import FWSLogo from "@/assets/logo.svg";
 import { I18nBackend, getLocale } from "@fy-/fws-js";
+import EnUSImage from "@/assets/lang/en-US.svg";
+import FrFRImage from "@/assets/lang/fr-FR.svg";
 await i18nextPromise(I18nBackend, getLocale());
 const userStore = useUserStore();
+const locale = getLocale();
 const navOpen = ref(false);
 const isAuth = computed(() => userStore.isAuth);
 const translate = useTranslation();
 const links = computed(() => {
-  const _links: any[] = [{ name: translate("nav_home"), url: "/" }];
+  const _links: any[] = [
+    { name: translate("nav_home"), url: "/" },
+    {
+      name: translate("nav_docs"),
+      url: "/docs",
+    },
+    {
+      name: translate("nav_fws_vue"),
+      url: "/fws-vue",
+    },
+    {
+      name: translate("nav_klb_vue"),
+      url: "/klb-vue",
+    },
+  ];
+  /*
   if (!isAuth.value) {
     _links.push({
       name: translate("nav_login"),
@@ -27,7 +47,7 @@ const links = computed(() => {
         userStore.logout();
       },
     });
-  }
+  }*/
   return _links;
 });
 useSeo(
@@ -46,7 +66,7 @@ if (!import.meta.env.SSR) {
     class="flex justify-center h-20 bg-white dark:bg-fv-neutral-900 fixed w-full z-20 top-0 left-0 border-b border-fv-neutral-200 dark:border-fv-neutral-600"
   >
     <div
-      class="container max-w-full xl:max-w-6xl flex flex-wrap items-center justify-between mx-auto px-4"
+      class="container xl:max-w-6xl mx-auto px-4 flex items-center justify-between"
     >
       <a href="/" class="flex items-center">
         <img
@@ -56,7 +76,10 @@ if (!import.meta.env.SSR) {
         />
         <span
           class="self-center text-xl lg:text-2xl font-semibold whitespace-nowrap dark:text-white"
-          >{{ $t("website_name_short") }}</span
+          >{{ $t("website_name_short")
+          }}<small class="text-sm block italic -mt-1">{{
+            $t("fws_slogan")
+          }}</small></span
         >
       </a>
       <div class="flex md:order-2">
@@ -101,7 +124,7 @@ if (!import.meta.env.SSR) {
             v-for="(l, i) in links"
             :key="`l_${i}`"
             itemprop="name"
-            class="flex-grow relative"
+            class="flex-grow flex-1 relative"
           >
             <RouterLink
               @click="navOpen = !navOpen"
@@ -122,6 +145,33 @@ if (!import.meta.env.SSR) {
           </li>
         </ul>
       </div>
+      <div
+        class="hidden lg:flex items-center justify-center gap-2 pr-4 mt-8 lg:mt-0"
+      >
+        <a
+          :href="
+            locale == 'en-US'
+              ? '/l/fr-FR' + $route.path
+              : '/l/en-US' + $route.path
+          "
+          class="group relative focus:outline-none"
+        >
+          <img
+            :src="
+              locale == 'en-US' ? FrFRImage.toString() : EnUSImage.toString()
+            "
+            style="filter: grayscale(90%)"
+            class="text-fv-neutral-400 w-7 h-6 rounded hover:text-fv-primary-400 active:text-fv-primary-400 active:scale-110 dark:text-fv-neutral-500 transition ease-out duration-200"
+          />
+          <div
+            class="z-50 text-sm px-2 py-1 hidden group-hover:block absolute top-0 -mt-3 md:mt-0 -translate-y-full md:translate-y-0 md:-mr-1 md:-left-3 md:-translate-x-full whitespace-nowrap bg-white dark:bg-fv-neutral-900 shadow rounded"
+          >
+            <span class="text-color">
+              {{ locale == "en-US" ? $t("fr_FR") : $t("en_US") }}</span
+            >
+          </div>
+        </a>
+      </div>
     </div>
   </nav>
   <div class="flex flex-col min-h-[94.75vh] pt-20 w-full relative">
@@ -130,12 +180,21 @@ if (!import.meta.env.SSR) {
         <template
           v-if="!$route.meta.reqLogin || ($route.meta.reqLogin && isAuth)"
         >
-          <!--<DefaultLoader id="main" :show-loading-text="false" />-->
+          <DefaultLoader
+            id="main"
+            :show-loading-text="false"
+            :image="FWSLogo"
+          />
           <component :is="Component" />
         </template>
 
         <template #fallback>
-          <div>Loading...</div>
+          <DefaultLoader
+            id="tss"
+            :show-loading-text="false"
+            :image="FWSLogo"
+            :force="true"
+          />
         </template>
       </Suspense>
     </RouterView>
@@ -147,11 +206,22 @@ if (!import.meta.env.SSR) {
           class="text-sm text-fv-neutral-500 sm:text-center dark:text-fv-neutral-400"
           >{{ $t("footer_copyright") }} -
           <RouterLink
-            to="/pages/privacy"
+            to="/pages/privacy-policy"
             class="underline hover:no-underline"
             >{{ $t("nav_privacy") }}</RouterLink
           >
         </span>
+
+        <div
+          class="text-xs italic text-fv-neutral-500 sm:text-center dark:text-fv-neutral-400"
+        >
+          {{ $t("footer_add2") }}
+        </div>
+        <div
+          class="text-xs text-fv-neutral-500 sm:text-center dark:text-fv-neutral-400"
+        >
+          {{ $t("footer_add") }}
+        </div>
       </div>
     </div>
   </footer>

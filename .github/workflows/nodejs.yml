@@ -1,0 +1,63 @@
+name: Node.js CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+
+    - uses: pnpm/action-setup@v2
+      name: Install pnpm
+      id: pnpm-install
+      with:
+        version: latest
+        run_install: false
+    - run: pnpm install --no-frozen-lockfile
+    - run: pnpm run build:play
+    - run: sudo apt-get update -qq && DEBIAN_FRONTEND=noninteractive sudo apt-get -y install zip
+    - run: cd packages/playground
+    - run: zip -9r ../../final.zip dist etc views
+    - run: cd ../..
+      working-directory: .
+    - uses: actions/upload-artifact@v1
+      with:
+        name: build
+        path: ./final.zip
+
+  deploy:
+
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v1
+      with:
+        name: build
+    - run: sudo apt-get update -qq && DEBIAN_FRONTEND=noninteractive sudo apt-get -y install jq curl
+    - run: |
+        curl -X POST https://hera.fy.to/_special/publish \
+        -H "Content-Type: multipart/form-data"  \
+        -F "WebsiteUUID=${DEPLOY_SITE}" \
+        -F "Token=${DEPLOY_TOKEN}" \
+        -F "Branch=${GITHUB_REF}" \
+        -F "Commit=${GITHUB_SHA}" \
+        -F "Login=${GITHUB_ACTOR}" \
+        -F "Email=$(git show -s --format=%ce "${GITHUB_SHA}")" \
+        -F "UserID=${GITHUB_ACTOR}" \
+        -F "Username=$(git show -s --format=%cn "${GITHUB_SHA}")" \
+        -F "Project=https://github.com/${GITHUB_REPOSITORY}" \
+        -F "zipfile=@build/final.zip"
+      env:
+        DEPLOY_SITE: ${{ secrets.DEPLOY_SITE }}
+        DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}

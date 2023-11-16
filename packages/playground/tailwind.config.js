@@ -6,7 +6,7 @@ module.exports = {
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
-    "./node_modules/@fy-/fws-vue/**/*.js",
+    "./node_modules/@fy-/fws-vue/**/*.{vue,js,ts,jsx,tsx,css}",
   ],
 
   darkMode: "class",

@@ -6,7 +6,7 @@ import { useTranslation } from "../../composables/translations";
 import { useEventBus } from "../../composables/event-bus";
 import { onMounted } from "vue";
 import DefaultDateSelection from "../ui/DefaultDateSelection.vue";
-import { onUnmounted } from "vue";
+import { onUnmounted, ref } from "vue";
 interface FilterData {
   label: string;
   req: boolean;
@@ -23,10 +23,12 @@ interface FilterData {
   focused: boolean;
 }
 const emit = defineEmits(["update:modelValue"]);
+const hidden = ref<boolean>(false);
 const state = reactive<any>({ formData: {} });
 const rules: any = { formData: {} };
 const types = reactive<any>({});
 const translate = useTranslation();
+const fDynamicOptions = ref<any[]>([]);
 const props = withDefaults(
   defineProps<{
     data?: Array<Array<FilterData>>;
@@ -111,8 +113,17 @@ const updateForms = () => {
 updateForms();
 const v$ = useVuelidate(rules, state);
 
+const updateFormData = (data: any) => {
+  data.forEach((d: any) => {
+    if (d.uid) {
+      state.formData[d.uid] = d.value;
+    }
+  });
+  submitForm();
+};
 const submitForm = () => {
   emit("update:modelValue", formatValues({ ...state.formData }));
+  eventBus.emit("forceUpdateFilters", true);
 };
 const resetForm = () => {
   updateForms();
@@ -120,13 +131,15 @@ const resetForm = () => {
 const eventBus = useEventBus();
 onMounted(() => {
   eventBus.on("resetFilters", resetForm);
+  eventBus.on("updateFilters", updateFormData);
 });
 onUnmounted(() => {
   eventBus.off("resetFilters", resetForm);
+  eventBus.off("updateFilters", updateFormData);
 });
 </script>
 <template>
-  <form @submit.prevent="() => submitForm()">
+  <form @submit.prevent="() => submitForm()" v-if="!hidden">
     <div :class="css">
       <div v-for="(g, i) in data" :key="`index_${i}`" class="relative">
         <template v-for="f in g" :key="f.uid">
@@ -144,8 +157,18 @@ onUnmounted(() => {
               v-model="state.formData[f.uid]"
               :errorVuelidate="v$.formData[f.uid].$errors"
               class="mb-2"
-              @focus="f.focused = true"
-              @blur="f.focused = false"
+              @focus="
+                () => {
+                  f.focused = true;
+                  $eventBus.emit('focusInput', true);
+                }
+              "
+              @blur="
+                () => {
+                  f.focused = false;
+                  $eventBus.emit('focusInput', false);
+                }
+              "
               @change="
                 (ev: any) => {
                   if (f.onChangeValue) {
@@ -156,24 +179,20 @@ onUnmounted(() => {
               @update:modelValue="
                 (v) => {
                   if (f.autocomplete && v.length >= 2) {
+                    fDynamicOptions = [];
                     f.autocomplete(v).then((r) => {
-                      f.options = r;
+                      fDynamicOptions = r;
                     });
                   }
                 }
               "
             >
               <div
-                v-if="
-                  f.type == 'autocomplete' &&
-                  f.options &&
-                  f.options.length &&
-                  f.focused
-                "
+                v-if="f.type == 'autocomplete' && f.focused"
                 class="absolute flex flex-col gap-2 p-2 bottom-0 translate-y-full inset-x-0 bg-fv-neutral-200 dark:bg-fv-neutral-800 border border-fv-neutral-700 z-10"
               >
                 <button
-                  v-for="o in f.options"
+                  v-for="o in fDynamicOptions"
                   :key="o[0]"
                   class="flex items-center justify-between btn defaults neutral"
                   type="button"
@@ -206,6 +225,9 @@ onUnmounted(() => {
       <button type="submit" class="btn defaults primary">
         {{ $t("filters_search_cta") }}
       </button>
+      <button type="button" class="btn defaults primary" @click="hidden = true">
+        {{ $t("hide_filters_cta") }}
+      </button>
       <button
         type="reset"
         class="btn defaults neutral"
@@ -219,4 +241,13 @@ onUnmounted(() => {
       </button>
     </div>
   </form>
+  <div class="flex justify-between mt-2 gap-x-2" v-else>
+    <button
+      type="button"
+      class="btn defaults primary !w-full flex-1 !text-center !items-center"
+      @click="hidden = false"
+    >
+      {{ $t("show_filters_cta") }}
+    </button>
+  </div>
 </template>

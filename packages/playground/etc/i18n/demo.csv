@@ -7,3 +7,20 @@ footer_copyright,© 2023 Fy Web Server,© 2023 Fy Web Server
 nav_privacy,Privacy Policy,Politique de confidentialité
 nav_login,Login,Connexion
 nav_logout,Logout,Déconnexion
+main_err_404_desc,Not Found,Introuvable
+404_description,The page you are looking for does not exist or has been moved.,La page que vous recherchez n'existe pas ou a été déplacée.
+go_back_home,Go back to home,Retourner à l'accueil
+fws_desc,"FWS, a vibrant webserver playground written in Go, offers a hub of APIs, user and realm management, and a wealth of digital functionalities. It adapts uniquely to both client-side and server-side locales through a simple CSV file. Compatible with HTMX and supporting SSR builds with Vite for JavaScript users, its standout feature is the reverse proxy mode, enabling use in preferred languages while leveraging FWS's extensive features, primarily through headers. Continuously evolving, FWS hosts several projects.","FWS, un environnement avancé pour serveur web écrit en Go, est conçu comme un carrefour dynamique d'APIs, de gestion d'utilisateurs et de domaines, et d'une multitude de fonctionnalités numériques. Il s'adapte de manière unique aux configurations locales côté client et serveur grâce à un fichier CSV simple. Compatible avec HTMX et offrant un support le SSR avec Vite pour les utilisateurs de JavaScript, sa caractéristique distinctive est le mode proxy inversé, qui permet l'utilisation dans les langues préférées tout en exploitant les vastes fonctionnalités de FWS, principalement via les en-têtes. En constante évolution, FWS héberge déjà plusieurs projets."
+avg_times_title,Average Response Times (max avg: {{ max }} ms),Temps de réponse moyens (max moy: {{ max }} ms)
+avg_times_legend,Average of last 1000 requests for each mode.,Moyenne des 1000 dernières requêtes pour chaque mode.
+thoth_title,Thoth (Watcher service),Thoth (Service de surveillance)
+thoth_legend,"Thoth service is a watcher that monitors the health of the FWS instances, and sends alerts if it detects any issues.",Le service Thoth est un observateur qui surveille la santé des instance FWS et envoie des alertes s'il détecte des problèmes.
+fws_slogan,Making Servers Great Again,Making Servers Great Again
+nav_docs,Documentation,Documentation
+nav_fws_vue,FWSVue,FWSVue
+nav_klb_vue,KLBVue,KLBVue
+footer_add,Made by Fy with 💖,Made by Fy with 💖
+footer_add2,"SSR Powered by FWS, Go, Bun & Vue/Vite","SSR Powered by FWS, Go, Bun & Vue/Vite"
+title_doc_page,Documentation - FWS,Documentation - FWS
+title_fv_page,FWSVue - @fy-/fws-vue,FWSVue - @fy-/fws-vue
+title_klb_page,KLBVue - @fy-/klb-vue,KLBVue - @fy-/klb-vue

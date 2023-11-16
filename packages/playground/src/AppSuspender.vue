@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import App from "./App.vue";
+import FWSLogo from "./assets/logo.svg";
+import { DefaultLoader } from "@fy-/fws-vue";
 </script>
 
 <template>
@@ -8,7 +10,12 @@ import App from "./App.vue";
       <App />
     </template>
     <template #fallback>
-        <div>Loading...</div>
+      <DefaultLoader
+        id="ts"
+        :show-loading-text="false"
+        :image="FWSLogo"
+        :force="true"
+      />
     </template>
   </Suspense>
 </template>
