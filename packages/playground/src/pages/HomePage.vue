@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useSeo, useTranslation, useRest } from "@fy-/fws-vue";
+import { ref, onMounted } from "vue";
+import { useSeo, useTranslation, useRest, useEventBus } from "@fy-/fws-vue";
 import { getLocales } from "@fy-/fws-js";
 const translate = useTranslation();
 
@@ -60,8 +60,7 @@ const secondsToDaysHoursMinutesSeconds = (seconds) => {
   }
   return `${seconds}s`;
 };
-await getStats();
-await getTothStats();
+
 useSeo(
   ref({
     title: translate("title_home_page"),
@@ -69,11 +68,20 @@ useSeo(
     alternateLocales: getLocales(),
   }),
 );
+
+const eventBus = useEventBus();
+
+onMounted(async () => {
+  eventBus.emit("main-loading", true);
+  await getStats();
+  await getTothStats();
+  eventBus.emit("main-loading", false);
+});
 </script>
 <template>
   <div class="container xl:max-w-6xl mx-auto px-4 mt-8">
     <p>{{ $t("fws_desc") }}</p>
-    <section class="py-10 px-3">
+    <section class="py-10 px-3" v-if="stats && maxValue">
       <h2 class="font-bold text-2xl lg:text-3xl">
         {{ $t("avg_times_title", { max: nToMs(maxValue) }) }}
       </h2>
@@ -108,7 +116,7 @@ useSeo(
         </div>
       </div>
     </section>
-    <section class="py-10 px-3">
+    <section class="py-10 px-3" v-if="thoth">
       <h2 class="font-bold text-2xl lg:text-3xl">
         {{ $t("thoth_title") }}
       </h2>
