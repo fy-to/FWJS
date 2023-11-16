@@ -25,7 +25,7 @@ jobs:
     - run: pnpm install --no-frozen-lockfile
     - run: pnpm run build:play
     - run: sudo apt-get update -qq && DEBIAN_FRONTEND=noninteractive sudo apt-get -y install zip
-    - run: mkdir temp && cp -R packages/playground/dist temp/dist && cp -R packages/playground/etc temp/etc && cp -R packages/playground/views temp/views
+    - run: mkdir temp && cp -R packages/playground/dist temp/dist && cp -R packages/playground/etc temp/etc 
     - run: zip -9r final.zip temp/*
     - run: rm -rf temp
 
