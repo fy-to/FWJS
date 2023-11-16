@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.5
 
   packages/fws-js:
     devDependencies:

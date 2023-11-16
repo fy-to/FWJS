@@ -15,6 +15,9 @@
         "build:klb": "pnpm -C packages/klb-vue lint:check --fix && pnpm -C packages/klb-vue build",
         "build": "pnpm run build:types && pnpm run build:js && pnpm run build:vue",
         "play": "pnpm -C packages/playground dev",
-        "build:play" : "pnpm run build && pnpm -C packages/playground build"
+        "build:play": "pnpm run build && pnpm -C packages/playground build"
+    },
+    "devDependencies": {
+        "rimraf": "^5.0.5"
     }
 }
