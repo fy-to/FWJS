@@ -25,10 +25,10 @@ jobs:
     - run: pnpm install --no-frozen-lockfile
     - run: pnpm run build:play
     - run: sudo apt-get update -qq && DEBIAN_FRONTEND=noninteractive sudo apt-get -y install zip
-    - run: pushd packages/playground
-    - run: zip -9r ../../final.zip dist etc
-    - run: popd
-
+    - run: |
+        pushd packages/playground
+        zip -9r ../../final.zip dist etc
+        popd
       working-directory: .
     - uses: actions/upload-artifact@v1
       with:
