@@ -172,6 +172,7 @@ export interface KlbFlowData {
   url?: string;
   user?: KlbUser;
   Redirect?: string;
+  realm_flags: Record<string, any>;
 }
 
 export interface KlbUserFlow extends KlbAPIResult {

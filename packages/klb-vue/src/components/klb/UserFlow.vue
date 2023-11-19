@@ -181,6 +181,49 @@ onMounted(async () => {
         >
           {{ responseMessage }}
         </h2>
+        <template
+          v-if="hasOauth && response?.data.realm_flags['oauth_first'] === true"
+        >
+          <div
+            class="flex items-center justify-center shadow py-2 rounded bg-fv-neutral-50 dark:bg-fv-neutral-700"
+          >
+            <template v-for="field of responseFields" :key="field.id">
+              <a
+                @click="
+                  () => {
+                    if (field.info.Button_Extra?.trigger) {
+                      doTrigger(field);
+                    } else {
+                      userFlow({ initial: true, oauth: field.id });
+                    }
+                  }
+                "
+                v-if="field.type && field.type == 'oauth2' && field.button"
+                href="javascript:void(0);"
+              >
+                <img
+                  :key="`${field.label}oauth`"
+                  class="h-12 w-12 block p-2 mr-3 rounded-full border-4 shadow hover:border"
+                  :alt="field.info.Name"
+                  :src="field.button.logo"
+                  :style="`background: ${field.button['background-color']}`"
+                />
+              </a>
+            </template>
+          </div>
+          <div
+            class="relative flex items-center justify-center w-full mt-4 mb-2"
+          >
+            <div
+              class="h-px bg-neutral-300 dark:bg-neutral-600 inset-x-0 absolute"
+            ></div>
+            <div
+              class="bg-white dark:bg-neutral-700 fws-helper-text px-4 relative"
+            >
+              {{ $t("or_text_label") }}
+            </div>
+          </div>
+        </template>
         <template v-if="responseFields && responseFields.length > 0">
           <template v-for="field of responseFields" :key="field.label">
             <h3
@@ -255,7 +298,11 @@ onMounted(async () => {
           <button class="btn primary medium mt-4">
             {{ $t("cta_login_next") }}
           </button>
-          <template v-if="hasOauth">
+          <template
+            v-if="
+              hasOauth && response?.data.realm_flags['oauth_first'] !== true
+            "
+          >
             <div
               class="relative flex items-center justify-center w-full mt-4 mb-2"
             >

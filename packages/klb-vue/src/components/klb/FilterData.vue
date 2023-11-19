@@ -122,7 +122,8 @@ const updateFormData = (data: any) => {
   submitForm();
 };
 const submitForm = () => {
-  emit("update:modelValue", formatValues({ ...state.formData }));
+  const formData = formatValues({ ...state.formData });
+  emit("update:modelValue", formData);
   eventBus.emit("forceUpdateFilters", true);
 };
 const resetForm = () => {
