@@ -1,6 +1,6 @@
 {
     "name": "@fy-/fws-types",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Types for FWS - https://fy.to/@G",
     "types": "./src/index.d.ts",
     "scripts": {

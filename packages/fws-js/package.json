@@ -1,6 +1,6 @@
 {
     "name": "@fy-/fws-js",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "FWJS is a framework for building web applications FWS - https://fy.to/@G",
     "scripts": {
         "build": "tsc && node copyPackage.js"

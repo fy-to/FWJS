@@ -1,4 +1,4 @@
-export type RestMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+export type RestMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS";
 export interface RestParams {
     [key: string]: any;
 }

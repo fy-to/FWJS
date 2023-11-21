@@ -6,22 +6,9 @@ import { useTranslation } from "../../composables/translations";
 import { useEventBus } from "../../composables/event-bus";
 import { onMounted } from "vue";
 import DefaultDateSelection from "../ui/DefaultDateSelection.vue";
+import type { FilterDataItems } from "../../types/types";
 import { onUnmounted, ref } from "vue";
-interface FilterData {
-  label: string;
-  req: boolean;
-  uid: string;
-  type: string;
-  restValue?: string;
-  options?: any[][];
-  isHidden?: boolean;
-  default?: any | undefined;
-  formats?: Record<string, (value: any) => any>;
-  autocomplete?: (value: string) => Promise<any[]>;
-  formatRestValue?: (value: any) => any;
-  onChangeValue?: (form: any, value: any) => void;
-  focused: boolean;
-}
+
 const emit = defineEmits(["update:modelValue"]);
 const hidden = ref<boolean>(false);
 const state = reactive<any>({ formData: {} });
@@ -31,7 +18,7 @@ const translate = useTranslation();
 const fDynamicOptions = ref<any[]>([]);
 const props = withDefaults(
   defineProps<{
-    data?: Array<Array<FilterData>>;
+    data?: Array<Array<FilterDataItems>>;
     css: string;
     modelValue?: Record<string, unknown>;
   }>(),
