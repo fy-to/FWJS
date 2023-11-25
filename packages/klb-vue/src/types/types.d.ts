@@ -26,3 +26,7 @@ export interface FilterDataItems {
   onChangeValue?: (form: any, value: any) => void;
   focused?: boolean;
 }
+export interface StepperSteps {
+  list: StepperStep[];
+  current: number;
+}

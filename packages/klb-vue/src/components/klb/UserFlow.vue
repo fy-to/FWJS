@@ -255,10 +255,20 @@ onMounted(async () => {
           </div>
         </template>
         <div
-          class="px-3 max-w-md mx-auto"
+          :class="`
+            ${
+              (response?.data.realm_flags['oauth_first'] === true &&
+                showEmail) ||
+              response?.data.realm_flags['oauth_first'] !== true ||
+              !hasOauth
+                ? 'px-3 max-w-md mx-auto'
+                : ''
+            }
+              `"
           v-if="
             (response?.data.realm_flags['oauth_first'] === true && showEmail) ||
-            response?.data.realm_flags['oauth_first'] !== true
+            response?.data.realm_flags['oauth_first'] !== true ||
+            !hasOauth
           "
         >
           <template v-if="responseFields && responseFields.length > 0">

@@ -225,6 +225,7 @@ export interface KlbUser {
   Validation_Code?: string;
   Profile: KlbUserProfile;
   Current_Group: KlbUserGroup;
+  Meta?: Record<string, any>;
 }
 
 // KlbUserProfile (https://ws.atonline.com/_special/rest/User/Profile)

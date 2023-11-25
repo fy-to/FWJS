@@ -16,6 +16,7 @@ import {
   formatDate,
   formatDatetime,
   formatTimeago,
+  formatRecurringPaymentCycle,
 } from "./misc/templating";
 import { useRest } from "./composables/rest";
 export * from "./stores/catalog";
@@ -40,12 +41,17 @@ import DefaultBreadcrumb from "./components/ui/DefaultBreadcrumb.vue";
 import DefaultLoader from "./components/ui/DefaultLoader.vue";
 import DefaultSidebar from "./components/ui/DefaultSidebar.vue";
 import DefaultDateSelection from "./components/ui/DefaultDateSelection.vue";
+import DefaultStepper from "./components/ui/DefaultStepper.vue";
+import DefaultTable from "./components/ui/DefaultTable.vue";
 // Components/KLB
 import UserFlow from "./components/klb/UserFlow.vue";
 import CmsPage from "./components/klb/CmsPage.vue";
 import DataTable from "./components/klb/DataTable.vue";
 import FilterData from "./components/klb/FilterData.vue";
-
+import KlbBillingHistory from "./components/klb/KlbBillingHistory.vue";
+import KlbUpdateEmail from "./components/klb/KlbUpdateEmail.vue";
+import KlbUpdatePassword from "./components/klb/KlbUpdatePassword.vue";
+import KlbContact from "./components/klb/KlbContact.vue";
 import "./style.css";
 
 function createKLB(): Plugin {
@@ -67,6 +73,8 @@ function createKLB(): Plugin {
         app.config.globalProperties.$formatTimeago = formatTimeago;
         app.config.globalProperties.$formatDatetime = formatDatetime;
         app.config.globalProperties.$formatDate = formatDate;
+        app.config.globalProperties.$formatRecurringPaymentCycle =
+          formatRecurringPaymentCycle;
 
         app.component("ClientOnly", ClientOnly);
       }
@@ -83,6 +91,7 @@ declare module "vue" {
     $formatTimeago: typeof formatTimeago;
     $formatDatetime: typeof formatDatetime;
     $formatDate: typeof formatDate;
+    $formatRecurringPaymentCycle: typeof formatRecurringPaymentCycle;
   }
   export interface GlobalComponents {
     ClientOnly: typeof ClientOnly;
@@ -121,10 +130,16 @@ export {
   DefaultLoader,
   DefaultSidebar,
   DefaultDateSelection,
+  DefaultStepper,
+  DefaultTable,
 
   // KLB
   UserFlow,
   CmsPage,
   DataTable,
   FilterData,
+  KlbBillingHistory,
+  KlbUpdateEmail,
+  KlbUpdatePassword,
+  KlbContact,
 };

@@ -75,5 +75,38 @@ const formatTimeago = (dt: Date | string | number) => {
   }
   return formatDateTimeago(new Date(_dt), getLocale().replace("_", "-"));
 };
+const formatRecurringPaymentCycle = (cycle?: string): string => {
+  const translate = useTranslation();
+  if (!cycle) {
+    return translate("payment_cycles_one_time");
+  }
+  const unit = cycle.slice(-1);
+  const quantity = parseInt(cycle.replace(unit, ""));
+  switch (unit) {
+    case "h":
+      return translate("payment_cycles_hour", { count: quantity });
+      break;
+    case "w":
+      return translate("payment_cycles_week", { count: quantity });
+      break;
+    case "d":
+      return translate("payment_cycles_day", { count: quantity });
+      break;
+    case "m":
+      return translate("payment_cycles_month", { count: quantity });
+      break;
+    case "y":
+      return translate("payment_cycles_year", { count: quantity });
+      break;
+  }
 
-export { cropText, formatBytes, formatDate, formatDatetime, formatTimeago };
+  return "";
+};
+export {
+  cropText,
+  formatBytes,
+  formatDate,
+  formatDatetime,
+  formatTimeago,
+  formatRecurringPaymentCycle,
+};
