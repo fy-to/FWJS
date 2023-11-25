@@ -21,6 +21,7 @@ import { useRest } from "./composables/rest";
 export * from "./stores/catalog";
 export * from "./stores/serverRouter";
 export * from "./types/klb.d";
+export * from "./types/types.d";
 export * from "./composables/countries";
 
 // Components/UI/Transitions
@@ -102,7 +103,7 @@ export {
   useUserCheck,
   useRest,
   useCart,
-
+  ClientOnly,
   // Components
   // UI/Transitions
   SlideTransition,

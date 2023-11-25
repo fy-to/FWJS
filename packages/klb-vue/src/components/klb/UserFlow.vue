@@ -8,6 +8,7 @@ import { useKlbStore } from "../../stores/user";
 import { useRest, APIResult } from "../../composables/rest";
 import DefaultInput from "../ui/DefaultInput.vue";
 import { ClientOnly } from "../ssr/ClientOnly";
+import { EnvelopeIcon } from "@heroicons/vue/24/solid";
 const rest = useRest();
 interface UserFlow extends APIResult {
   data: KlbFlowData;
@@ -45,7 +46,7 @@ const fieldsError = ref<Record<string, any>>({});
 const pwdRecoverMailSent = ref<boolean>(false);
 const inputs = ref<InstanceType<typeof DefaultInput>[]>([]);
 const translate = useTranslation();
-
+const showEmail = ref<boolean>(false);
 const formData = ref<Record<string, any>>({
   return_to: props.returnDefault,
   session: null,
@@ -65,6 +66,17 @@ const doTrigger = async (field: any) => {
     await userFlow();
   }
 };
+
+const getContrastingTextColor = (backgroundColor: string) => {
+  const r = parseInt(backgroundColor.substring(1, 3), 16);
+  const g = parseInt(backgroundColor.substring(3, 5), 16);
+  const b = parseInt(backgroundColor.substring(5, 7), 16);
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.5 ? "#000000" : "#FFFFFF";
+};
+
 const userFlow = async (params: paramsType = { initial: false }) => {
   eventBus.emit("login-loading", true);
   fieldsError.value = {};
@@ -172,11 +184,11 @@ onMounted(async () => {
     <form
       @submit.prevent="userFlow()"
       v-if="!completed"
-      class="fws-login w-full"
+      class="fws-login w-full min-w-[90vw] lg:min-w-[460px]"
     >
       <div class="w-full">
         <h2
-          class="text-lg text-fv-neutral-700 dark:text-fv-neutral-300"
+          class="text-lg text-fv-neutral-700 dark:text-fv-neutral-300 text-center font-semibold"
           v-if="responseMessage"
         >
           {{ responseMessage }}
@@ -185,7 +197,7 @@ onMounted(async () => {
           v-if="hasOauth && response?.data.realm_flags['oauth_first'] === true"
         >
           <div
-            class="flex items-center justify-center shadow py-2 rounded bg-fv-neutral-50 dark:bg-fv-neutral-700"
+            class="flex flex-col gap-2 px-2 justify-center py-2 min-w-[90vw] lg:min-w-[460px]"
           >
             <template v-for="field of responseFields" :key="field.id">
               <a
@@ -200,150 +212,178 @@ onMounted(async () => {
                 "
                 v-if="field.type && field.type == 'oauth2' && field.button"
                 href="javascript:void(0);"
+                class="flex items-center gap-2 justify-start btn neutral defaults w-full max-w-md mx-auto !font-semibold"
+                :style="`background: ${
+                  field.button['background-color']
+                }; color: ${getContrastingTextColor(
+                  field.button['background-color'],
+                )}`"
               >
                 <img
                   :key="`${field.label}oauth`"
-                  class="h-12 w-12 block p-2 mr-3 rounded-full border-4 shadow hover:border"
+                  class="h-12 w-12 block p-2 mr-3"
                   :alt="field.info.Name"
                   :src="field.button.logo"
-                  :style="`background: ${field.button['background-color']}`"
                 />
+                <div>
+                  {{
+                    $t("user_flow_signin_with", {
+                      provider: field.info.Name,
+                    })
+                  }}
+                </div>
               </a>
             </template>
-          </div>
-          <div
-            class="relative flex items-center justify-center w-full mt-4 mb-2"
-          >
-            <div
-              class="h-px bg-neutral-300 dark:bg-neutral-600 inset-x-0 absolute"
-            ></div>
-            <div
-              class="bg-white dark:bg-neutral-700 fws-helper-text px-4 relative"
-            >
-              {{ $t("or_text_label") }}
-            </div>
-          </div>
-        </template>
-        <template v-if="responseFields && responseFields.length > 0">
-          <template v-for="field of responseFields" :key="field.label">
-            <h3
-              v-if="field.type == 'label'"
-              class="pt-2 pb-1 text-sm text-fv-neutral-500 dark:text-fv-neutral-400"
-              :class="
-                field.style == 'error'
-                  ? 'text-sm my-2 p-1 font-semibold text-red-800 dark:text-red-300'
-                  : ''
+            <button
+              type="button"
+              class="flex items-center gap-2 justify-start btn neutral defaults w-full max-w-md mx-auto !font-semibold"
+              @click="
+                () => {
+                  showEmail = true;
+                }
               "
             >
-              <a :href="field.link" v-if="field.link" class="fws-link mb-3">{{
-                field.label
-              }}</a>
-              <span class="mb-2" v-else>{{ field.label }}</span>
-            </h3>
-
-            <template v-if="field.cat == 'input'">
-              <template
-                v-if="
-                  field.type == 'text' ||
-                  field.type == 'password' ||
-                  field.type == 'email'
+              <EnvelopeIcon class="h-12 w-12 block p-2 mr-3" />
+              <div>
+                {{
+                  $t("user_flow_signin_with", {
+                    provider: $t("user_flow_provider_email_cta"),
+                  })
+                }}
+              </div>
+            </button>
+          </div>
+        </template>
+        <div
+          class="px-3 max-w-md mx-auto"
+          v-if="
+            (response?.data.realm_flags['oauth_first'] === true && showEmail) ||
+            response?.data.realm_flags['oauth_first'] !== true
+          "
+        >
+          <template v-if="responseFields && responseFields.length > 0">
+            <template v-for="field of responseFields" :key="field.label">
+              <h3
+                v-if="field.type == 'label'"
+                class="pt-2 pb-1 text-sm text-fv-neutral-500 dark:text-fv-neutral-400"
+                :class="
+                  field.style == 'error'
+                    ? 'text-sm my-2 p-1 font-semibold text-red-800 dark:text-red-300'
+                    : ''
                 "
               >
+                <a :href="field.link" v-if="field.link" class="fws-link mb-3">{{
+                  field.label
+                }}</a>
+                <span class="mb-2" v-else>{{ field.label }}</span>
+              </h3>
+
+              <template v-if="field.cat == 'input'">
+                <template
+                  v-if="
+                    field.type == 'text' ||
+                    field.type == 'password' ||
+                    field.type == 'email'
+                  "
+                >
+                  <DefaultInput
+                    v-if="field.name"
+                    :id="field.name"
+                    :label="field.label"
+                    class="mt-3"
+                    :placeholder="
+                      field.name == 'name' ? 'John Doe' : field.label
+                    "
+                    :error="fieldsError[field.name]"
+                    :type="field.type"
+                    ref="inputs"
+                    v-model="formData[field.name]"
+                    :req="responseReq.includes(field.name)"
+                  />
+                </template>
+              </template>
+              <template v-if="field.type == 'checkbox'">
                 <DefaultInput
                   v-if="field.name"
                   :id="field.name"
-                  :label="field.label"
                   class="mt-3"
-                  :placeholder="field.name == 'name' ? 'John Doe' : field.label"
+                  :label="field.label"
                   :error="fieldsError[field.name]"
                   :type="field.type"
-                  ref="inputs"
-                  v-model="formData[field.name]"
+                  v-model:checkbox-value="formData[field.name]"
                   :req="responseReq.includes(field.name)"
+                  :link-icon="field.link"
                 />
               </template>
             </template>
-            <template v-if="field.type == 'checkbox'">
-              <DefaultInput
-                v-if="field.name"
-                :id="field.name"
-                class="mt-3"
-                :label="field.label"
-                :error="fieldsError[field.name]"
-                :type="field.type"
-                v-model:checkbox-value="formData[field.name]"
-                :req="responseReq.includes(field.name)"
-                :link-icon="field.link"
-              />
+            <div
+              class="text-sm my-2 p-1 font-semibold text-red-800 dark:text-red-300"
+              v-if="responseError && responseError.token"
+            >
+              {{ $t(responseError.token) }}
+            </div>
+            <div v-if="responseReq.includes('password') && 0" class="reset-pwd">
+              <a
+                href="javascript:void(0)"
+                @click="
+                  () => {
+                    eventBus.emit('ResetPasswordModal', true);
+                    pwdRecoverMailSent = false;
+                  }
+                "
+                >{{ $t("recover_pwd_link") }}</a
+              >
+            </div>
+            <button class="btn primary medium mt-4">
+              {{ $t("cta_login_next") }}
+            </button>
+            <template
+              v-if="
+                hasOauth && response?.data.realm_flags['oauth_first'] !== true
+              "
+            >
+              <div
+                class="relative flex items-center justify-center w-full mt-4 mb-2"
+              >
+                <div
+                  class="h-px bg-neutral-300 dark:bg-neutral-600 inset-x-0 absolute"
+                ></div>
+                <div
+                  class="bg-white dark:bg-neutral-700 fws-helper-text px-4 relative"
+                >
+                  {{ $t("or_text_label") }}
+                </div>
+              </div>
+              <div
+                class="flex items-center justify-center shadow py-2 rounded bg-fv-neutral-50 dark:bg-fv-neutral-800"
+              >
+                <template v-for="field of responseFields" :key="field.id">
+                  <a
+                    @click="
+                      () => {
+                        if (field.info.Button_Extra?.trigger) {
+                          doTrigger(field);
+                        } else {
+                          userFlow({ initial: true, oauth: field.id });
+                        }
+                      }
+                    "
+                    v-if="field.type && field.type == 'oauth2' && field.button"
+                    href="javascript:void(0);"
+                  >
+                    <img
+                      :key="`${field.label}oauth`"
+                      class="h-12 w-12 block p-2 mr-3 rounded-full border-4 shadow hover:border"
+                      :alt="field.info.Name"
+                      :src="field.button.logo"
+                      :style="`background: ${field.button['background-color']}`"
+                    />
+                  </a>
+                </template>
+              </div>
             </template>
           </template>
-          <div
-            class="text-sm my-2 p-1 font-semibold text-red-800 dark:text-red-300"
-            v-if="responseError && responseError.token"
-          >
-            {{ $t(responseError.token) }}
-          </div>
-          <div v-if="responseReq.includes('password') && 0" class="reset-pwd">
-            <a
-              href="javascript:void(0)"
-              @click="
-                () => {
-                  eventBus.emit('ResetPasswordModal', true);
-                  pwdRecoverMailSent = false;
-                }
-              "
-              >{{ $t("recover_pwd_link") }}</a
-            >
-          </div>
-          <button class="btn primary medium mt-4">
-            {{ $t("cta_login_next") }}
-          </button>
-          <template
-            v-if="
-              hasOauth && response?.data.realm_flags['oauth_first'] !== true
-            "
-          >
-            <div
-              class="relative flex items-center justify-center w-full mt-4 mb-2"
-            >
-              <div
-                class="h-px bg-neutral-300 dark:bg-neutral-600 inset-x-0 absolute"
-              ></div>
-              <div
-                class="bg-white dark:bg-neutral-700 fws-helper-text px-4 relative"
-              >
-                {{ $t("or_text_label") }}
-              </div>
-            </div>
-            <div
-              class="flex items-center justify-center shadow py-2 rounded bg-fv-neutral-50 dark:bg-fv-neutral-800"
-            >
-              <template v-for="field of responseFields" :key="field.id">
-                <a
-                  @click="
-                    () => {
-                      if (field.info.Button_Extra?.trigger) {
-                        doTrigger(field);
-                      } else {
-                        userFlow({ initial: true, oauth: field.id });
-                      }
-                    }
-                  "
-                  v-if="field.type && field.type == 'oauth2' && field.button"
-                  href="javascript:void(0);"
-                >
-                  <img
-                    :key="`${field.label}oauth`"
-                    class="h-12 w-12 block p-2 mr-3 rounded-full border-4 shadow hover:border"
-                    :alt="field.info.Name"
-                    :src="field.button.logo"
-                    :style="`background: ${field.button['background-color']}`"
-                  />
-                </a>
-              </template>
-            </div>
-          </template>
-        </template>
+        </div>
       </div>
     </form>
   </ClientOnly>

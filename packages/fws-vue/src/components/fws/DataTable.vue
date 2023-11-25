@@ -164,12 +164,11 @@ watch(
     getData();
   },
 );
+await getData();
 onMounted(() => {
   eventBus.on(`${props.id}PagesGoToPage`, getData);
   eventBus.on(`${props.id}Reload`, getData);
   eventBus.on(`${props.id}Refresh`, getData);
-
-  getData();
 });
 onUnmounted(() => {
   eventBus.off(`${props.id}PagesGoToPage`, getData);
