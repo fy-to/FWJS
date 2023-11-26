@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import type { KlbFlowData, KlbUserFlowField } from "../../types/klb";
 import { useRoute, useRouter } from "vue-router";
 import { useTranslation } from "../../composables/translations";
@@ -31,6 +31,17 @@ type paramsType = {
   initial: boolean;
   oauth?: string;
 };
+const shouldShowRealmStuff = computed(() => {
+  const realmFlags = response.value?.data.realm_flags;
+  const oauthFirst = realmFlags ? realmFlags["oauth_first"] === true : false;
+
+  return (
+    (oauthFirst && showEmail.value) ||
+    !realmFlags ||
+    !oauthFirst ||
+    !hasOauth.value
+  );
+});
 const store = useKlbStore();
 const route = useRoute();
 const router = useRouter();
@@ -194,7 +205,11 @@ onMounted(async () => {
           {{ responseMessage }}
         </h2>
         <template
-          v-if="hasOauth && response?.data.realm_flags['oauth_first'] === true"
+          v-if="
+            hasOauth &&
+            response?.data.realm_flags &&
+            response?.data.realm_flags['oauth_first'] === true
+          "
         >
           <div
             class="flex flex-col gap-2 px-2 justify-center py-2 min-w-[90vw] lg:min-w-[460px]"
@@ -256,20 +271,9 @@ onMounted(async () => {
         </template>
         <div
           :class="`
-            ${
-              (response?.data.realm_flags['oauth_first'] === true &&
-                showEmail) ||
-              response?.data.realm_flags['oauth_first'] !== true ||
-              !hasOauth
-                ? 'px-3 max-w-md mx-auto'
-                : ''
-            }
+            ${shouldShowRealmStuff ? 'px-3 max-w-md mx-auto' : ''}
               `"
-          v-if="
-            (response?.data.realm_flags['oauth_first'] === true && showEmail) ||
-            response?.data.realm_flags['oauth_first'] !== true ||
-            !hasOauth
-          "
+          v-if="shouldShowRealmStuff"
         >
           <template v-if="responseFields && responseFields.length > 0">
             <template v-for="field of responseFields" :key="field.label">
@@ -349,7 +353,9 @@ onMounted(async () => {
             </button>
             <template
               v-if="
-                hasOauth && response?.data.realm_flags['oauth_first'] !== true
+                hasOauth &&
+                response?.data.realm_flags &&
+                response?.data.realm_flags['oauth_first'] !== true
               "
             >
               <div
