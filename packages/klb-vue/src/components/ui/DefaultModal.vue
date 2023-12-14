@@ -63,7 +63,7 @@ onUnmounted(() => {
         style="z-index: 41"
       >
         <div
-          :class="`relative ${mSize} max-w-6xl max-h-full bg-white rounded-lg shadow dark:bg-fv-neutral-800`"
+          :class="`relative ${mSize} max-w-6xl max-h-full overflow-y-auto bg-white rounded-lg shadow dark:bg-fv-neutral-800`"
           style="z-index: 42"
         >
           <div

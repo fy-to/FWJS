@@ -43,6 +43,7 @@ import DefaultSidebar from "./components/ui/DefaultSidebar.vue";
 import DefaultDateSelection from "./components/ui/DefaultDateSelection.vue";
 import DefaultStepper from "./components/ui/DefaultStepper.vue";
 import DefaultTable from "./components/ui/DefaultTable.vue";
+import DefaultTagInput from "./components/ui/DefaultTagInput.vue";
 // Components/KLB
 import UserFlow from "./components/klb/UserFlow.vue";
 import CmsPage from "./components/klb/CmsPage.vue";
@@ -132,6 +133,7 @@ export {
   DefaultDateSelection,
   DefaultStepper,
   DefaultTable,
+  DefaultTagInput,
 
   // KLB
   UserFlow,
