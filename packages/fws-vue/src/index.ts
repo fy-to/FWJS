@@ -39,6 +39,8 @@ import DefaultBreadcrumb from "./components/ui/DefaultBreadcrumb.vue";
 import DefaultLoader from "./components/ui/DefaultLoader.vue";
 import DefaultSidebar from "./components/ui/DefaultSidebar.vue";
 import DefaultTagInput from "./components/ui/DefaultTagInput.vue";
+import DefaultGallery from "./components/ui/DefaultGallery.vue";
+
 // Components/FWS
 import UserFlow from "./components/fws/UserFlow.vue";
 import DataTable from "./components/fws/DataTable.vue";
@@ -120,6 +122,7 @@ export {
   DefaultLoader,
   DefaultSidebar,
   DefaultTagInput,
+  DefaultGallery,
 
   // FWS
   UserFlow,
