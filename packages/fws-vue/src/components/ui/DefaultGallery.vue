@@ -12,7 +12,7 @@ import {
 } from "@heroicons/vue/24/solid";
 import DefaultPaging from "./DefaultPaging.vue";
 import type { Component } from "vue";
-const isOpen = ref<boolean>(false);
+const isGalleryOpen = ref<boolean>(false);
 const eventBus = useEventBus();
 const sidePanel = ref<boolean>(true);
 const props = withDefaults(
@@ -62,7 +62,7 @@ const setModal = (value: boolean) => {
   } else {
     if (props.onClose) props.onClose();
   }
-  isOpen.value = value;
+  isGalleryOpen.value = value;
 };
 const openGalleryImage = (index: number | undefined) => {
   if (index === undefined) modelValue.value = 0;
@@ -140,9 +140,13 @@ const handleKeyboardRelease = (event: KeyboardEvent) => {
     isKeyPressed.value = false;
   }
 };
+const closeGallery = () => {
+  setModal(false);
+};
 onMounted(() => {
   eventBus.on(`${props.id}GalleryImage`, openGalleryImage);
   eventBus.on(`${props.id}Gallery`, openGalleryImage);
+  eventBus.on(`${props.id}GalleryClose`, closeGallery);
   if (window !== undefined && !import.meta.env.SSR) {
     window.addEventListener("keydown", handleKeyboardInput);
     window.addEventListener("keyup", handleKeyboardRelease);
@@ -151,6 +155,7 @@ onMounted(() => {
 onUnmounted(() => {
   eventBus.off(`${props.id}Gallery`, openGalleryImage);
   eventBus.off(`${props.id}GalleryImage`, openGalleryImage);
+  eventBus.off(`${props.id}GalleryClose`, closeGallery);
   if (window !== undefined && !import.meta.env.SSR) {
     window.removeEventListener("keydown", handleKeyboardInput);
     window.removeEventListener("keyup", handleKeyboardRelease);
@@ -160,7 +165,7 @@ onUnmounted(() => {
 <template>
   <div>
     <TransitionRoot
-      :show="isOpen"
+      :show="isGalleryOpen"
       as="template"
       enter="duration-300 ease-out"
       enter-from="opacity-0"
@@ -170,7 +175,7 @@ onUnmounted(() => {
       leave-to="opacity-0"
     >
       <Dialog
-        :open="isOpen"
+        :open="isGalleryOpen"
         @close="setModal"
         class="fixed bg-fv-neutral-900 text-white inset-0 max-w-[100vw] overflow-y-auto overflow-x-hidden"
         style="z-index: 37"
