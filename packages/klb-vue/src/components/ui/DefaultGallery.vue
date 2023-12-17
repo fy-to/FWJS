@@ -11,7 +11,7 @@ import {
   ChevronDoubleLeftIcon,
 } from "@heroicons/vue/24/solid";
 import DefaultPaging from "./DefaultPaging.vue";
-import { Component } from "vue";
+import type { Component } from "vue";
 const isOpen = ref<boolean>(false);
 const eventBus = useEventBus();
 const sidePanel = ref<boolean>(true);
@@ -233,7 +233,7 @@ onUnmounted(() => {
                     </template>
                   </div>
                   <div class="flex-0 py-2 flex items-center justify-center">
-                    <slot></slot>
+                    <slot :value="images[modelValue]"></slot>
                   </div>
                 </div>
                 <div
