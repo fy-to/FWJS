@@ -9,14 +9,14 @@
     >
       <span v-for="(tag, index) in tags" :key="index" :class="`tag ${color}`">
         {{ tag }}
-        <button @click.stop="removeTag(index)">
+        <button @click.stop="removeTag(index)" type="button">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             stroke-width="1.5"
             stroke="currentColor"
-            class="w-3 h-3 text-red-600"
+            class="w-3 h-3 text-red-600 dark:text-red-200"
           >
             <path
               stroke-linecap="round"
@@ -136,22 +136,22 @@ const handlePaste = (e) => {
 .tag {
   @apply inline-flex gap-1   font-medium  px-2.5 py-0.5 rounded;
   &.blue {
-    @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200;
   }
   &.purple {
-    @apply bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300;
+    @apply bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200;
   }
   &.red {
-    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300;
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
   }
   &.orange {
-    @apply bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300;
+    @apply bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200;
   }
   &.neutral {
-    @apply bg-fv-neutral-100 text-fv-neutral-800 dark:bg-fv-neutral-900 dark:text-fv-neutral-300;
+    @apply bg-fv-neutral-100 text-fv-neutral-800 dark:bg-fv-neutral-900 dark:text-fv-neutral-200;
   }
   &.green {
-    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
   }
 }
 

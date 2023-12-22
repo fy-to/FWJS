@@ -41,3 +41,5 @@ user_flow_reset_password_confirm_input_label,Confirm new password,Confirmer le n
 user_flow_reset_password_link,Reset password,Réinitialiser le mot de passe
 or_text_label,or,ou
 sidebar_size_control,Controls Sidebar Size,Contrôle la taille de la barre latérale
+user_flow_signin_with,Sign in with {{provider}},Se connecter avec {{provider}}
+user_flow_provider_email_cta,Email,Email

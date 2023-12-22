@@ -3,7 +3,8 @@ import { LinkIcon } from "@heroicons/vue/24/solid";
 import { computed, ref, toRef } from "vue";
 import type { ErrorObject } from "@vuelidate/core";
 import { useTranslation } from "../../composables/translations";
-type modelValueType = string | number | string[] | undefined;
+type modelValueType = string | number | string[] | number[] | undefined;
+
 type checkboxValueType = any[] | Set<any> | undefined | boolean;
 const props = withDefaults(
   defineProps<{
@@ -126,6 +127,7 @@ defineExpose({ focus, getInputRef });
         :required="req"
         :placeholder="placeholder"
       />
+      <!-- @vue-skip -->
       <textarea
         :aria-describedby="label"
         ref="inputRef"
@@ -161,7 +163,7 @@ defineExpose({ focus, getInputRef });
     </template>
 
     <template v-if="type == 'checkbox'">
-      <div class="fws-checkbox">
+      <div class="flex items-center">
         <input
           :aria-describedby="label"
           :id="id"
@@ -171,6 +173,8 @@ defineExpose({ focus, getInputRef });
           v-model="modelCheckbox"
           type="checkbox"
           value=""
+          :checked="modelCheckbox"
+          class="w-4 h-4 mr-2 text-fv-primary-600 bg-fv-neutral-100 border-fv-neutral-300 rounded focus:ring-fv-primary-500 dark:focus:ring-fv-primary-600 dark:ring-offset-fv-neutral-800 focus:ring-2 dark:bg-fv-neutral-700 dark:border-fv-neutral-600"
         />
         <label
           :for="id"
