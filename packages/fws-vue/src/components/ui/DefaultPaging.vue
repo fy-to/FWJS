@@ -14,10 +14,17 @@ import { useServerRouter } from "../../stores/serverRouter";
 import { useRoute } from "vue-router";
 import { useFyHead } from "@fy-/head";
 import { hasFW, getURL } from "@fy-/fws-js";
-const props = defineProps<{
-  items: APIPaging;
-  id: string;
-}>();
+
+const props = withDefaults(
+  defineProps<{
+    items: APIPaging;
+    id: string;
+    hash?: string;
+  }>(),
+  {
+    hash: "",
+  },
+);
 const route = useRoute();
 const eventBus = useEventBus();
 const history = useServerRouter();
@@ -37,6 +44,7 @@ const next = () => {
   history.push({
     path: history.currentRoute.path,
     query: { page: page.toString() },
+    hash: props.hash != "" ? props.hash : undefined,
   });
 };
 const prev = () => {
@@ -46,6 +54,7 @@ const prev = () => {
   history.push({
     path: history.currentRoute.path,
     query: { page: page.toString() },
+    hash: props.hash != "" ? props.hash : undefined,
   });
 };
 const page = (page: number) => {
@@ -54,6 +63,7 @@ const page = (page: number) => {
   history.push({
     path: history.currentRoute.path,
     query: { page: page.toString() },
+    hash: props.hash != "" ? props.hash : undefined,
   });
 };
 
@@ -64,14 +74,14 @@ const checkPageNumber = (page: number = 1) => {
   if (hasFW()) {
     const url = getURL();
     if (page + 1 <= props.items.page_max && url) {
-      prevNextSeo.value.next = `${url.Scheme}://${url.Host}${url.Path}?page=${
-        page + 1
-      }`;
+      prevNextSeo.value.next =
+        `${url.Scheme}://${url.Host}${url.Path}?page=${page + 1}` +
+        (props.hash != "" ? `#${props.hash}` : "");
     }
     if (page - 1 >= 1 && url) {
-      prevNextSeo.value.prev = `${url.Scheme}://${url.Host}${url.Path}?page=${
-        page - 1
-      }`;
+      prevNextSeo.value.prev =
+        `${url.Scheme}://${url.Host}${url.Path}?page=${page - 1}` +
+        (props.hash != "" ? `#${props.hash}` : "");
     }
   }
 };
@@ -79,7 +89,9 @@ const checkPageNumber = (page: number = 1) => {
 pageWatcher.value = watch(
   () => route.query.page,
   (v) => {
-    eventBus.emit(`${props.id}GoToPage`, v ? v : 1);
+    if (props.hash == "" || route.hash == props.hash) {
+      eventBus.emit(`${props.id}GoToPage`, v ? v : 1);
+    }
   },
 );
 onMounted(() => {

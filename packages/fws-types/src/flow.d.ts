@@ -25,5 +25,5 @@ export interface KlbFlowData {
     initial: boolean;
     url?: string;
     user?: KlbUser;
-    Redirect?: string;
+    redirect?: string;
 }

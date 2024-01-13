@@ -9,7 +9,7 @@ import { useRest, APIResult } from "../../composables/rest";
 import DefaultInput from "../ui/DefaultInput.vue";
 import { ClientOnly } from "../ssr/ClientOnly";
 import { EnvelopeIcon } from "@heroicons/vue/24/solid";
-
+import { useSessionStorage } from "@vueuse/core";
 const rest = useRest();
 interface UserFlow extends APIResult {
   data: KlbFlowData;
@@ -49,10 +49,13 @@ const fieldsError = ref<Record<string, any>>({});
 const pwdRecoverMailSent = ref<boolean>(false);
 const inputs = ref<InstanceType<typeof DefaultInput>[]>([]);
 const translate = useTranslation();
-
+const session = useSessionStorage<string | null>(
+  "session",
+  route.query.session ? route.query.session.toString() : null,
+);
 const formData = ref<Record<string, any>>({
   return_to: props.returnDefault,
-  session: null,
+  session: session.value,
   action: props.forceAction ? props.forceAction : undefined,
 });
 const completed = ref(false);
@@ -86,6 +89,8 @@ const userFlow = async (params: paramsType = { initial: false }) => {
       eventBus.emit("login-loading", false);
       return;
     }
+  } else {
+    formData.value.initial = true;
   }
   hasOauth.value = false;
 
@@ -97,12 +102,6 @@ const userFlow = async (params: paramsType = { initial: false }) => {
     returnTo.value = route.query.return_to
       ? route.query.return_to
       : props.returnDefault;
-  }
-
-  if (!formData.value.session) {
-    formData.value.session = route.query.session
-      ? route.query.session
-      : undefined;
   }
 
   formData.value.return_to = returnTo.value;
@@ -126,12 +125,16 @@ const userFlow = async (params: paramsType = { initial: false }) => {
     }
     if (response.value.data.complete == true && response.value.data.user) {
       store.setUser(response.value.data.user);
-      if (isExternalUrl(returnTo.value)) {
-        window.location.href = returnTo.value;
+      const actualReturnTo = response.value.data.redirect
+        ? response.value.data.redirect
+        : returnTo.value;
+      session.value = null;
+      if (isExternalUrl(actualReturnTo)) {
+        window.location.href = actualReturnTo;
       } else {
-        const routeExists = router.resolve(returnTo.value);
-        if (routeExists.matched.length != 0) router.push(returnTo.value);
-        else window.location.href = returnTo.value;
+        const routeExists = router.resolve(actualReturnTo);
+        if (routeExists.matched.length != 0) router.push(actualReturnTo);
+        else window.location.href = actualReturnTo;
       }
       return;
     }
@@ -139,13 +142,16 @@ const userFlow = async (params: paramsType = { initial: false }) => {
       window.location.href = response.value.data.url;
       return;
     }
-    if (response.value.data.Redirect && response.value.data.complete) {
-      router.push("/");
+    if (response.value.data.redirect && response.value.data.complete) {
+      router.push(
+        response.value.data.redirect ? response.value.data.redirect : "/",
+      );
       return;
     }
     formData.value = {
       session: response.value.data.session,
     };
+    session.value = response.value.data.session;
     inputs.value = [];
     responseFields.value = response.value.data.fields;
     if (response.value.data.message)

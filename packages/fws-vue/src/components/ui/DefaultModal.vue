@@ -15,9 +15,11 @@ const props = withDefaults(
     onOpen?: Function;
     onClose?: Function;
     closeIcon?: Object;
+    mSize?: string;
   }>(),
   {
     closeIcon: () => h(XCircleIcon),
+    mSize: "w-full",
   },
 );
 
@@ -61,7 +63,7 @@ onUnmounted(() => {
         style="z-index: 41"
       >
         <div
-          class="relative w-full max-w-2xl max-h-full bg-white rounded-lg shadow dark:bg-fv-neutral-800"
+          :class="`relative ${mSize} max-w-6xl max-h-full overflow-y-auto bg-white rounded-lg shadow dark:bg-fv-neutral-800`"
           style="z-index: 42"
         >
           <div

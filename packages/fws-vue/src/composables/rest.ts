@@ -58,6 +58,9 @@ export function useRest(): <ResultType extends APIResult>(
       if (getMode() === "ssr") {
         restStore.addResult(requestHash, restResult);
       }
+      if (restResult.result === "error") {
+        eventBus.emit("rest-error", restResult);
+      }
       return Promise.resolve(restResult);
     } catch (error) {
       const restError: ResultType = error as ResultType;

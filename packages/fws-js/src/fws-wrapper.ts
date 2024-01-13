@@ -5,38 +5,36 @@ declare const FW: IFWS | undefined;
 export const hasFW = (): boolean =>
     (typeof FW !== "undefined");
 
-export const getPrefix = (): string => 
-    FW?.Prefix ?? "";
+export const getPrefix = (): string => (typeof FW !== "undefined") ? FW?.Prefix : "";
 
-export const getRealm = (): Realm | {} => 
-    FW?.Realm ?? {};
+export const getRealm = (): Realm | {} => (typeof FW !== "undefined") ? FW?.Realm : {};
 
 export const getLocale = (): string =>
-    FW?.Locale ?? "";
+   (typeof FW !== "undefined") ? FW?.Locale : "";
 
 export const getPath = (): string =>
-    FW?.Path ?? window.location.pathname;
+   (typeof FW !== "undefined") ? FW?.Path : window.location.pathname;
 
 export const getHostname = (): string =>
-    FW?.Hostname ?? window.location.hostname;
+   (typeof FW !== "undefined") ? FW?.Hostname : window.location.hostname;
 
 export const getURL = (): IFWSUrl =>
-    FW?.URL ?? {Path: window.location.pathname, Full: window.location.href, Host: window.location.host, Query: window.location.search, Scheme: window.location.protocol};
+   (typeof FW !== "undefined") ? FW?.URL : {Path: window.location.pathname, Full: window.location.href, Host: window.location.host, Query: window.location.search, Scheme: window.location.protocol};
 
 export const getInitialState = (): any =>
-    FW?.Initial ?? {};
+   (typeof FW !== "undefined") ? FW?.Initial : {};
 
 export const getMode = (): "client"|"ssr" =>
-    FW?.Mode ?? "client";
+   (typeof FW !== "undefined") ? FW?.Mode : "client";
 
 export const getUUID = (): string =>
-    FW?.UUID ?? "";
+   (typeof FW !== "undefined") ? FW?.UUID : "";
 
 export const getLocales = (): string[] =>
-    FW?.Locales ?? [];
+   (typeof FW !== "undefined") ? FW?.Locales : [];
 
 export const getCookies = (): {[key: string]: string} =>
-    FW?.Cookies ?? {};
+   (typeof FW !== "undefined") ? FW?.Cookies : {};
 
 export const getCookiesString = (): string =>
     Object.entries(getCookies())

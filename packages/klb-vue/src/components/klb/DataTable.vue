@@ -50,6 +50,8 @@ const props = withDefaults(
     defaultSort?: SortingField;
     subData?: boolean;
     errorMessage?: string;
+    subQuery?: boolean;
+    subQueryExclude?: string[];
   }>(),
   {
     errorMessage: "no_data_found",
@@ -57,10 +59,12 @@ const props = withDefaults(
     showHeaders: true,
     sortables: () => ({}),
     exportableColumns: () => [],
+    subQueryExclude: () => [],
     csvFormatColumns: () => ({}),
     exportableName: "default",
     defaultPerPage: 25,
     defaultSort: () => ({ field: "Created", direction: "DESC" }),
+    subQuery: false,
   },
 );
 const perPage = useStorage<number>(`${props.id}PerPage`, props.defaultPerPage);
@@ -77,8 +81,22 @@ const getData = async (page: number = 1) => {
   } else {
     sort = `${currentSort.value.field}:${currentSort.value.direction}`;
   }
+  let query = { ...props.filtersData };
+  if (props.subQuery) {
+    const basedata: any = {};
+    const queryData: any = {};
+    Object.keys(query).forEach((key) => {
+      if (!props.subQueryExclude.includes(key)) {
+        queryData[key] = query[key];
+      } else {
+        basedata[key] = query[key];
+      }
+    });
+    basedata["query"] = queryData;
+    query = basedata;
+  }
   const requestParams = {
-    ...props.filtersData,
+    ...query,
     sort: sort,
     results_per_page: perPage.value,
     page_no: page,

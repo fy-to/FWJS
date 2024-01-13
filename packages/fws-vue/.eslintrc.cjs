@@ -1,13 +1,16 @@
+const { root } = require("postcss");
+
 /* eslint-env node */
 require("@rushstack/eslint-patch/modern-module-resolution");
 
 module.exports = {
+  root: true,
   env: {
     es6: true,
     browser: true,
     node: true,
   },
-  plugins: ["@typescript-eslint", "prettier"],
+  plugins: ["@typescript-eslint"],
   settings: {
     "import/resolver": {
       node: { extensions: [".js", ".mjs", ".ts", ".d.ts", ".tsx"] },

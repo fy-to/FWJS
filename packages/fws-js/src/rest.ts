@@ -69,8 +69,13 @@ export async function rest(
         });
     }
     const restRejected = restResolved;
-    const restCatch = function (data: Response) {
-        console.log(data);
+    const restCatch = function (data: any) {
+        if (data.headers) {
+            delete data.headers;
+        }
+        return new Promise((resolve) => {
+            resolve(data)
+        });
     }
 
     return fetch(callUrl, {
