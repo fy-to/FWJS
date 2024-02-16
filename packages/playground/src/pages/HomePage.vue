@@ -62,7 +62,7 @@ const sortedStats = computed(() => {
     const keyComparison = a[0].localeCompare(b[0]);
     if (keyComparison !== 0) return keyComparison;
 
-    // If keys are the same, compare by values (times)
+    //@ts-ignore
     return a[1] - b[1];
   });
 });
@@ -118,7 +118,7 @@ onMounted(async () => {
             :class="`${getColorBasedOnResponse(
               nToMs(time),
             )}  noise  rounded-none`"
-            :style="{ width: (time / maxValue) * 100 + '%' }"
+            :style="{ width: ((time as number) / maxValue) * 100 + '%' }"
           >
             &nbsp;
           </div>
