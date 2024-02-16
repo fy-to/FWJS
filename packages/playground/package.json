@@ -2,6 +2,7 @@
   "name": "fws-playground",
   "private": true,
   "version": "0.0.1",
+  "type": "module",
   "scripts": {
     "dev": "vite --force --port 3055",
     "build": "yarn run build:client && yarn run build:server:noExternal",
