@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "vite --force --port 3055",
     "build": "yarn run build:client && yarn run build:server:noExternal",
-    "build:client": "vue-tsc --noEmit && vite build --ssrManifest --outDir dist/client",
-    "build:server": "vue-tsc --noEmit && vite build --ssr src/entry-server.ts --outDir dist/server",
+    "build:client": "pnpm run type-check && vite build --ssrManifest --outDir dist/client",
+    "build:server": "pnpm run type-check && vite build --ssr src/entry-server.ts --outDir dist/server",
     "build:server:noExternal": "vue-tsc --noEmit && vite build --config vite.config.noexternal.ts --ssr src/entry-server.ts --outDir dist/server",
-    "typecheck": "vue-tsc --noEmit",
+    "type-check": "vue-tsc --noEmit --composite false",
     "lint:check": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore",
     "lint:fix": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix  --ignore-path .gitignore"
   },
