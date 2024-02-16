@@ -103,7 +103,7 @@ onMounted(async () => {
         class="flex items-center gap-3 mb-2"
       >
         <h3
-          class="font-bold whitespace-nowrap w-[220px] text-lg mb-2 uppercase"
+          class="font-bold whitespace-nowrap w-[270px] text-lg mb-2 uppercase"
         >
           {{ key }}
         </h3>
