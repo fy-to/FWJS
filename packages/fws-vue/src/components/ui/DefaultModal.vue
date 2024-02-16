@@ -68,6 +68,7 @@ onUnmounted(() => {
         >
           <div
             class="flex items-center justify-between p-2 w-full border-b rounded-t dark:border-fv-neutral-700"
+            v-if="title"
           >
             <slot name="before"></slot>
             <DialogTitle

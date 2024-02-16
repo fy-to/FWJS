@@ -67,7 +67,7 @@ const setModal = (value: boolean) => {
 const openGalleryImage = (index: number | undefined) => {
   if (index === undefined) modelValue.value = 0;
   else {
-    modelValue.value = index;
+    modelValue.value = parseInt(index.toString());
   }
   setModal(true);
 };
@@ -82,7 +82,8 @@ const goPrevImage = () => {
   if (modelValue.value > 0) {
     modelValue.value--;
   } else {
-    modelValue.value = props.images.length - 1;
+    modelValue.value =
+      props.images.length - 1 > 0 ? props.images.length - 1 : 0;
   }
 };
 const modelValueSrc = computed(() => {

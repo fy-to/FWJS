@@ -29,7 +29,7 @@ user_flow_complete,Welcome!,Bienvenue !
 user_flow_code_label,Input the verification code,Veuillez saisir le code de vérification
 user_flow_code_input_label,Code,Code
 user_flow_code_step,Please input the code you received by email,Veuillez saisir le code que vous avez reçu par courrier électronique
-user_flow_password_error,Password is incorrect,Le mot de passe est incorrect
+user_flow_password_error,Password is incorrect (7 characters minimum with at least 1 number and 1 uppercase letter),Le mot de passe est incorrect (7 caractères minimum avec au moins 1 chiffre et 1 lettre majuscule)
 user_flow_code_error,Code is incorrect,Le code est incorrect
 user_flow_input_code,Please input the code you received by email,Veuillez saisir le code que vous avez reçu par courrier électronique
 user_flow_reset_code_label,Reset your password,Réinitialisez votre mot de passe
@@ -43,3 +43,12 @@ or_text_label,or,ou
 sidebar_size_control,Controls Sidebar Size,Contrôle la taille de la barre latérale
 user_flow_signin_with,Sign in with {{provider}},Se connecter avec {{provider}}
 user_flow_provider_email_cta,Email,Email
+fws_realms_count,Realms,Domaines
+fws_website_count,Websites,Site web
+fws_user_count,Users,Utilisateurs
+fws_file_count,Files,Fichiers
+fws_post_count,Posts,Articles
+fws_js_instance_count,JS Instances,Instances JS
+fws_memory_alloc,Memory Allocation,Allocation de mémoire
+fws_db_uptime,DB Uptime,Disponibilité de la base de données
+fws_ws_uptime,WS Uptime,Disponibilité du serveur

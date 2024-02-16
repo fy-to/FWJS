@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useSeo, useTranslation, useRest, useEventBus } from "@fy-/fws-vue";
 import { getLocales } from "@fy-/fws-js";
 const translate = useTranslation();
@@ -49,18 +49,27 @@ const secondsToDaysHoursMinutesSeconds = (seconds) => {
   const days = Math.floor(seconds / (3600 * 24));
   const hours = Math.floor((seconds % (3600 * 24)) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  if (days > 0) {
-    return `${days}d ${hours}h ${minutes}m`;
-  }
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m`;
-  }
-  return `${seconds}s`;
+  // return as str
+  return `${days}d ${hours}h ${minutes}m`;
 };
+const sortedStats = computed(() => {
+  if (!stats.value || !stats.value.AverageResponseTime) {
+    return [];
+  }
 
+  return Object.entries(stats.value.AverageResponseTime).sort((a, b) => {
+    // First, compare by keys alphabetically
+    const keyComparison = a[0].localeCompare(b[0]);
+    if (keyComparison !== 0) return keyComparison;
+
+    // If keys are the same, compare by values (times)
+    return a[1] - b[1];
+  });
+});
+function formatValueBytes(value) {
+  const size = (value / (1024 * 1024)).toFixed(2); // size in MB
+  return `${size}`;
+}
 useSeo(
   ref({
     title: translate("title_home_page"),
@@ -89,12 +98,12 @@ onMounted(async () => {
         {{ $t("avg_times_legend") }}
       </div>
       <div
-        v-for="(time, key) in stats.AverageResponseTime"
+        v-for="[key, time] in sortedStats"
         :key="key"
         class="flex items-center gap-3 mb-2"
       >
         <h3
-          class="font-bold whitespace-nowrap w-[170px] text-lg mb-2 uppercase"
+          class="font-bold whitespace-nowrap w-[220px] text-lg mb-2 uppercase"
         >
           {{ key }}
         </h3>
@@ -178,6 +187,99 @@ onMounted(async () => {
               <small class="text-xs"> (avg response time)</small>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+    <section class="py-10 px-3">
+      <h2 class="font-bold text-2xl lg:text-3xl mb-4">FWS Stats</h2>
+      <div
+        v-if="stats"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+      >
+        <div
+          class="p-4 noise rounded bg-fv-neutral-200/[.95] dark:bg-fv-neutral-800/[.7] shadow"
+        >
+          <h3 class="font-bold text-lg mb-2">{{ $t("fws_realms_count") }}</h3>
+          <p class="text-2xl">{{ stats.TotalRealms }}</p>
+        </div>
+
+        <div
+          class="p-4 noise rounded bg-fv-neutral-200/[.95] dark:bg-fv-neutral-800/[.7] shadow"
+        >
+          <h3 class="font-bold text-lg mb-2">
+            {{ $t("fws_website_count") }}
+          </h3>
+          <p class="text-2xl">{{ stats.TotalWebsite }}</p>
+        </div>
+
+        <div
+          class="p-4 noise rounded bg-fv-neutral-200/[.95] dark:bg-fv-neutral-800/[.7] shadow"
+        >
+          <h3 class="font-bold text-lg mb-2">{{ $t("fws_user_count") }}</h3>
+          <p class="text-2xl">{{ stats.TotalUsers }}</p>
+        </div>
+
+        <div
+          class="p-4 noise rounded bg-fv-neutral-200/[.95] dark:bg-fv-neutral-800/[.7] shadow"
+        >
+          <h3 class="font-bold text-lg mb-2">{{ $t("fws_file_count") }}</h3>
+          <p class="text-2xl">{{ stats.TotalFiles }}</p>
+        </div>
+
+        <div
+          class="p-4 noise rounded bg-fv-neutral-200/[.95] dark:bg-fv-neutral-800/[.7] shadow"
+        >
+          <h3 class="font-bold text-lg mb-2">{{ $t("fws_post_count") }}</h3>
+          <p class="text-2xl">{{ stats.TotalCmsPosts }}</p>
+        </div>
+
+        <div
+          class="p-4 noise rounded bg-fv-neutral-200/[.95] dark:bg-fv-neutral-800/[.7] shadow"
+        >
+          <h3 class="font-bold text-lg mb-2">
+            {{ $t("fws_js_instance_count") }}
+          </h3>
+          <p class="text-2xl">{{ stats.TotalBunInstances }}</p>
+        </div>
+        <div
+          class="p-4 noise rounded bg-fv-neutral-200/[.95] dark:bg-fv-neutral-800/[.7] shadow"
+        >
+          <h3 class="font-bold text-lg mb-2">{{ $t("fws_memory_alloc") }}</h3>
+          <p class="text-base grid grid-cols-2 justify-between">
+            <span>Alloc</span>
+            <span class="text-right block font-semibold"
+              >{{ formatValueBytes(stats.AllocMemory) }} MB</span
+            >
+          </p>
+          <p class="text-base grid grid-cols-2 justify-between">
+            <span>Sys</span>
+            <span class="text-right block font-semibold"
+              >{{ formatValueBytes(stats.SysMemory) }} MB</span
+            >
+          </p>
+          <!--<p class="text-base grid grid-cols-2 justify-between">
+              <span>Total Alloc</span>
+              <span class="text-right block font-semibold"
+                >{{ formatValueBytes(stats.TotalAllocMemory) }} MB</span
+              >
+            </p>-->
+        </div>
+
+        <div
+          class="p-4 noise rounded bg-fv-neutral-200/[.95] dark:bg-fv-neutral-800/[.7] shadow"
+        >
+          <h3 class="font-bold text-lg mb-2">{{ $t("fws_db_uptime") }}</h3>
+          <p class="text-2xl">
+            {{ secondsToDaysHoursMinutesSeconds(stats.DatabaseUptime) }}
+          </p>
+        </div>
+        <div
+          class="p-4 noise rounded bg-fv-neutral-200/[.95] dark:bg-fv-neutral-800/[.7] shadow"
+        >
+          <h3 class="font-bold text-lg mb-2">{{ $t("fws_ws_uptime") }}</h3>
+          <p class="text-2xl">
+            {{ secondsToDaysHoursMinutesSeconds(stats.Uptime) }}
+          </p>
         </div>
       </div>
     </section>
