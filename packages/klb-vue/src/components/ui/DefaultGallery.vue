@@ -67,7 +67,7 @@ const setModal = (value: boolean) => {
 const openGalleryImage = (index: number | undefined) => {
   if (index === undefined) modelValue.value = 0;
   else {
-    modelValue.value = index;
+    modelValue.value = parseInt(index.toString());
   }
   setModal(true);
 };
@@ -82,7 +82,8 @@ const goPrevImage = () => {
   if (modelValue.value > 0) {
     modelValue.value--;
   } else {
-    modelValue.value = props.images.length - 1;
+    modelValue.value =
+      props.images.length - 1 > 0 ? props.images.length - 1 : 0;
   }
 };
 const modelValueSrc = computed(() => {
@@ -230,10 +231,14 @@ onUnmounted(() => {
                     <template v-else>
                       <img
                         class="shadow max-w-full h-auto object-contain max-h-[85vh]"
-                        :src="modelValueSrc"
                         v-if="modelValueSrc"
                         @touchstart="touchStart"
                         @touchend="touchEnd"
+                        v-lazy="{
+                          src: modelValueSrc,
+                          loading: imageLoader,
+                          error: imageLoader,
+                        }"
                       />
                     </template>
                   </div>
@@ -297,7 +302,11 @@ onUnmounted(() => {
                     :class="`h-auto max-w-full rounded-lg cursor-pointer shadow  ${getBorderColor(
                       images[i - 1],
                     )}`"
-                    :src="getThumbnailUrl(images[i - 1])"
+                    v-lazy="{
+                      src: getThumbnailUrl(images[i - 1]),
+                      loading: imageLoader,
+                      error: imageLoader,
+                    }"
                   />
                 </div>
               </div>
@@ -326,7 +335,11 @@ onUnmounted(() => {
                     @click="$eventBus.emit(`${id}GalleryImage`, i + j - 2)"
                     class="h-auto max-w-full rounded-lg cursor-pointer"
                     v-if="i + j - 2 < images.length"
-                    :src="getThumbnailUrl(images[i + j - 2])"
+                    v-lazy="{
+                      src: getThumbnailUrl(images[i + j - 2]),
+                      loading: imageLoader,
+                      error: imageLoader,
+                    }"
                   />
                 </div>
               </template>
@@ -336,7 +349,11 @@ onUnmounted(() => {
             <img
               @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
               class="h-auto max-w-full rounded-lg cursor-pointer"
-              :src="getThumbnailUrl(images[i - 1])"
+              v-lazy="{
+                src: getThumbnailUrl(images[i - 1]),
+                loading: imageLoader,
+                error: imageLoader,
+              }"
             />
           </div>
         </template>
