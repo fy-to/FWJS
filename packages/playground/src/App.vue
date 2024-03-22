@@ -22,17 +22,14 @@ const links = computed(() => {
   const _links: any[] = [
     { name: translate("nav_home"), url: "/" },
     {
+      name: translate("nav_js_workers"),
+      url: "/js_workers",
+    },
+    {
       name: translate("nav_docs"),
       url: "/docs",
     },
-    {
-      name: translate("nav_fws_vue"),
-      url: "/fws-vue",
-    },
-    {
-      name: translate("nav_klb_vue"),
-      url: "/klb-vue",
-    },
+
   ];
   /*
   if (!isAuth.value) {

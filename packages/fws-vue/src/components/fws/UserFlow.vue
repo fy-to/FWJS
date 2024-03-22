@@ -162,6 +162,9 @@ const userFlow = async (params: paramsType = { initial: false }) => {
         hasOauth.value = true;
       }
     });
+    if (!hasOauth.value && responseFields.value.length > 0) {
+      showEmail.value = true;
+    }
     setTimeout(() => {
       if (inputs.value.length > 0 && inputs.value[inputs.value.length - 1])
         inputs.value[inputs.value.length - 1].focus();

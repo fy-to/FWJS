@@ -100,15 +100,15 @@ onMounted(async () => {
       <div
         v-for="[key, time] in sortedStats"
         :key="key"
-        class="flex items-center gap-3 mb-2"
+        class="flex items-center gap-3  border-b border-fv-neutral-100 py-1.5"
       >
         <h3
-          class="font-bold whitespace-nowrap w-[270px] text-lg mb-2 uppercase"
+          class="font-bold whitespace-nowrap w-[270px] text-lg uppercase"
         >
           {{ key }}
         </h3>
 
-        <div class="flex-1 rounded-none bg-fv-neutral-700 relative noise">
+        <div class="flex-1  bg-fv-neutral-700 relative noise rounded-full overflow-hidden ">
           <div
             class="absolute leading-none text-sm text-white text-center inset-x-0 top-[5px] font-medium"
           >
@@ -136,7 +136,7 @@ onMounted(async () => {
         <div
           v-for="(t, j) in thoth"
           :key="t.key"
-          class="border-l border-b border-fv-neutral-400 border-r py-2 px-3"
+          class="border-l border-b border-fv-neutral-100 border-r py-2 px-3"
           :class="{
             'rounded-b-xl ': j == thoth.length - 1,
             'rounded-t-xl border-t': j == 0,
@@ -190,7 +190,7 @@ onMounted(async () => {
         </div>
       </div>
     </section>
-    <section class="py-10 px-3">
+    <section class="py-10 px-3" v-if="0">
       <h2 class="font-bold text-2xl lg:text-3xl mb-4">FWS Stats</h2>
       <div
         v-if="stats"

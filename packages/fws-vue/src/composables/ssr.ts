@@ -21,7 +21,9 @@ export interface SSRResult {
 }
 
 export function isServerRendered() {
-  return getInitialState().isSSR;
+  const state = getInitialState();
+  if (state && state.isSSR) return true;
+  return false;
 }
 
 export function initVueClient(router: Router, pinia: Pinia) {

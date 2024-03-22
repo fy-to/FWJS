@@ -43,7 +43,7 @@ export function useRest(): <ResultType extends APIResult>(
     if (isServerRendered()) {
       const hasResult = restStore.getResult(requestHash);
       if (hasResult !== undefined) {
-        const result = { ...hasResult } as ResultType;
+        const result = hasResult as ResultType;
         restStore.removeResult(requestHash);
         if (result.result === "error") {
           eventBus.emit("rest-error", result);
@@ -56,10 +56,10 @@ export function useRest(): <ResultType extends APIResult>(
     try {
       const restResult: ResultType = await rest(url, method, params);
       if (getMode() === "ssr") {
-        restStore.addResult(requestHash, restResult);
-      }
-      if (restResult.result === "error") {
-        eventBus.emit("rest-error", restResult);
+        restStore.addResult(
+          requestHash,
+          JSON.parse(JSON.stringify(restResult)),
+        );
       }
       return Promise.resolve(restResult);
     } catch (error) {

@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { APIResult } from "../composables/rest";
 
 type SharedState = {
-  results: Record<number, APIResult | undefined>;
+  results: Record<number, any | undefined>;
 };
 
 export const useRestStore = defineStore({
@@ -11,8 +11,11 @@ export const useRestStore = defineStore({
     results: {},
   }),
   actions: {
-    addResult(id: number, result: APIResult) {
+    addResult(id: number, result: any) {
       this.results[id] = result;
+    },
+    hasResult(id: number) {
+      return this.results[id] !== undefined;
     },
     getResult(id: number) {
       return this.results[id];

@@ -15,6 +15,11 @@ export default [
     component: () => import("./pages/doc/IndexDoc.vue"),
   },
   {
+    path: "/js_workers",
+    name: "/js_workers",
+    component: () => import("./pages/JSProcessPage.vue"),
+  },
+  {
     path: "/fws-vue",
     name: "fws-vue",
     component: () => import("./pages/fv/IndexFv.vue"),
