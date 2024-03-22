@@ -22,7 +22,7 @@ const links = computed(() => {
   const _links: any[] = [
     { name: translate("nav_home"), url: "/" },
     {
-      name: translate("nav_js_workers"),
+      name: "SSR Info",
       url: "/js_workers",
     },
     {
