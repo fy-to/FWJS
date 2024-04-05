@@ -3,6 +3,8 @@ import i18next from "i18next";
 import mitt from "mitt";
 import { Emitter } from "mitt";
 import { useServerRouter } from "./stores/serverRouter";
+import { useAudioRecorder } from "./composables/audioRecorder";
+import { useKlbAgent } from "./composables/klbAgent";
 import { useEventBus, Events } from "./composables/event-bus";
 import { i18nextPromise, useTranslation } from "./composables/translations";
 import { initVueClient, initVueServer, isServerRendered } from "./misc/ssr";
@@ -115,6 +117,8 @@ export {
   useRest,
   useCart,
   ClientOnly,
+  useAudioRecorder,
+  useKlbAgent,
   // Components
   // UI/Transitions
   SlideTransition,

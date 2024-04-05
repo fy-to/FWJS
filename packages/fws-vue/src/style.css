@@ -10,24 +10,40 @@
 }
 
 .btn {
-  @apply inline-flex gap-1 text-white focus:ring-4 font-medium rounded-lg focus:outline-none transition-colors ease-in-out motion-reduce:transition-none;
+  @apply inline-flex gap-1  text-white focus:ring-1 font-medium rounded-lg focus:outline-none transition-colors ease-in-out motion-reduce:transition-none;
   &.primary {
     @apply bg-fv-primary-700 hover:bg-fv-primary-800 focus:ring-fv-primary-300 dark:bg-fv-primary-600 dark:hover:bg-fv-primary-700 dark:focus:ring-fv-primary-800;
+    &.ol {
+      @apply bg-transparent border border-fv-primary-800 text-fv-primary-700 dark:border-fv-primary-300 dark:text-fv-primary-300 hover:bg-fv-primary-800 hover:text-white dark:hover:bg-fv-primary-800 dark:hover:text-white;
+    }
   }
   &.accent {
     @apply bg-fv-accent-700 hover:bg-fv-accent-800 focus:ring-fv-accent-300 dark:bg-fv-accent-600 dark:hover:bg-fv-accent-700 dark:focus:ring-fv-accent-800;
+    &.ol {
+      @apply bg-transparent border border-fv-accent-800 text-fv-accent-700 dark:border-fv-accent-300 dark:text-fv-accent-300 hover:bg-fv-accent-800 hover:text-white dark:hover:bg-fv-accent-800 dark:hover:text-white;
+    }
   }
   &.success,
   &.valid {
     @apply bg-green-700 hover:bg-green-800 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800;
+    &.ol {
+      @apply bg-transparent border border-green-800 text-green-700 dark:border-green-300 dark:text-green-300 hover:bg-green-800 hover:text-white dark:hover:bg-green-800 dark:hover:text-white;
+    }
   }
   &.error,
   &.danger {
     @apply bg-red-700 hover:bg-red-800 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800;
+    &.ol {
+      @apply bg-transparent border border-red-800 text-red-700 dark:border-red-300 dark:text-red-300 hover:bg-red-800 hover:text-white dark:hover:bg-red-800 dark:hover:text-white;
+    }
   }
   &.neutral {
     @apply bg-fv-neutral-700 hover:bg-fv-neutral-800 focus:ring-fv-neutral-300 dark:bg-fv-neutral-600 dark:hover:bg-fv-neutral-700 dark:focus:ring-fv-neutral-800;
+    &.ol {
+      @apply bg-transparent border border-fv-neutral-800 text-fv-neutral-700 dark:border-fv-neutral-300 dark:text-fv-neutral-300 hover:bg-fv-neutral-800 hover:text-white dark:hover:bg-fv-neutral-800 dark:hover:text-white;
+    }
   }
+
 
   &.defaults {
     @apply px-2 py-1;

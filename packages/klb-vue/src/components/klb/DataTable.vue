@@ -52,6 +52,7 @@ const props = withDefaults(
     errorMessage?: string;
     subQuery?: boolean;
     subQueryExclude?: string[];
+    variations?: string[];
   }>(),
   {
     errorMessage: "no_data_found",
@@ -61,6 +62,7 @@ const props = withDefaults(
     exportableColumns: () => [],
     subQueryExclude: () => [],
     csvFormatColumns: () => ({}),
+    variations: () => [],
     exportableName: "default",
     defaultPerPage: 25,
     defaultSort: () => ({ field: "Created", direction: "DESC" }),
@@ -100,8 +102,11 @@ const getData = async (page: number = 1) => {
     sort: sort,
     results_per_page: perPage.value,
     page_no: page,
-  };
+  } as DefaultAnyObject;
   eventBus.emit("dataTableRequestParams", requestParams);
+  if (props.variations && props.variations.length > 0) {
+    requestParams["image_variation"] = props.variations;
+  }
   const r = await rest(props.apiPath, "GET", requestParams);
   currentPage.value = page;
   data.value = [];
