@@ -8,6 +8,7 @@ import { computed } from "vue";
 export function useKlbAgent() {
   const sessionStarted = ref(false);
   const videoElement = ref<HTMLVideoElement>();
+  const idleVideoElement = ref<HTMLVideoElement>();
   const sessionData = ref<any>();
   const session = ref<any>();
   const peerConnection = ref<RTCPeerConnection | null>(null);
@@ -17,7 +18,8 @@ export function useKlbAgent() {
   const bgImage = ref();
   const lastBytesReceived = ref(0);
   const sentCandidates = ref<any>([]);
-
+  const saying = ref(false);
+  let statsIntervalId: any = null;
   const videoIdleURL = ref();
   const rest = useRest();
   const eventBus = useEventBus();
@@ -49,24 +51,35 @@ export function useKlbAgent() {
     upload.run();
   };
   const playIdleVideo = () => {
-    if (videoElement.value) {
-      // Add Animation Class
-      videoElement.value.classList.toggle("animated");
-      // @ts-ignore
-      videoElement.value.srcObject = undefined;
-      videoElement.value.src = videoIdleURL.value;
-      videoElement.value.loop = true;
-
-      // Remove Animation Class after it's completed
-      setTimeout(() => {
-        // @ts-ignore
-        videoElement.value.classList.remove("animated");
-      }, 1000);
+    if (!videoElement.value) return;
+    videoElement.value.classList.add("hidden");
+    if (!audioRecorder.isRecording()) {
+      audioRecorder.startRecording();
     }
+    if (!idleVideoElement.value) return;
+
+    // @ts-ignore
+    if (idleVideoElement.value.src === videoIdleURL.value) {
+      if (idleVideoElement.value.paused) {
+        idleVideoElement.value.play().catch((e) => {
+          console.error("Failed to play idle video", e);
+        });
+      }
+      return;
+    }
+    idleVideoElement.value.src = videoIdleURL.value;
+    idleVideoElement.value.loop = true;
+    idleVideoElement.value.muted = true;
+    idleVideoElement.value.play().catch((e) => {
+      console.error("Failed to play idle video", e);
+    });
   };
   const setVideoElement = (stream: MediaStream) => {
     if (!stream) return;
     if (!videoElement.value) return;
+
+    if (!videoElement.value) return;
+    videoElement.value.classList.remove("hidden");
     videoElement.value.classList.add("animated");
 
     videoElement.value.muted = false;
@@ -101,10 +114,12 @@ export function useKlbAgent() {
     return null;
   };
   const sendSay = async (say: string) => {
+    if (saying.value) return;
     const r = await rest(`HIAgent/Session/${session.value}:say`, "POST", {
       input: say,
     });
     if (r && r.result == "success") {
+      saying.value = true;
       if (audioRecorder.isRecording()) {
         audioRecorder.stopRecording();
       }
@@ -135,7 +150,7 @@ export function useKlbAgent() {
   };
 
   const onVideoStatusChange = (playing: boolean, stream: MediaStream) => {
-    console.debug("Video status changed:", playing, videoElement.value, stream);
+    console.log("Video status changed:", playing, videoElement.value, stream);
     if (playing) {
       setVideoElement(stream);
     } else {
@@ -147,7 +162,12 @@ export function useKlbAgent() {
     let playing = false;
     statsIntervalId = setInterval(async () => {
       if (peerConnection.value == null || !event.track) return;
-      const stats = await peerConnection.value.getStats(event.track);
+      const stats = await peerConnection.value
+        .getStats(event.track)
+        .catch((e) => {
+          console.error("Failed to get stats", e);
+          return [];
+        });
       stats.forEach((report) => {
         if (report.type === "inbound-rtp" && report.mediaType === "video") {
           const videoStatusChanged =
@@ -168,6 +188,10 @@ export function useKlbAgent() {
     signalStatus.value = peerConnection.value?.signalingState;
   };
   const closePeerConnection = () => {
+    if (statsIntervalId) {
+      clearInterval(statsIntervalId);
+      statsIntervalId = null;
+    }
     if (peerConnection.value) {
       peerConnection.value.close();
       peerConnection.value.removeEventListener(
@@ -198,13 +222,9 @@ export function useKlbAgent() {
 
       peerConnection.value = null;
     }
-    if (statsIntervalId) {
-      clearInterval(statsIntervalId);
-      statsIntervalId = null;
-    }
   };
   const onIceConnectionStateChange = (event: Event) => {
-    console.debug("ICE connection state changed:", event);
+    console.log("ICE connection state changed:", event);
     if (peerConnection.value) {
       if (
         peerConnection.value.iceConnectionState === "failed" ||
@@ -218,14 +238,14 @@ export function useKlbAgent() {
     }
   };
   const onConnectionStateChange = (event: Event) => {
-    console.debug("Connection state changed:", event);
+    console.log("Connection state changed:", event);
     if (peerConnection.value) {
       peerStatus.value = peerConnection.value?.connectionState;
     }
   };
   const stopAllStreams = () => {
     if (videoElement.value && videoElement.value.srcObject) {
-      console.debug("stopping video streams");
+      console.log("stopping video streams");
       // @ts-ignore
       videoElement.value.srcObject.getTracks().forEach((track) => track.stop());
       videoElement.value.srcObject = null;
@@ -275,30 +295,31 @@ export function useKlbAgent() {
       const msgType = "chat/answer:";
       if (msg.includes(msgType)) {
         msg = decodeURIComponent(msg.replace(msgType, ""));
-        console.debug(msg);
+        console.log(msg);
         decodedMsg = msg;
         return decodedMsg;
       }
       if (msg == "stream/started") {
-        console.debug("stream started");
+        console.log("stream started");
       } else if (msg == "stream/done") {
-        console.debug("stream done");
+        console.log("stream done");
+        playIdleVideo();
+        saying.value = false;
         if (!audioRecorder.isRecording()) {
           audioRecorder.startRecording();
         }
       } else {
-        console.debug("datachannel message", msg);
+        console.log("datachannel message", msg);
       }
     };
 
     dc.onclose = () => {
-      console.debug("datachannel close");
+      console.log("datachannel close");
     };
   };
 
   const audioRecorder = useAudioRecorder(onAudioAvailableCallback, -20, 1000);
   const isRecordingMic = computed(() => audioRecorder.isRecording());
-  let statsIntervalId: any = null;
 
   return {
     getSession,
@@ -312,5 +333,7 @@ export function useKlbAgent() {
     isRecordingMic,
     bgImage,
     videoElement,
+    idleVideoElement,
+    saying,
   };
 }
