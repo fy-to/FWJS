@@ -7,6 +7,7 @@ export interface KlbUserFlowField {
     cat?: string;
     label?: string;
     type: string;
+    mask?: string;
     name: string;
     button?: KlbUserFlowButton;
     id?: KlbUUID;

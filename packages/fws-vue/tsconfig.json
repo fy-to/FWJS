@@ -5,6 +5,7 @@
         "module": "esnext",
         "moduleResolution": "node",
         "strict": true,
+        "allowJs": true,
         "jsx": "preserve",
         "sourceMap": true,
         "resolveJsonModule": true,
@@ -19,8 +20,8 @@
         "types": ["vite/client"]
     },
     "include": [
-        "src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"
-    ],
+        "src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue",
+    "src/**/*.js", "src/**/*.jsx"],
     "exclude": [
         "node_modules", "dist",
     ],

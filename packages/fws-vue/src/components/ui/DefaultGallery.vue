@@ -26,18 +26,20 @@ const props = withDefaults(
     onClose?: Function;
     closeIcon?: Object;
     gridHeight?: number;
-    mode: "mason" | "grid" | "button" | "hidden";
+    mode: "mason" | "grid" | "button" | "hidden" | "custom";
     paging?: APIPaging | undefined;
     buttonText?: string;
     buttonType?: string;
     modelValue: number;
     borderColor?: Function;
     imageLoader: string;
-    videoComponent?: Component;
+    videoComponent?: Component | string;
+    imageComponent?: Component | string;
     isVideo?: Function;
   }>(),
   {
     modelValue: 0,
+    imageComponent: "img",
     mode: "grid",
     gridHeight: 4,
     closeIcon: () => h(XCircleIcon),
@@ -232,9 +234,17 @@ onUnmounted(() => {
                       <img
                         class="shadow max-w-full h-auto object-contain max-h-[85vh]"
                         :src="modelValueSrc"
-                        v-if="modelValueSrc"
+                        v-if="modelValueSrc && imageComponent == 'img'"
                         @touchstart="touchStart"
                         @touchend="touchEnd"
+                      />
+                      <component
+                        v-else-if="modelValueSrc && imageComponent"
+                        :is="imageComponent"
+                        :image="modelValueSrc.image"
+                        :variant="modelValueSrc.variant"
+                        :alt="modelValueSrc.alt"
+                        class="shadow max-w-full h-auto object-contain max-h-[85vh]"
                       />
                     </template>
                   </div>
@@ -299,6 +309,16 @@ onUnmounted(() => {
                       images[i - 1],
                     )}`"
                     :src="getThumbnailUrl(images[i - 1])"
+                    v-if="imageComponent == 'img'"
+                  />
+                  <component
+                    v-else
+                    @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+                    :is="imageComponent"
+                    :image="getThumbnailUrl(images[i - 1]).image"
+                    :variant="getThumbnailUrl(images[i - 1]).variant"
+                    :alt="getThumbnailUrl(images[i - 1]).alt"
+                    class="h-auto max-w-full rounded-lg cursor-pointer shadow"
                   />
                 </div>
               </div>
@@ -307,12 +327,14 @@ onUnmounted(() => {
         </DialogPanel>
       </Dialog>
     </TransitionRoot>
-    <template v-if="mode == 'grid' || mode == 'mason'">
+    <template v-if="mode == 'grid' || mode == 'mason' || mode == 'custom'">
       <div
-        class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4"
         :class="{
-          'items-start': mode == 'mason',
-          'items-center': mode == 'grid',
+          'grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4 items-start':
+            mode == 'mason',
+          'grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4 items-center':
+            mode == 'grid',
+          'custom-grid': mode == 'custom',
         }"
       >
         <template v-for="i in images.length" :key="`g_${id}_${i}`">
@@ -326,8 +348,17 @@ onUnmounted(() => {
                   <img
                     @click="$eventBus.emit(`${id}GalleryImage`, i + j - 2)"
                     class="h-auto max-w-full rounded-lg cursor-pointer"
-                    v-if="i + j - 2 < images.length"
+                    v-if="i + j - 2 < images.length && imageComponent == 'img'"
                     :src="getThumbnailUrl(images[i + j - 2])"
+                  />
+                  <component
+                    v-else-if="i + j - 2 < images.length"
+                    :is="imageComponent"
+                    :image="getThumbnailUrl(images[i + j - 2]).image"
+                    :variant="getThumbnailUrl(images[i + j - 2]).variant"
+                    :alt="getThumbnailUrl(images[i + j - 2]).alt"
+                    class="h-auto max-w-full rounded-lg cursor-pointer"
+                    @click="$eventBus.emit(`${id}GalleryImage`, i + j - 2)"
                   />
                 </div>
               </template>
@@ -338,6 +369,16 @@ onUnmounted(() => {
               @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
               class="h-auto max-w-full rounded-lg cursor-pointer"
               :src="getThumbnailUrl(images[i - 1])"
+              v-if="imageComponent == 'img'"
+            />
+            <component
+              v-else-if="imageComponent"
+              :is="imageComponent"
+              :image="getThumbnailUrl(images[i - 1]).image"
+              :variant="getThumbnailUrl(images[i - 1]).variant"
+              :alt="getThumbnailUrl(images[i - 1]).alt"
+              class="h-auto max-w-full rounded-lg cursor-pointer"
+              @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
             />
           </div>
         </template>

@@ -38,10 +38,10 @@ import DefaultPaging from "./components/ui/DefaultPaging.vue";
 import DefaultBreadcrumb from "./components/ui/DefaultBreadcrumb.vue";
 import DefaultLoader from "./components/ui/DefaultLoader.vue";
 import DefaultSidebar from "./components/ui/DefaultSidebar.vue";
-import DefaultTagInput from "./components/ui/DefaultTagInput.vue";
 import DefaultGallery from "./components/ui/DefaultGallery.vue";
 import DefaultDropdown from "./components/ui/DefaultDropdown.vue";
 import DefaultDropdownLink from "./components/ui/DefaultDropdownLink.vue";
+import DefaultTagInput from "./components/ui/DefaultTagInput.vue";
 // Components/FWS
 import UserFlow from "./components/fws/UserFlow.vue";
 import DataTable from "./components/fws/DataTable.vue";
@@ -49,6 +49,7 @@ import FilterData from "./components/fws/FilterData.vue";
 import CmsArticleBoxed from "./components/fws/CmsArticleBoxed.vue";
 import CmsArticleSingle from "./components/fws/CmsArticleSingle.vue";
 
+// Css
 import "./style.css";
 
 function createFWS(): Plugin {
@@ -122,10 +123,10 @@ export {
   DefaultBreadcrumb,
   DefaultLoader,
   DefaultSidebar,
-  DefaultTagInput,
   DefaultGallery,
   DefaultDropdown,
   DefaultDropdownLink,
+  DefaultTagInput,
 
   // FWS
   UserFlow,

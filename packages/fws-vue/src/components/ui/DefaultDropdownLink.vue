@@ -29,6 +29,7 @@ const classes = computed(() => `${baseClasses} ${colorClasses.value}`);
     @click.prevent="props.handleClick"
     :class="classes"
     role="menuitem"
+    type="button"
   >
     <slot></slot>
   </button>

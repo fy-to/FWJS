@@ -288,13 +288,15 @@ onMounted(async () => {
                   v-if="
                     field.type == 'text' ||
                     field.type == 'password' ||
-                    field.type == 'email'
+                    field.type == 'email' ||
+                    field.type == 'mask'
                   "
                 >
                   <DefaultInput
                     v-if="field.name"
                     :id="field.name"
                     :label="field.label"
+                    :mask="field.mask"
                     class="mt-3"
                     :placeholder="
                       field.name == 'name' ? 'John Doe' : field.label

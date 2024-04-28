@@ -1,6 +1,6 @@
 {
     "name": "@fy-/fws-vue",
-    "version": "0.0.948",
+    "version": "0.3.57",
     "author": "Florian 'Fy' Gasquez <m@fy.to>",
     "license": "MIT",
     "repository": {
@@ -37,7 +37,8 @@
         "pinia": "2.x.x",
         "timeago.js": "^4.0.x",
         "vue": "^3.3.x",
-        "vue-router": "^4.1.x"
+        "vue-router": "^4.1.x",
+        "flowbite": "^2.3.x"
     },
     "scripts": {
         "clean": "rimraf dist",
@@ -55,6 +56,8 @@
         "@rushstack/eslint-patch": "^1.6.1",
         "@types/node": "^20.10.5",
         "@typescript-eslint/eslint-plugin": "^6.15.0",
+        "@vitejs/plugin-vue": "^4.5.2",
+        "@vitejs/plugin-vue-jsx": "^3.1.0",
         "@vue/compiler-sfc": "^3.3.13",
         "@vue/eslint-config-prettier": "^8.0.0",
         "@vue/runtime-core": "^3.3.13",
@@ -68,6 +71,7 @@
         "mitt": "^3.0.1",
         "pinia": "^2.1.7",
         "postcss": "^8.4.32",
+        "primevue": "^3.51.0",
         "rollup": "^4.9.1",
         "rollup-plugin-copy": "^3.5.0",
         "sass": "^1.69.5",
@@ -77,10 +81,8 @@
         "vue": "^3.3.13",
         "vue-router": "^4.2.5",
         "vue-tsc": "^1.8.26",
-        "@vitejs/plugin-vue": "^4.5.2",
-        "@vitejs/plugin-vue-jsx": "^3.1.0"
-    },
-    "dependencies": {
         "timeago.js": "^4.0.2"
+
     }
+  
 }

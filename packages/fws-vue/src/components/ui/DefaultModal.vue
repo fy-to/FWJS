@@ -71,12 +71,11 @@ onUnmounted(() => {
             v-if="title"
           >
             <slot name="before"></slot>
-            <DialogTitle
+            <h2
               class="text-xl font-semibold text-fv-neutral-900 dark:text-white"
               v-if="title"
-            >
-              {{ title }}
-            </DialogTitle>
+              v-html="title"
+            />
             <button
               @click="setModal(false)"
               class="text-fv-neutral-400 bg-transparent hover:bg-fv-neutral-200 hover:text-fv-neutral-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-fv-neutral-600 dark:hover:text-white"

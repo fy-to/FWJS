@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect } from "vue";
+import { ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import type { Component } from "vue";
 import { useRest } from "../../composables/rest";
@@ -77,9 +77,16 @@ const getPage = async () => {
 };
 await getPage();
 useSeo(seo);
-watchEffect(() => {
-  getPage();
-});
+watch(
+  () => route.params.slug,
+  (ov, nv) => {
+    if (ov != nv) {
+      is404.value = false;
+      post.value = undefined;
+      getPage();
+    }
+  },
+);
 </script>
 
 <template>

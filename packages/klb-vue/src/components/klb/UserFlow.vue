@@ -32,7 +32,7 @@ type paramsType = {
   oauth?: string;
 };
 const shouldShowRealmStuff = computed(() => {
-  const realmFlags = response.value?.data.realm_flags;
+  const realmFlags = response.value?.data?.realm_flags;
   const oauthFirst = realmFlags ? realmFlags["oauth_first"] === true : false;
 
   return (
@@ -159,7 +159,9 @@ const userFlow = async (params: paramsType = { initial: false }) => {
       return;
     }
     if (response.value.data.Redirect && response.value.data.complete) {
-      router.push("/");
+      response.value.data.Redirect
+        ? router.push(response.value.data.Redirect)
+        : router.push("/");
       return;
     }
     formData.value = {
@@ -195,7 +197,7 @@ onMounted(async () => {
     <form
       @submit.prevent="userFlow()"
       v-if="!completed"
-      class="fws-login w-full min-w-[90vw] lg:min-w-[460px]"
+      class="fws-login w-full"
     >
       <div class="w-full">
         <h2
@@ -227,7 +229,7 @@ onMounted(async () => {
                 "
                 v-if="field.type && field.type == 'oauth2' && field.button"
                 href="javascript:void(0);"
-                class="flex items-center gap-2 justify-start btn neutral defaults w-full max-w-md mx-auto !font-semibold"
+                class="flex items-center gap-2 justify-start btn neutral defaults w-full mx-auto !font-semibold"
                 :style="`background: ${
                   field.button['background-color']
                 }; color: ${getContrastingTextColor(
@@ -251,7 +253,7 @@ onMounted(async () => {
             </template>
             <button
               type="button"
-              class="flex items-center gap-2 justify-start btn neutral defaults w-full max-w-md mx-auto !font-semibold"
+              class="flex items-center gap-2 justify-start btn neutral defaults w-full mx-auto !font-semibold"
               @click="
                 () => {
                   showEmail = true;
@@ -271,7 +273,7 @@ onMounted(async () => {
         </template>
         <div
           :class="`
-            ${shouldShowRealmStuff ? 'px-3 max-w-md mx-auto' : ''}
+            ${shouldShowRealmStuff ? 'px-3 mx-auto' : ''}
               `"
           v-if="shouldShowRealmStuff"
         >
