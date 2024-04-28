@@ -141,6 +141,12 @@ const userFlow = async (params: paramsType = { initial: false }) => {
   )) as UserFlow;
   if (response.value?.result == "success") {
     if (response.value.data.complete == true && response.value.data.user) {
+      if (response.value.data.Redirect && response.value.data.complete) {
+        response.value.data.Redirect
+          ? (window.location.href = response.value.data.Redirect)
+          : router.push("/");
+        return;
+      }
       store.setUser(response.value.data.user);
       if (props.onSuccess) {
         await props.onSuccess();
@@ -156,12 +162,6 @@ const userFlow = async (params: paramsType = { initial: false }) => {
     }
     if (response.value.data.url) {
       window.location.href = response.value.data.url;
-      return;
-    }
-    if (response.value.data.Redirect && response.value.data.complete) {
-      response.value.data.Redirect
-        ? router.push(response.value.data.Redirect)
-        : router.push("/");
       return;
     }
     formData.value = {

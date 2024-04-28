@@ -4,11 +4,11 @@ import type { BreadcrumbLink } from "../../types/types";
 withDefaults(
   defineProps<{
     nav: BreadcrumbLink[];
-    showHome: Boolean;
+    showHome?: Boolean;
   }>(),
   {
     nav: () => [],
-    showHome: () => true,
+    showHome: () => false,
   },
 );
 </script>
