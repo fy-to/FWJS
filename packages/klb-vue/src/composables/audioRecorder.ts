@@ -7,13 +7,13 @@ export function useAudioRecorder(
 ) {
   const audioContext = ref<AudioContext | null>(null);
   const mediaRecorder = ref<MediaRecorder | null>(null);
-  const audioChunks = ref<Blob[]>([]);
   const analyser = ref<AnalyserNode | null>(null);
   const recording = ref(false);
   const silenceStart = ref(performance.now());
   const isSilent = ref(false);
   const hasAudioBeenRecorded = ref(false);
   const shouldCallOnAudioAvailable = ref(false);
+  console.log("init object");
 
   const isRecording = () => {
     return mediaRecorder.value && mediaRecorder.value.state === "recording";
@@ -51,7 +51,7 @@ export function useAudioRecorder(
 
             if (!shouldCallOnAudioAvailable.value) {
               shouldCallOnAudioAvailable.value = true;
-              mediaRecorder.value?.requestData();
+              mediaRecorder.value?.stop(); // stop() will trigger the dataavailable
             }
           }
         }
@@ -72,7 +72,6 @@ export function useAudioRecorder(
     // Init everything
 
     recording.value = false;
-    audioChunks.value = [];
     hasAudioBeenRecorded.value = false;
     isSilent.value = false;
     silenceStart.value = performance.now();
@@ -91,32 +90,20 @@ export function useAudioRecorder(
 
     mediaRecorder.value.addEventListener("dataavailable", (event) => {
       if (event.data.size > 0) {
-        if (shouldCallOnAudioAvailable.value) {
-          // add the last chunk
-          audioChunks.value.push(event.data);
-          onAudioAvailableCallback(
-            audioChunks.value.length > 1
-              ? new Blob(audioChunks.value)
-              : audioChunks.value[0],
-          );
-          stopRecording();
-          audioChunks.value = [];
-          shouldCallOnAudioAvailable.value = false;
-          silenceStart.value = performance.now();
-        } else {
-          audioChunks.value.push(event.data);
-        }
+        onAudioAvailableCallback(event.data);
+        stopRecording();
+        shouldCallOnAudioAvailable.value = false;
+        silenceStart.value = performance.now();
       }
     });
 
-    mediaRecorder.value.start(200);
+    mediaRecorder.value.start();
     recording.value = true;
 
     processAudioStream();
   };
   const stopRecording = async () => {
     recording.value = false;
-    audioChunks.value = [];
     hasAudioBeenRecorded.value = false;
     isSilent.value = false;
     silenceStart.value = performance.now();
@@ -142,7 +129,6 @@ export function useAudioRecorder(
       analyser.value = null;
     }
     recording.value = false;
-    audioChunks.value = [];
   };
 
   const resumeRecording = () => {
