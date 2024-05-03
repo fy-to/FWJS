@@ -19,6 +19,7 @@ import {
   formatDate,
   formatDatetime,
   formatTimeago,
+  getContrastingTextColor,
 } from "./composables/templating";
 import { useRest } from "./composables/rest";
 export * from "./stores/serverRouter";
@@ -48,7 +49,7 @@ import DataTable from "./components/fws/DataTable.vue";
 import FilterData from "./components/fws/FilterData.vue";
 import CmsArticleBoxed from "./components/fws/CmsArticleBoxed.vue";
 import CmsArticleSingle from "./components/fws/CmsArticleSingle.vue";
-
+import UserOAuth2 from "./components/fws/UserOAuth2.vue";
 // Css
 import "./style.css";
 
@@ -71,6 +72,8 @@ function createFWS(): Plugin {
         app.config.globalProperties.$formatTimeago = formatTimeago;
         app.config.globalProperties.$formatDatetime = formatDatetime;
         app.config.globalProperties.$formatDate = formatDate;
+        app.config.globalProperties.$getContrastingTextColor =
+          getContrastingTextColor;
 
         app.component("ClientOnly", ClientOnly);
       }
@@ -87,6 +90,7 @@ declare module "vue" {
     $formatTimeago: typeof formatTimeago;
     $formatDatetime: typeof formatDatetime;
     $formatDate: typeof formatDate;
+    $getContrastingTextColor: typeof getContrastingTextColor;
   }
   export interface GlobalComponents {
     ClientOnly: typeof ClientOnly;
@@ -130,6 +134,7 @@ export {
 
   // FWS
   UserFlow,
+  UserOAuth2,
   DataTable,
   FilterData,
   CmsArticleBoxed,

@@ -61,6 +61,10 @@ export function useRest(): <ResultType extends APIResult>(
           JSON.parse(JSON.stringify(restResult)),
         );
       }
+      if (restResult.result === "error") {
+        eventBus.emit("rest-error", restResult);
+        return Promise.reject(restResult);
+      }
       return Promise.resolve(restResult);
     } catch (error) {
       const restError: ResultType = error as ResultType;

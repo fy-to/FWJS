@@ -20,8 +20,10 @@ const props = withDefaults(
     items: APIPaging;
     id: string;
     hash?: string;
+    showLegend?: boolean;
   }>(),
   {
+    showLegend: true,
     hash: "",
   },
 );
@@ -128,88 +130,97 @@ useFyHead({
     v-if="items && items.page_max > 1 && items.page_no"
   >
     <div class="paging-container">
-      <nav
-        aria-label="Pagination"
-        class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-      >
-        <a
-          href="javascript:void(0);"
-          @click="prev()"
-          v-if="items.page_no >= 2"
-          class="relative inline-flex items-center px-2 pt-2 pb-1.5 border text-sm font-medium border-fv-neutral-300 bg-fv-neutral-100 text-fv-neutral-500 hover:bg-fv-neutral-200 hover:text-fv-neutral-600 dark:border-fv-neutral-600 dark:bg-fv-neutral-800 dark:text-fv-neutral-200 dark:hover:bg-fv-neutral-800 dark:hover:text-fv-neutral-100"
-        >
-          <span class="sr-only">{{ $t("previous_paging") }}</span>
-          <ChevronLeftIcon class="w-4 h-4" />
-        </a>
-        <a
-          v-if="items.page_no - 2 > 1"
-          class="relative inline-flex items-center px-4 pt-2 pb-1.5 border text-sm font-medium bg-fv-neutral-100 border-fv-neutral-300 text-fv-neutral-500 hover:bg-fv-neutral-200 hover:text-fv-neutral-600 dark:bg-fv-neutral-800 dark:border-fv-neutral-600 dark:text-fv-neutral-200 dark:hover:bg-fv-neutral-800 dark:hover:text-fv-neutral-100"
-          href="javascript:void(0);"
-          @click="page(1)"
-        >
-          1
-        </a>
-        <span
-          v-if="items.page_no - 2 > 2"
-          class="relative inline-flex items-center px-2 pt-2 pb-1.5 border text-sm font-medium border-fv-neutral-300 bg-fv-neutral-100 text-fv-neutral-700 hover:text-fv-neutral-600 dark:border-fv-neutral-600 dark:bg-fv-neutral-800 dark:text-fv-neutral-700 dark:hover:text-fv-neutral-100"
-        >
-          ...
-        </span>
-        <template v-for="i in 2">
-          <a
-            v-if="items.page_no - (3 - i) >= 1"
-            class="relative inline-flex items-center px-4 pt-2 pb-1.5 border text-sm font-medium bg-fv-neutral-100 border-fv-neutral-300 text-fv-neutral-500 hover:bg-fv-neutral-200 hover:text-fv-neutral-600 dark:bg-fv-neutral-800 dark:border-fv-neutral-600 dark:text-fv-neutral-200 dark:hover:bg-fv-neutral-800 dark:hover:text-fv-neutral-100"
-            href="javascript:void(0);"
-            :key="`${i}-sm`"
-            @click="page(items.page_no - (3 - i))"
-          >
-            {{ items.page_no - (3 - i) }}
-          </a>
-        </template>
-        <a
-          href="#"
-          aria-current="page"
-          class="z-10 relative inline-flex items-center px-4 pt-2 pb-1.5 border text-sm font-medium font-bold bg-fv-primary-50 border-fv-primary-500 text-fv-primary-600 hover:text-fv-neutral-600 dark:bg-fv-primary-900 dark:border-fv-primary-500 dark:text-fv-primary-200 dark:hover:text-fv-neutral-100"
-        >
-          {{ items.page_no }}
-        </a>
-        <template v-for="i in 2">
-          <a
-            v-if="items.page_no + i <= items.page_max"
-            class="relative inline-flex items-center px-4 pt-2 pb-1.5 border text-sm font-medium bg-fv-neutral-100 border-fv-neutral-300 text-fv-neutral-500 hover:bg-fv-neutral-200 hover:text-fv-neutral-600 dark:bg-fv-neutral-800 dark:border-fv-neutral-600 dark:text-fv-neutral-200 dark:hover:bg-fv-neutral-800 dark:hover:text-fv-neutral-100"
-            href="javascript:void(0);"
-            :key="`${i}-md`"
-            @click="page(items.page_no + i)"
-          >
-            {{ items.page_no + i }}
-          </a>
-        </template>
-        <span
-          v-if="items.page_no + 2 < items.page_max - 1"
-          class="relative inline-flex items-center px-2 pt-2 pb-1.5 border text-sm font-medium border-fv-neutral-300 bg-fv-neutral-100 text-fv-neutral-700 hover:text-fv-neutral-600 dark:border-fv-neutral-600 dark:bg-fv-neutral-800 dark:text-fv-neutral-700 dark:hover:text-fv-neutral-100"
-        >
-          ...
-        </span>
-        <a
-          v-if="items.page_no + 2 < items.page_max"
-          class="relative inline-flex items-center px-4 pt-2 pb-1.5 border text-sm font-medium bg-fv-neutral-100 border-fv-neutral-300 text-fv-neutral-500 hover:bg-fv-neutral-200 hover:text-fv-neutral-600 dark:bg-fv-neutral-800 dark:border-fv-neutral-600 dark:text-fv-neutral-200 dark:hover:bg-fv-neutral-800 dark:hover:text-fv-neutral-100"
-          href="javascript:void(0);"
-          @click="page(items.page_max)"
-        >
-          {{ items.page_max }}
-        </a>
-        <a
-          href="javascript:void(0);"
-          @click="next()"
-          v-if="items.page_no < items.page_max - 1"
-          class="relative inline-flex items-center px-2 pt-2 pb-1.5 border text-sm font-medium border-fv-neutral-300 bg-fv-neutral-100 text-fv-neutral-500 hover:bg-fv-neutral-200 hover:text-fv-neutral-600 dark:border-fv-neutral-600 dark:bg-fv-neutral-800 dark:text-fv-neutral-200 dark:hover:bg-fv-neutral-800 dark:hover:text-fv-neutral-100"
-        >
-          <span class="sr-only">{{ $t("next_paging") }}</span>
-          <ChevronRightIcon class="w-4 h-4" />
-        </a>
+      <nav aria-label="Pagination">
+        <ul class="flex items-center -space-x-px h-8 text-sm">
+          <li v-if="items.page_no >= 2">
+            <a
+              href="javascript:void(0);"
+              @click="prev()"
+              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+            >
+              <span class="sr-only">{{ $t("previous_paging") }}</span>
+              <ChevronLeftIcon class="w-4 h-4" />
+            </a>
+          </li>
+          <li v-if="items.page_no - 2 > 1">
+            <a
+              class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+              href="javascript:void(0);"
+              @click="page(1)"
+            >
+              1
+            </a>
+          </li>
+          <li v-if="items.page_no - 2 > 2">
+            <div
+              v-if="items.page_no - 2 > 2"
+              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+            >
+              ...
+            </div>
+          </li>
+          <template v-for="i in 2">
+            <li v-if="items.page_no - (3 - i) >= 1" :key="`${i}-sm`">
+              <a
+                class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+                href="javascript:void(0);"
+                @click="page(items.page_no - (3 - i))"
+              >
+                {{ items.page_no - (3 - i) }}
+              </a>
+            </li>
+          </template>
+          <li>
+            <a
+              href="#"
+              aria-current="page"
+              class="z-10 flex items-center justify-center px-3 h-8 leading-tight text-primary-600 border border-primary-300 bg-primary-50 hover:bg-primary-100 hover:text-primary-700 dark:border-fv-neutral-700 dark:bg-fv-neutral-700 dark:text-white"
+            >
+              {{ items.page_no }}
+            </a>
+          </li>
+          <template v-for="i in 2">
+            <li :key="`${i}-md`" v-if="items.page_no + i <= items.page_max">
+              <a
+                class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+                href="javascript:void(0);"
+                @click="page(items.page_no + i)"
+              >
+                {{ items.page_no + i }}
+              </a>
+            </li>
+          </template>
+          <li v-if="items.page_no + 2 < items.page_max - 1">
+            <div
+              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+            >
+              ...
+            </div>
+          </li>
+          <li v-if="items.page_no + 2 < items.page_max">
+            <a
+              class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+              href="javascript:void(0);"
+              @click="page(items.page_max)"
+            >
+              {{ items.page_max }}
+            </a>
+          </li>
+          <li v-if="items.page_no < items.page_max - 1">
+            <a
+              href="javascript:void(0);"
+              @click="next()"
+              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+            >
+              <span class="sr-only">{{ $t("next_paging") }}</span>
+              <ChevronRightIcon class="w-4 h-4" />
+            </a>
+          </li>
+        </ul>
       </nav>
       <p
-        class="text-xs text-center italic mt-0.5 text-fv-neutral-700 dark:text-fv-neutral-300"
+        class="text-xs text-fv-neutral-700 dark:text-fv-neutral-400 pt-0.5"
+        v-if="showLegend"
       >
         {{
           $t("global_paging", {

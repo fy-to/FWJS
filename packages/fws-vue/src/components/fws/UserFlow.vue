@@ -176,16 +176,6 @@ const userFlow = async (params: paramsType = { initial: false }) => {
   eventBus.emit("login-loading", false);
 };
 
-const getContrastingTextColor = (backgroundColor: string) => {
-  const r = parseInt(backgroundColor.substring(1, 3), 16);
-  const g = parseInt(backgroundColor.substring(3, 5), 16);
-  const b = parseInt(backgroundColor.substring(5, 7), 16);
-
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-  return luminance > 0.5 ? "#000000" : "#FFFFFF";
-};
-
 onMounted(async () => {
   await userFlow({ initial: true });
 });
@@ -223,7 +213,7 @@ onMounted(async () => {
                 class="flex border border-fv-neutral-300 dark:border-fv-neutral-700 shadow items-center gap-2 justify-start btn neutral defaults w-full mx-auto !font-semibold"
                 :style="`background: ${
                   field.button['background-color']
-                }; color: ${getContrastingTextColor(
+                }; color: ${$getContrastingTextColor(
                   field.button['background-color'],
                 )}`"
               >

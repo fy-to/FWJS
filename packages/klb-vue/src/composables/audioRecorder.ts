@@ -1,7 +1,7 @@
 import { ref } from "vue";
 
 export function useAudioRecorder(
-  onAudioAvailableCallback: (chunks: Blob[]) => void,
+  onAudioAvailableCallback: (chunks: Blob) => void,
   dbTreshold: number,
   silenceMinLength: number,
 ) {
@@ -13,6 +13,7 @@ export function useAudioRecorder(
   const silenceStart = ref(performance.now());
   const isSilent = ref(false);
   const hasAudioBeenRecorded = ref(false);
+  const shouldCallOnAudioAvailable = ref(false);
 
   const isRecording = () => {
     return mediaRecorder.value && mediaRecorder.value.state === "recording";
@@ -47,10 +48,12 @@ export function useAudioRecorder(
         } else if (performance.now() - silenceStart.value > silenceMinLength) {
           if (hasAudioBeenRecorded.value) {
             // Only proceed if non-silence audio data has been recorded
-            onAudioAvailableCallback([...audioChunks.value]);
-            stopRecording();
+
+            if (!shouldCallOnAudioAvailable.value) {
+              shouldCallOnAudioAvailable.value = true;
+              mediaRecorder.value?.requestData();
+            }
           }
-          silenceStart.value = performance.now();
         }
       } else {
         isSilent.value = false;
@@ -88,7 +91,21 @@ export function useAudioRecorder(
 
     mediaRecorder.value.addEventListener("dataavailable", (event) => {
       if (event.data.size > 0) {
-        audioChunks.value.push(event.data);
+        if (shouldCallOnAudioAvailable.value) {
+          // add the last chunk
+          audioChunks.value.push(event.data);
+          onAudioAvailableCallback(
+            audioChunks.value.length > 1
+              ? new Blob(audioChunks.value)
+              : audioChunks.value[0],
+          );
+          stopRecording();
+          audioChunks.value = [];
+          shouldCallOnAudioAvailable.value = false;
+          silenceStart.value = performance.now();
+        } else {
+          audioChunks.value.push(event.data);
+        }
       }
     });
 
@@ -98,31 +115,34 @@ export function useAudioRecorder(
     processAudioStream();
   };
   const stopRecording = async () => {
-    if (recording.value) {
-      // destroy everything
+    recording.value = false;
+    audioChunks.value = [];
+    hasAudioBeenRecorded.value = false;
+    isSilent.value = false;
+    silenceStart.value = performance.now();
+    // destroy everything
 
-      if (mediaRecorder.value) {
-        mediaRecorder.value.ondataavailable = null;
-        mediaRecorder.value.stop();
-        const stream = mediaRecorder.value.stream;
-        if (stream) {
-          stream.getTracks().forEach((track) => {
-            track.stop();
-          });
-        }
-        mediaRecorder.value = null;
+    if (mediaRecorder.value) {
+      mediaRecorder.value.ondataavailable = null;
+      mediaRecorder.value.stop();
+      const stream = mediaRecorder.value.stream;
+      if (stream) {
+        stream.getTracks().forEach((track) => {
+          track.stop();
+        });
       }
-      if (audioContext.value) {
-        audioContext.value.close();
-        audioContext.value = null;
-      }
-      if (analyser.value) {
-        analyser.value.disconnect();
-        analyser.value = null;
-      }
-      recording.value = false;
-      audioChunks.value = [];
+      mediaRecorder.value = null;
     }
+    if (audioContext.value) {
+      audioContext.value.close();
+      audioContext.value = null;
+    }
+    if (analyser.value) {
+      analyser.value.disconnect();
+      analyser.value = null;
+    }
+    recording.value = false;
+    audioChunks.value = [];
   };
 
   const resumeRecording = () => {

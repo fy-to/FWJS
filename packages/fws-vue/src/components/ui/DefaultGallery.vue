@@ -201,7 +201,7 @@ onUnmounted(() => {
                 class="flex h-[100vh] relative flex-grow items-center justify-center gap-2"
               >
                 <div
-                  class="hidden lg:relative lg:flex w-10 flex-shrink-0 items-center justify-center"
+                  class="hidden lg:relative lg:flex w-10 flex-shrink-0 items-center justify-center flex-0"
                 >
                   <button
                     class="btn p-1 rounded-full"
@@ -248,7 +248,9 @@ onUnmounted(() => {
                       />
                     </template>
                   </div>
-                  <div class="flex-0 py-2 flex items-center justify-center">
+                  <div
+                    class="flex-0 py-2 flex items-center justify-center max-w-full w-full"
+                  >
                     <slot :value="images[modelValue]"></slot>
                   </div>
                 </div>

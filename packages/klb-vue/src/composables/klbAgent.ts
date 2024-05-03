@@ -34,6 +34,10 @@ export function useKlbAgent() {
       session.value = r.data.HIAgent_Session__;
       videoIdleURL.value = r.data.Idle_Url;
       bgImage.value = r.data.Background;
+      if (idleVideoElement.value) {
+        idleVideoElement.value.muted = true;
+        idleVideoElement.value.loop = true;
+      }
       setTimeout(() => {
         playIdleVideo();
       }, 1000);
@@ -43,36 +47,32 @@ export function useKlbAgent() {
       eventBus.emit("main-loading", false);
     }
   };
-  const onAudioAvailableCallback = (chunks: Blob[]) => {
-    const blob = new Blob(chunks, { type: "audio/webm" });
+  const onAudioAvailableCallback = (chunks: Blob) => {
     const filename = `audio_${Date.now()}.webm`; // Example filename with timestamp
-    const file = new File([blob], filename, { type: "audio/webm" });
+    const file = new File([chunks], filename, { type: "audio/webm" });
     upload.append(`HIAgent/Session/${session.value}:input`, file);
     upload.run();
   };
   const playIdleVideo = () => {
-    if (!videoElement.value) return;
-    videoElement.value.classList.add("hidden");
+    if (videoElement.value) {
+      videoElement.value.classList.add("hidden");
+    }
     if (!audioRecorder.isRecording()) {
       audioRecorder.startRecording();
     }
-    if (!idleVideoElement.value) return;
-
-    // @ts-ignore
-    if (idleVideoElement.value.src === videoIdleURL.value) {
-      if (idleVideoElement.value.paused) {
-        idleVideoElement.value.play().catch((e) => {
-          console.error("Failed to play idle video", e);
-        });
+    if (idleVideoElement.value) {
+      idleVideoElement.value.muted = true;
+      idleVideoElement.value.loop = true;
+      if (idleVideoElement.value.src !== videoIdleURL.value) {
+        idleVideoElement.value.src = videoIdleURL.value;
       }
-      return;
+
+      idleVideoElement.value.play().catch((e) => {
+        console.error("Failed to play idle video", e);
+      });
+    } else {
+      console.error("idle video element not found");
     }
-    idleVideoElement.value.src = videoIdleURL.value;
-    idleVideoElement.value.loop = true;
-    idleVideoElement.value.muted = true;
-    idleVideoElement.value.play().catch((e) => {
-      console.error("Failed to play idle video", e);
-    });
   };
   const setVideoElement = (stream: MediaStream) => {
     if (!stream) return;

@@ -25,4 +25,5 @@ interface User {
     GoogleID?: string | null;
     TwitterID?: string | null;
     GithubID?: string | null;
+    PatreonPledges?: Record<string, any>;
 }
