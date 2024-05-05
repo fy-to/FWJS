@@ -1,0 +1,50 @@
+.bb-base-container-base {
+  @apply w-full mx-auto container max-w-7xl;
+}
+.bb-base-container {
+  @apply bb-base-container-base  py-2 lg:py-4;
+}
+.bb-striped-bg {
+  background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(to left, rgba(53, 60, 72, 0.01), rgba(20, 33, 40, 0.01)) !important;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-space font-bold;
+  }
+  .h1 {
+    @apply text-4xl lg:text-5xl font-bold mb-1;
+  }
+  .h2 {
+    @apply text-2xl lg:text-3xl font-bold;
+  }
+
+  .h3 {
+    @apply text-xl lg:text-2xl font-bold;
+  }
+
+  .h4 {
+    @apply text-lg lg:text-xl font-bold;
+  }
+}
+
+.bb-main {
+  @apply bg-zinc-50 font-poppins antialiased dark:bg-zinc-950 dark:text-fv-neutral-200 bb-striped-bg;
+}
+.bb-kik {
+  @apply bg-gradient-to-r from-fv-neutral-50/[.5] to-fv-neutral-200/[.5] text-black/[.6] dark:text-white/[.6] dark:from-fv-neutral-800/[.2] dark:to-fv-neutral-900 p-1 rounded-lg border border-fv-neutral-300/[.4] dark:border-fv-neutral-700/[.4];
+}
+.bb-kikk {
+  @apply py-1.5 bg-white/[.45] dark:bg-black/[.45] shadow-sm rounded-lg text-black dark:text-white;
+}
+.bb-data {
+  @apply bg-white/[1] dark:bg-fv-neutral-900/[1] shadow-sm rounded-lg text-black dark:text-white border border-fv-neutral-300/[.4] dark:border-fv-neutral-700/[.4];
+}
+
+.bb-boxed-s {
+  @apply border border-fv-neutral-200 dark:border-fv-neutral-800 bg-fv-neutral-50/[.7] dark:bg-fv-neutral-950/[.7] rounded-md shadow-sm px-2 lg:px-4 py-4 relative z-[1];
+}

@@ -13,6 +13,7 @@
         "build:js": "pnpm -C packages/fws-js build",
         "build:vue": "pnpm -C packages/fws-vue lint:check --fix && pnpm -C packages/fws-vue build",
         "build:klb": "pnpm -C packages/klb-vue lint:check --fix && pnpm -C packages/klb-vue build",
+        "build:obelix": "pnpm -C packages/fws-obelix lint:check --fix && pnpm -C packages/fws-obelix build",
         "build": "pnpm run build:types && pnpm run build:js && pnpm run build:vue",
         "play": "pnpm -C packages/playground dev",
         "build:play": "pnpm run build && pnpm -C packages/playground build"

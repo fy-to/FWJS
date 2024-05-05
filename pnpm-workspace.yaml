@@ -3,4 +3,5 @@ packages:
   - 'packages/fws-js'
   - 'packages/fws-vue'
   - 'packages/klb-vue'
+  - 'packages/fws-obelix'
   - 'packages/playground'
