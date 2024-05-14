@@ -12,7 +12,7 @@ import { maxLength, minLength, required } from "@vuelidate/validators";
 import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useLocalStorage } from "@vueuse/core";
-import { MdEditor } from "md-editor-v3";
+//import { MdEditor } from "md-editor-v3";
 
 const posts = ref();
 const is404 = ref(false);
@@ -37,14 +37,15 @@ const state = reactive({
 const rules = {
   post: {
     Title: { required, minLength: minLength(4), maxLength: maxLength(100) },
-    Message: { required, minLength: minLength(4), maxLength: maxLength(3000) },
+    Message: { required, minLength: minLength(4) },
   },
   link: {
     Title: { required, minLength: minLength(3), maxLength: maxLength(100) },
-    Message: { required, minLength: minLength(3), maxLength: maxLength(3000) },
+    Message: { required, minLength: minLength(3) },
   },
 };
 const v$ = useVuelidate(rules, state);
+const currentEditID = ref();
 const eventBus = useEventBus();
 const store = useUserStore();
 const currentType = ref("post");
@@ -63,6 +64,34 @@ async function getPosts() {
   eventBus.emit("main-loading", false);
 }
 await getPosts();
+const getEditPost = async () => {
+  eventBus.emit("main-loading", true);
+
+  const data = await rest(
+    `ObelixBB/${route.params.uuid.toString()}/Post/${route.query.edit}`,
+    "GET",
+  ).catch(() => {
+    eventBus.emit("main-loading", false);
+    router.push(`/forums/${route.params.uuid}`);
+  });
+  if (data && data.result === "success") {
+    if (data.data.Post.PostType !== 1) {
+      eventBus.emit("main-loading", false);
+      router.push(`/forums/${route.params.uuid}`);
+    }
+    state.post.Title = data.data.Post.Title;
+    state.post.Message = data.data.Post.Message;
+    currentEditID.value = data.data.Post.ID;
+  } else {
+    eventBus.emit("main-loading", false);
+    router.push(`/forums/${route.params.uuid}`);
+  }
+  eventBus.emit("main-loading", false);
+};
+
+if (route.query.edit) {
+  getEditPost();
+}
 function openPostBB() {
   if (!isAuth.value) {
     router.push(`/login?return_to=/forums/${route.params.uuid}`);
@@ -75,22 +104,45 @@ const mode = computed(() => (isDark.value === "1" ? "dark" : "light"));
 async function post() {
   if (await v$.value[currentType.value].$validate()) {
     if (currentType.value === "post") {
-      const res = await rest(`ObelixBB/${route.params.uuid}`, "POST", {
-        Title: state.post.Title,
-        Message: state.post.Message,
-        IsNSFW: state.post.IsNSFW,
-        IsSpoiler: state.post.IsSpoiler,
-        PostTypeStr: state.post.Type,
-      });
-      if (res && res.result === "success") {
-        state.post.Title = "";
-        state.post.Message = "";
-        state.post.IsNSFW = false;
-        state.post.IsSpoiler = false;
-        v$.value.post.$reset();
-        eventBus.emit("postBBModal", false);
-        eventBus.emit("reloadBB");
-        router.push(`/forums/${route.params.uuid}/${res.data.Post.Slug}`);
+      if (!route.query.edit) {
+        const res = await rest(`ObelixBB/${route.params.uuid}`, "POST", {
+          Title: state.post.Title,
+          Message: state.post.Message,
+          IsNSFW: state.post.IsNSFW,
+          IsSpoiler: state.post.IsSpoiler,
+          PostTypeStr: state.post.Type,
+        });
+        if (res && res.result === "success") {
+          state.post.Title = "";
+          state.post.Message = "";
+          state.post.IsNSFW = false;
+          state.post.IsSpoiler = false;
+          v$.value.post.$reset();
+          eventBus.emit("postBBModal", false);
+          eventBus.emit("reloadBB");
+          router.push(`/forums/${route.params.uuid}/${res.data.Post.Slug}`);
+        }
+      } else {
+        const res = await rest(
+          `ObelixBB/_Patch/${route.params.uuid}`,
+          "PATCH",
+          {
+            Title: state.post.Title,
+            Message: state.post.Message,
+            ID: currentEditID.value,
+          },
+        );
+
+        if (res && res.result === "success") {
+          state.post.Title = "";
+          state.post.Message = "";
+          state.post.IsNSFW = false;
+          state.post.IsSpoiler = false;
+          v$.value.post.$reset();
+          eventBus.emit("postBBModal", false);
+          eventBus.emit("reloadBB");
+          router.push(`/forums/${route.params.uuid}/${res.data.Slug}`);
+        }
       }
     }
     if (currentType.value === "link") {
@@ -144,8 +196,7 @@ const nav = computed(() => {
       </div>
     </div>
     <div class="bb-kik mt-4">
-      {{ currentType }}
-      <div class="flex">
+      <div class="flex" v-if="!$route.query.edit">
         <button
           class="w-1/2 p-2 flex items-center justify-center gap-1"
           :class="{
@@ -215,7 +266,18 @@ const nav = computed(() => {
           class="mb-2"
         />
 
-        <MdEditor
+        <DefaultInput
+          id="message"
+          v-model="state.post.Message"
+          :error-vuelidate="v$.post.Message.$errors"
+          :label="$t('bb_message_label')"
+          :help="$t('bb_message_help')"
+          :placeholder="$t('bb_message_placeholder')"
+          type="textarea"
+          class="mb-2 bb-high"
+        />
+
+        <!--<MdEditor
           v-model="state.post.Message"
           :theme="mode"
           language="en-US"
@@ -232,7 +294,7 @@ const nav = computed(() => {
             'htmlPreview',
           ]"
           :no-upload-img="true"
-        />
+        />-->
 
         <div
           v-if="checkVuelidate(v$.post.Message.$errors)"
@@ -251,7 +313,10 @@ const nav = computed(() => {
           type="textarea"
           class="mb-2 btr"
         />
-        <div class="flex items-end justify-start gap-3 mt-3">
+        <div
+          class="flex items-end justify-start gap-3 mt-3"
+          v-if="!$route.query.edit"
+        >
           <div>
             <DefaultInput
               id="isNSFW"
@@ -269,16 +334,9 @@ const nav = computed(() => {
             />
           </div>
         </div>
-        <div class="flex items-center justify-between">
-          <button type="submit" class="btn primary defaults">
+        <div class="flex items-center justify-center">
+          <button type="submit" class="btn primary medium">
             {{ $t("bb_post_cta") }}
-          </button>
-          <button
-            type="reset"
-            class="btn neutral defaults"
-            @click="() => eventBus.emit('postBBModal', false)"
-          >
-            {{ $t("bb_cancel_cta") }}
           </button>
         </div>
       </form>

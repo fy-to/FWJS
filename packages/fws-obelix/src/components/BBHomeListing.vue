@@ -28,17 +28,13 @@ await getBoards();
 
 <template>
   <div class="bb-base-container px-1">
-    <div class="mb-1 px-1">
-      <DefaultBreadcrumb
-        :nav="[{ name: $t('bb_home_bc') }]"
-        :show-home="false"
-      />
-    </div>
     <div class="flex flex-col gap-3">
       <section
         v-for="(bg, index) in boardsGroupByGroupIndex"
         :key="`group_${index}`"
         class="flex shadow flex-col bb-kik"
+        itemscope
+        itemtype="http://schema.org/ItemList"
       >
         <div class="flex w-full px-4 text-xs font-medium uppercase my-1">
           <div class="flex-1 pr-0.5">
@@ -56,6 +52,11 @@ await getBoards();
             {{ $t("bb_th_last_post") }}
           </div>
         </div>
+        <meta
+          itemprop="itemListOrder"
+          content="http://schema.org/ItemListOrderDescending"
+        />
+
         <router-link
           v-for="(bb, idx2) in bg"
           :key="bb.UUID"
@@ -65,16 +66,21 @@ await getBoards();
             'mb-1': idx2 !== bg.length - 1,
           }"
           class="px-2 bb-kikk rounded-lg"
+          itemprop="itemListElement"
+          itemscope
+          itemtype="http://schema.org/ListItem"
         >
+          <metameta itemprop="position" :content="idx2" />
+          <meta itemprop="url" :content="`/forums/${bb.UUID}`" />
           <div
             class="mx-2 flex w-auto items-center divide-x divide-fv-neutral-900/[.2] dark:divide-fv-neutral-300/[.2]"
           >
             <div class="flex-1 pr-0.5">
-              <h2 class="h3">
+              <h2 class="h3 !text-left">
                 {{ bb.Name }}
               </h2>
               <p
-                class="text-sm text-white/[.6] dark:text-white/[.6] hidden lg:block"
+                class="text-sm text-black/[.6] dark:text-white/[.6] hidden lg:block"
               >
                 {{ bb.Description }}
               </p>
@@ -88,14 +94,15 @@ await getBoards();
             <div
               class="flex-0 grow-0 shrink 0 w-64 pl-0.5 hidden lg:block text-right"
             >
-              <div class="text-sm text-white/[.6] dark:text-white/[.6]">
+              <div class="text-sm text-black/[.6] dark:text-white/[.6]">
                 <div v-if="bb.LastPost && bb.LastPost.ID">
                   <RouterLink
                     :to="`/forums/${bb.UUID}/${bb.LastPost.Slug}`"
                     :title="bb.LastPost.Title"
                   >
                     <b>{{ bb.LastPost.Title }}</b> </RouterLink
-                  >, {{ $formatTimeago(bb.LastPost.CreatedAt.iso) }}
+                  >,
+                  <small>{{ $formatTimeago(bb.LastPost.CreatedAt.iso) }}</small>
                 </div>
                 <span v-else>
                   {{ $t("bb_no_post") }}

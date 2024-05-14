@@ -11,7 +11,7 @@ import {
   isServerRendered,
 } from "./composables/ssr";
 import { useSeo } from "./composables/seo";
-import { useUserStore, useUserCheck } from "./stores/user";
+import { useUserStore, useUserCheck, useUserCheckAsync } from "./stores/user";
 import { ClientOnly } from "./components/ssr/ClientOnly";
 import {
   cropText,
@@ -50,6 +50,9 @@ import FilterData from "./components/fws/FilterData.vue";
 import CmsArticleBoxed from "./components/fws/CmsArticleBoxed.vue";
 import CmsArticleSingle from "./components/fws/CmsArticleSingle.vue";
 import UserOAuth2 from "./components/fws/UserOAuth2.vue";
+import UserData from "./components/fws/UserData.vue";
+import UserProfile from "./components/fws/UserProfile.vue";
+import UserProfileStrict from "./components/fws/UserProfileStrict.vue";
 // Css
 import "./style.css";
 
@@ -109,6 +112,7 @@ export {
   useSeo,
   useUserStore,
   useUserCheck,
+  useUserCheckAsync,
   useRest,
 
   // Components
@@ -139,4 +143,7 @@ export {
   FilterData,
   CmsArticleBoxed,
   CmsArticleSingle,
+  UserData,
+  UserProfile,
+  UserProfileStrict,
 };

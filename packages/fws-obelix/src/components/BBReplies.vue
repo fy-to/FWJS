@@ -28,18 +28,19 @@ async function getReplies() {
   const data = await rest(
     `ObelixBB/${props.post.BoardUUID}/Replies/${props.post.Slug}`,
     "GET",
-  );
+  ).catch(() => {
+    replies.value = [];
+    eventBus.emit("main-loading", false);
+  });
   if (data && data.result === "success") {
     replies.value = data.data;
+  } else {
+    replies.value = [];
   }
   eventBus.emit("main-loading", false);
 }
-if (props.childs === null) {
-  getReplies();
-} else {
-  replies.value = props.childs;
-}
-async function upvote(id, type = "upvote", object = "post") {
+
+async function upvote(id: string, type = "upvote", object = "post") {
   eventBus.emit("main-loading", true);
   const _r = await rest(`ObelixBB/Vote/${type}/${object}/${id}`, "POST", {});
   if (_r && _r.result === "success") {
@@ -49,7 +50,12 @@ async function upvote(id, type = "upvote", object = "post") {
   eventBus.emit("main-loading", false);
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (props.childs === null) {
+    await getReplies();
+  } else {
+    replies.value = props.childs;
+  }
   eventBus.on("reloadBB", getReplies);
 });
 
@@ -59,8 +65,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <template id="replies">
+  <template v-if="replies && replies.length">
     <div
+      id="replies"
       v-for="reply in replies"
       :key="`${reply.ID}-${post.ID}-${reply.Depth}`"
       class="relative pl-6"
@@ -172,7 +179,7 @@ onUnmounted(() => {
         <BBReply
           v-if="repliesOpen[reply.ID]"
           :post="props.post"
-          :-in-reply-to="reply.ID"
+          :in-reply-to="reply.ID"
           class="-mt-5"
         />
         <BBReplies :post="props.post" :childs="reply.Childrens" />

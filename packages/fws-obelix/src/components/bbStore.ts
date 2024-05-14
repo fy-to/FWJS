@@ -21,7 +21,6 @@ export const useBBStore = defineStore("bbStore", {
       this.ForumsDownvotesPost = forumsDownvotesPost;
     },
     setForumsUpvotesComment(forumsUpvotesComment: number[]) {
-      console.log(forumsUpvotesComment);
       this.ForumsUpvotesComment = forumsUpvotesComment;
     },
     setForumsDownvotesComment(forumsDownvotesComment: number[]) {

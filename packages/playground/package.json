@@ -17,6 +17,7 @@
     "@fy-/fws-js": "workspace:*",
     "@fy-/fws-types": "workspace:*",
     "@fy-/fws-vue": "workspace:*",
+    "@fy-/fws-obelix": "workspace:*",
     "@fy-/head": "^0.0.39",
     "@headlessui/vue": "^1.7.16",
     "@heroicons/vue": "^2.1.1",

@@ -5,6 +5,7 @@ export interface ServerRouterState {
   _router: any | null;
   status: number;
   redirect?: string;
+  results: Record<number, any | undefined>;
 }
 
 export const useServerRouter = defineStore({
@@ -14,6 +15,7 @@ export const useServerRouter = defineStore({
       _router: null,
       status: 200,
       redirect: undefined,
+      results: {},
     }) as ServerRouterState,
   getters: {
     currentRoute: (state) => state._router!.currentRoute,
@@ -44,6 +46,18 @@ export const useServerRouter = defineStore({
     },
     forward() {
       this._router?.go(1);
+    },
+    addResult(id: number, result: any) {
+      this.results[id] = result;
+    },
+    hasResult(id: number) {
+      return this.results[id] !== undefined;
+    },
+    getResult(id: number) {
+      return this.results[id];
+    },
+    removeResult(id: number) {
+      delete this.results[id];
     },
   },
 });

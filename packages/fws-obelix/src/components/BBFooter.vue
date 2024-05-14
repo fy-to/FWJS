@@ -18,9 +18,9 @@ async function getStats() {
   }
 }
 const eventBus = useEventBus();
-onMounted(() => {
+onMounted(async () => {
+  await getStats();
   eventBus.on("refreshBBProfile", getStats);
-  getStats();
 });
 onUnmounted(() => {
   eventBus.off("refreshBBProfile", getStats);

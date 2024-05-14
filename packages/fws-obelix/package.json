@@ -1,6 +1,7 @@
 {
     "name": "@fy-/fws-obelix",
-    "version": "0.0.01",
+    "version": "0.0.36",
+    "description": "BB for FWS",
     "author": "Florian 'Fy' Gasquez <m@fy.to>",
     "license": "MIT",
     "repository": {
@@ -40,8 +41,7 @@
         "vue-router": "^4.1.x",
         "flowbite": "^2.3.x",
         "@fy-/fws-vue": "^0.3.x",
-        "markdown-it": "^14.x.x",
-        "md-editor-v3": "^4.x.x"
+        "markdown-it": "^14.x.x"
     },
     "scripts": {
         "clean": "rimraf dist",
@@ -53,10 +53,9 @@
     "devDependencies": {
         "@fy-/fws-js": "workspace:*",
         "@fy-/fws-types": "workspace:*",
+        "@fy-/fws-vue": "workspace:*",
         "@fy-/head": "^0.0.39",
-        "@fy-/fws-vue": "^0.3.67",
         "markdown-it": "^14.1.0",
-        "md-editor-v3": "^4.13.5",
         "@headlessui/vue": "^1.7.16",
         "@heroicons/vue": "^2.1.1",
         "@rushstack/eslint-patch": "^1.6.1",
@@ -88,7 +87,5 @@
         "vue-router": "^4.2.5",
         "vue-tsc": "^1.8.26",
         "timeago.js": "^4.0.2"
-
     }
-  
 }

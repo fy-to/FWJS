@@ -11,6 +11,7 @@ import { createPinia } from "pinia";
 import App from "./AppSuspender.vue";
 import routes from "./routes";
 import "./style.css";
+import "@fy-/fws-obelix/style.css";
 export const createApp = async (isSSR: boolean) => {
   const pinia = createPinia();
   const fws = createFWS();

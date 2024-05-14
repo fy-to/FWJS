@@ -1,7 +1,7 @@
 {
     "name": "@fy-/fws-types",
-    "version": "0.0.6",
-    "description": "Types for FWS - https://fy.to/@G",
+    "version": "0.0.8",
+    "description": "Types for FWS",
     "types": "./src/index.d.ts",
     "scripts": {
         "clean": "rimraf dist",

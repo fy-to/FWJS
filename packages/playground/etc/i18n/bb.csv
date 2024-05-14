@@ -1,0 +1,57 @@
+token,fr-FR,en-US
+bb_th_forum,Forum,Forum
+bb_th_post_count,Messages,Posts
+bb_th_reply_count,Réponses,Replies
+bb_th_last_post,Dernier message,Last post
+bb_home_bc,Accueil,Home
+bb_login_cta,Connectez-vous,Log in
+bb_register_cta,Inscrivez-vous,Register
+bb_welcome,Salut,Hi
+bb_whos_online,En ligne,Online
+bb_whos_online_desc,"Au total il y a <b>{{total}}</b> utilisateurs en ligne : <b>{{users}}</b> enregistrés, et <b>{{guests}}</b> invités <i>(d’après le nombre d’utilisateurs actifs ces 5 dernières minutes)</i>","There are a total of <b>{{total}}</b> users online : <b>{{users}}</b> registered, and <b>{{guests}}</b> guests <i>(based on users active over the past 5 minutes)</i>"
+bb_stats,Statistiques,Statistics
+bb_stats_desc,"<b>{{posts}}</b> sujets • <b>{{replies}}</b> réponses • <b>{{users}}</b> membres.","<b>{{posts}}</b> topics • <b>{{replies}}</b> replies • <b>{{users}}</b> members."
+bb_logout_cta,Déconnexion,Log out
+bb_posting_on,"Posting on <b>{{forum}}</b>","Posting on <b>{{forum}}</b>"
+bb_post_type_cta,Article,Post
+bb_link_type_cta,Lien,Link
+bb_title_label,Titre,Title
+bb_title_placeholder,"Entrez le titre de votre message...","Enter your post title..."
+bb_message_label,Message,Message
+bb_message_placeholder,"Entrez le contenu de votre message...","Enter your post content..."
+bb_is_nsfw,Contenu sensible,NSFW
+bb_is_spoiler,Spoiler,Spoiler
+bb_post_cta,Poster,Post
+bb_cancel_cta,Annuler,Cancel
+bb_new_post_cta,Nouvel article,New post
+bb_no_articles,Aucun article trouvé. Soyez le premier à poster dans <b>{{ name }}</b>!,No articles found. Be the first to post in <b>{{ name }}</b>!
+bb_sort_controversial_cta,Controversé,Controversial
+bb_sort_top_cta,Populaire,Popular
+bb_sort_new_cta,Nouveau,New
+bb_post_pinned,Épinglé,Pinned
+bb_post_nsfw,Contenu sensible,NSFW
+bb_post_spoiler,Spoiler,Spoiler
+bb_pin_cta,Épingler,Pin
+bb_unpin_cta,Désépingler,Unpin
+bb_delete_cta,Supprimer,Delete
+bb_no_post,n/a,n/a
+bb_comment_one,1 commentaire,1 comment
+bb_comment_other,{{count}} commentaires,{{count}} comments
+bb_unnsfw_cta,Non sensible,Not NSFW
+bb_nsfw_cta,Contenu sensible,NSFW
+bb_unspoiler_cta,Non spoiler,Not spoiler
+bb_spoiler_cta,Spoiler,Spoiler
+bb_unlock_cta,Déverrouiller,Unlock
+bb_lock_cta,Verrouiller,Lock
+bb_post_locked,Verrouillé,Locked
+bb_locked_msg_info,"Ce sujet est verrouillé. Vous ne pouvez pas y répondre.","This topic is locked. You cannot reply to it."
+bb_vuelidate_validator_required,Ce champ est requis.,This field is required.
+bb_vuelidate_validator_minLength,Le message est trop court.,The message is too short.
+bb_message_help,"Markdown est autorisé. Les balises HTML ne sont pas autorisées.","Markdown is allowed. HTML tags are not allowed."
+bb_view_one,1 vue,1 view
+bb_view_other,{{count}} vues,{{count}} views
+bb_user_messages_one,1 message,1 post
+bb_user_messages_other,{{count}} messages,{{count}} posts
+bb_user_likes_one,1 j'aime,1 like
+bb_user_likes_other,{{count}} j'aimes,{{count}} likes
+bb_edit_cta,Éditer,Edit

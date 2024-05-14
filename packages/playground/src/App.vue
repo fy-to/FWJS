@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import {
   i18nextPromise,
   useTranslation,
@@ -7,12 +7,17 @@ import {
   useUserStore,
   useUserCheck,
   DefaultLoader,
+  DefaultConfirm,
 } from "@fy-/fws-vue";
 import FWSLogo from "@/assets/logo.svg";
 import { I18nBackend, getLocale } from "@fy-/fws-js";
+import { useLocalStorage } from "@vueuse/core";
+import { MoonIcon, SunIcon } from "@heroicons/vue/24/outline";
 import EnUSImage from "@/assets/lang/en-US.svg";
 import FrFRImage from "@/assets/lang/fr-FR.svg";
 await i18nextPromise(I18nBackend, getLocale());
+const isDark = useLocalStorage("isDark", "1");
+
 const userStore = useUserStore();
 const locale = getLocale();
 const navOpen = ref(false);
@@ -29,7 +34,6 @@ const links = computed(() => {
       name: translate("nav_docs"),
       url: "/docs",
     },
-
   ];
   /*
   if (!isAuth.value) {
@@ -57,11 +61,29 @@ useSeo(
 if (!import.meta.env.SSR) {
   useUserCheck("/login", true);
 }
+watch(isDark, () => {
+  if (!import.meta.env.SSR) {
+    if (isDark.value === "1") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }
+});
+onMounted(() => {
+  // initFlowbite()
+  if (isDark.value === "1") {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+});
 </script>
 <template>
   <nav
-    class="flex justify-center h-20 bg-white dark:bg-fv-neutral-900 fixed w-full z-20 top-0 left-0 border-b border-fv-neutral-200 dark:border-fv-neutral-600"
+    class="flex justify-center h-20 bg-white dark:bg-fv-neutral-900 fixed w-full z-20 top-0 left-0 border-b border-fv-neutral-200 dark:border-fv-neutral-800"
   >
+    <DefaultConfirm />
     <div
       class="container xl:max-w-6xl mx-auto px-4 flex items-center justify-between"
     >
@@ -145,6 +167,13 @@ if (!import.meta.env.SSR) {
       <div
         class="hidden lg:flex items-center justify-center gap-2 pr-4 mt-8 lg:mt-0"
       >
+        <button
+          class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 dark:hover:text-white text-black dark:text-white"
+          @click="isDark = isDark === '1' ? '0' : '1'"
+        >
+          <SunIcon v-if="isDark === '1'" class="w-6 h-6" />
+          <MoonIcon v-else class="w-5 h-5" />
+        </button>
         <a
           :href="
             locale == 'en-US'
@@ -196,7 +225,9 @@ if (!import.meta.env.SSR) {
       </Suspense>
     </RouterView>
   </div>
-  <footer class="bg-white dark:bg-fv-neutral-900 border-t">
+  <footer
+    class="bg-white dark:bg-fv-neutral-900 border-t border-fv-neutral-200 dark:border-fv-neutral-800"
+  >
     <div class="mx-auto w-full max-w-screen-xl p-4">
       <div class="sm:flex sm:items-center sm:justify-between">
         <span

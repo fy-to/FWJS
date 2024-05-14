@@ -12,7 +12,6 @@ interface User {
     UpdatedAt: TimeResponse;
     LoggedAt?: TimeResponse;
     Email: string;
-    Username: string;
     Password: string;
     Firstname?: string | null;
     Lastname?: string | null;
@@ -21,9 +20,28 @@ interface User {
     RealmUUID: string;
     Realm: Realm; 
     Roles?: UserRole[];
-    FacebookID?: string | null;
-    GoogleID?: string | null;
-    TwitterID?: string | null;
-    GithubID?: string | null;
     PatreonPledges?: Record<string, any>;
+    AcceptedTerms: boolean;
+    EnabledNotifications: boolean;
+    EnabledEmails: boolean;
+    EnabledTrainingFromMyData: boolean;
+    EnabledDarkMode: boolean;
+    EnabledAdultContent: boolean;
+    UserProfile?: UserProfile;
+}
+
+interface UserProfile {
+    UUID: string;
+    Username: string;
+    Slug: string
+    Gender: string;
+    Bio: string;
+    Birthdate: TimeResponse;
+    PublicGender: boolean;
+    PublicBio: boolean;
+    PublicBirthdate: boolean;
+    HasUsernameAndSlug: boolean;
+    CreatedAt: TimeResponse;
+    UpdatedAt: TimeResponse;
+    AvatarUUID?: string;
 }

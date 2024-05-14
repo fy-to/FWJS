@@ -18,12 +18,15 @@
 
 .nav-website {
     @apply fixed items-start lg:relative flex-col lg:flex lg:flex-row justify-end lg:justify-between lg:items-center gap-4;
-    @apply bg-white right-0 w-56  lg:w-auto h-screen lg:h-auto bottom-0 top-[4.5rem] lg:top-0 transition	 duration-500 ease-in-out;
+    @apply right-0 w-56  lg:w-auto h-screen lg:h-auto bottom-0 top-[4.5rem] lg:top-0 transition	 duration-500 ease-in-out;
     @apply lg:translate-x-0 !important;
-    @apply translate-x-full;
+    @apply translate-x-full text-black dark:text-white;
 }
 
 .tx0 {
     @apply translate-x-0 !important;
 }
 
+body {
+    @apply bg-white dark:bg-black text-black dark:text-white;
+}

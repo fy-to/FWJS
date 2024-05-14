@@ -5,6 +5,7 @@ import { rest } from "@fy-/fws-js";
 import { computed } from "vue";
 import { RouteLocation, useRouter } from "vue-router";
 import { useServerRouter } from "./serverRouter";
+import { useEventBus } from "../composables/event-bus";
 
 export type UserStore = {
   user: User | null;
@@ -23,7 +24,6 @@ export const useUserStore = defineStore({
   actions: {
     async refreshUser() {
       const user: APIResult = await rest("User:get", "GET").catch((err) => {
-        console.log(err);
         this.setUser(null);
       });
       if (user.result === "success") {
@@ -47,6 +47,34 @@ export const useUserStore = defineStore({
     },
   },
 });
+
+export async function useUserCheckAsync(path = "/login", redirectLink = false) {
+  const userStore = useUserStore();
+  await userStore.refreshUser();
+  const isAuth = computed(() => userStore.isAuth);
+  const router = useServerRouter();
+
+  const checkUser = (route: RouteLocation) => {
+    if (route.meta.reqLogin) {
+      if (!isAuth.value) {
+        if (!redirectLink) router.push(path);
+        else {
+          router.status = 307;
+          router.push(`${path}?return_to=${route.path}`);
+        }
+      }
+    }
+  };
+
+  router._router.afterEach(async () => {
+    await userStore.refreshUser();
+  });
+  router._router.beforeEach((to: any) => {
+    if (to.fullPath != path) {
+      checkUser(to);
+    }
+  });
+}
 
 export function useUserCheck(path = "/login", redirectLink = false) {
   const userStore = useUserStore();

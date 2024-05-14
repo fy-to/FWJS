@@ -30,15 +30,16 @@ export interface LazyHead {
 export const useSeo = (seo: Ref<LazyHead>, initial: boolean = false) => {
   const currentUrl = `${getURL().Scheme}://${getURL().Host}${getURL().Path}`;
   const currentLocale = seo.value.locale || getLocale();
-
+  const actualCurrentURL = computed(() => seo.value.canonical || currentUrl);
   useFyHead({
     title: computed(() => seo.value.title),
+    scripts: seo.value.scripts,
     links: computed(() => {
       const links = [];
 
       links.push({
         rel: "canonical",
-        href: currentUrl,
+        href: actualCurrentURL.value,
         key: "canonical",
       });
 

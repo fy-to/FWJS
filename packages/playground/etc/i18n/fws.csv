@@ -52,3 +52,36 @@ fws_js_instance_count,JS Instances,Instances JS
 fws_memory_alloc,Memory Allocation,Allocation de mémoire
 fws_db_uptime,DB Uptime,Disponibilité de la base de données
 fws_ws_uptime,WS Uptime,Disponibilité du serveur
+fws_firstname_label,First Name,Prénom
+fws_firstname_help,(Private), (Privé)
+fws_lastname_label,Last Name,Nom
+fws_lastname_help,(Private), (Privé)
+fws_phone_label,Phone,Téléphone
+fws_phone_help,(Private), (Privé)
+fws_accepted_terms_label,Accepted Terms,Conditions acceptées
+fws_accepted_terms_help,"By checking this box, you agree to our terms and conditions.","En cochant cette case, vous acceptez nos conditions générales."
+fws_enabled_notifications_label,Enabled Notifications,Notifications activées
+fws_enabled_notifications_help,Receive notifications from our website.,Recevoir des notifications de notre site web.
+fws_enabled_emails_label,Enabled Emails,Emails activés
+fws_enabled_emails_help,Receive emails from our website.,Recevoir des emails de notre site web.
+fws_enabled_training_from_my_data_label,Enable AI Models Training,Activer l'entrainement des modèles IA
+fws_enabled_training_from_my_data_help,Allow our AI to train models using your data.,Permettre à notre IA d'entrainer des modèles en utilisant vos données.
+fws_enabled_dark_mode_label,Dark Mode,Mode sombre
+fws_enabled_dark_mode_help,Enable dark mode on our website.,Activer le mode sombre sur notre site web.
+fws_enabled_adult_content_label,Adult Content,Contenu pour adultes
+fws_enabled_adult_content_help,Enable adult content on our website.,Activer le contenu pour adultes sur notre site web.
+fws_save_user_cta,Save,Enregistrer
+fws_username_label,Username,Nom d'utilisateur
+fws_username_help,This will be your public username.,Ceci sera votre nom d'utilisateur public.
+fws_bio_label,Bio,Bio
+fws_gender_label,Gender,Genre
+fws_birthdate_label,Birthdate,Date de naissance
+fws_public_gender,Public Gender,Genre public
+fws_public_bio,Public Bio,Bio public
+fws_public_birthdate,Public Birthdate,Date de naissance publique
+fws_persona_phys_appearance_opt_female,Female,Femme
+fws_persona_phys_appearance_opt_male,Male,Homme
+fws_persona_phys_appearance_opt_non_binary,Non-binary,Non-binaire
+fws_upload_av_label,Upload Avatar,Importer un avatar
+fws_crop_av_cta,Crop Avatar,Recadrer l'avatar
+fws_crop_av_title,Drag the corners to crop your avatar,Faites glisser les coins pour recadrer votre avatar

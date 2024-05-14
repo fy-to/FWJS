@@ -15,6 +15,14 @@ export default [
     component: () => import("./pages/doc/IndexDoc.vue"),
   },
   {
+    path: "/test",
+    name: "test",
+    component: () => import("./pages/TestsPage.vue"),
+    meta: {
+      reqLogin: true,
+    },
+  },
+  {
     path: "/js_workers",
     name: "/js_workers",
     component: () => import("./pages/JSProcessPage.vue"),
@@ -33,6 +41,29 @@ export default [
     path: "/pages/:slug",
     name: "pages_post",
     component: () => import("./pages/CmsPage.vue"),
+  },
+  {
+    path: "/forums",
+    name: "bb_home",
+    component: () => import("@/pages/forums/BBHome.vue"),
+  },
+  {
+    path: "/forums/:uuid",
+    name: "bb_thead_home",
+    component: () => import("@/pages/forums/BBPage.vue"),
+  },
+  {
+    path: "/forums/:uuid/new",
+    name: "bn_new",
+    component: () => import("@/pages/forums/BBNew.vue"),
+    meta: {
+      reqLogin: true,
+    },
+  },
+  {
+    path: "/forums/:uuid/:slug",
+    name: "bb_home_slug",
+    component: () => import("@/pages/forums/BBSingle.vue"),
   },
   {
     name: "notFoundView",

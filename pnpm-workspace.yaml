@@ -1,7 +1,3 @@
 packages:
-  - 'packages/fws-types'
-  - 'packages/fws-js'
-  - 'packages/fws-vue'
-  - 'packages/klb-vue'
-  - 'packages/fws-obelix'
-  - 'packages/playground'
+  # all packages in direct subdirs of packages/
+  - 'packages/*'

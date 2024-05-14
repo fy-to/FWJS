@@ -7,6 +7,7 @@ module.exports = {
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
     "./node_modules/@fy-/fws-vue/**/*.{vue,js,ts,jsx,tsx,css}",
+    "./node_modules/@fy-/fws-obelix/**/*.{vue,js,ts,jsx,tsx,css}",
   ],
 
   darkMode: "class",

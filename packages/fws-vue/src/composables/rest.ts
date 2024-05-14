@@ -1,5 +1,5 @@
 import { RestMethod, RestParams, getMode, rest, stringHash } from "@fy-/fws-js";
-import { useRestStore } from "../stores/rest";
+import { useServerRouter } from "../stores/serverRouter";
 import { isServerRendered } from "./ssr";
 import { useEventBus } from "./event-bus";
 
@@ -31,7 +31,7 @@ export function useRest(): <ResultType extends APIResult>(
   method: RestMethod,
   params?: RestParams,
 ) => Promise<ResultType> {
-  const restStore = useRestStore();
+  const serverRouter = useServerRouter();
   const eventBus = useEventBus();
 
   return async <ResultType extends APIResult>(
@@ -39,13 +39,24 @@ export function useRest(): <ResultType extends APIResult>(
     method: RestMethod,
     params?: RestParams,
   ): Promise<ResultType> => {
-    const requestHash = stringHash(url + method + JSON.stringify(params));
+    let urlForHash: string = url;
+    try {
+      const urlParse = new URL(url);
+      urlForHash = urlParse.pathname + urlParse.search;
+    } catch (error) {
+      urlForHash = url;
+    }
+
+    const requestHash = stringHash(
+      urlForHash + method + JSON.stringify(params),
+    );
     if (isServerRendered()) {
-      const hasResult = restStore.getResult(requestHash);
+      const hasResult = serverRouter.getResult(requestHash);
       if (hasResult !== undefined) {
         const result = hasResult as ResultType;
-        restStore.removeResult(requestHash);
+        serverRouter.removeResult(requestHash);
         if (result.result === "error") {
+          eventBus.emit("main-loading", false);
           eventBus.emit("rest-error", result);
           return Promise.reject(result);
         }
@@ -56,12 +67,13 @@ export function useRest(): <ResultType extends APIResult>(
     try {
       const restResult: ResultType = await rest(url, method, params);
       if (getMode() === "ssr") {
-        restStore.addResult(
+        serverRouter.addResult(
           requestHash,
           JSON.parse(JSON.stringify(restResult)),
         );
       }
       if (restResult.result === "error") {
+        eventBus.emit("main-loading", false);
         eventBus.emit("rest-error", restResult);
         return Promise.reject(restResult);
       }
@@ -69,9 +81,9 @@ export function useRest(): <ResultType extends APIResult>(
     } catch (error) {
       const restError: ResultType = error as ResultType;
       if (getMode() === "ssr") {
-        restStore.addResult(requestHash, restError);
+        serverRouter.addResult(requestHash, restError);
       }
-
+      eventBus.emit("main-loading", false);
       eventBus.emit("rest-error", restError);
       return Promise.resolve(restError);
     }

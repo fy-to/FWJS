@@ -69,6 +69,15 @@ const page = (page: number) => {
   });
 };
 
+const currentUrl = computed(() => {
+  /*
+  const url = getURL();
+  return `${url.Path}?page=`;
+  */
+  // user router url instead of getURL
+  return `${history.currentRoute.path}?page=`;
+});
+
 const checkPageNumber = (page: number = 1) => {
   prevNextSeo.value.next = undefined;
   prevNextSeo.value.prev = undefined;
@@ -133,23 +142,22 @@ useFyHead({
       <nav aria-label="Pagination">
         <ul class="flex items-center -space-x-px h-8 text-sm">
           <li v-if="items.page_no >= 2">
-            <a
-              href="javascript:void(0);"
+            <button
+              type="button"
               @click="prev()"
               class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
             >
               <span class="sr-only">{{ $t("previous_paging") }}</span>
               <ChevronLeftIcon class="w-4 h-4" />
-            </a>
+            </button>
           </li>
           <li v-if="items.page_no - 2 > 1">
-            <a
+            <router-link
               class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
-              href="javascript:void(0);"
-              @click="page(1)"
+              :to="currentUrl + '1'"
             >
               1
-            </a>
+            </router-link>
           </li>
           <li v-if="items.page_no - 2 > 2">
             <div
@@ -160,34 +168,37 @@ useFyHead({
             </div>
           </li>
           <template v-for="i in 2">
-            <li v-if="items.page_no - (3 - i) >= 1" :key="`${i}-sm`">
-              <a
+            <li
+              v-if="items.page_no - (3 - i) >= 1"
+              :key="`page-${items.page_no + i}`"
+            >
+              <router-link
                 class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
-                href="javascript:void(0);"
-                @click="page(items.page_no - (3 - i))"
+                :to="currentUrl + (items.page_no - (3 - i))"
               >
                 {{ items.page_no - (3 - i) }}
-              </a>
+              </router-link>
             </li>
           </template>
           <li>
-            <a
-              href="#"
+            <div
               aria-current="page"
               class="z-10 flex items-center justify-center px-3 h-8 leading-tight text-primary-600 border border-primary-300 bg-primary-50 hover:bg-primary-100 hover:text-primary-700 dark:border-fv-neutral-700 dark:bg-fv-neutral-700 dark:text-white"
             >
               {{ items.page_no }}
-            </a>
+            </div>
           </li>
           <template v-for="i in 2">
-            <li :key="`${i}-md`" v-if="items.page_no + i <= items.page_max">
-              <a
+            <li
+              :key="`page-x-${items.page_no + i}`"
+              v-if="items.page_no + i <= items.page_max"
+            >
+              <router-link
                 class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
-                href="javascript:void(0);"
-                @click="page(items.page_no + i)"
+                :to="currentUrl + (items.page_no + i)"
               >
                 {{ items.page_no + i }}
-              </a>
+              </router-link>
             </li>
           </template>
           <li v-if="items.page_no + 2 < items.page_max - 1">
@@ -198,23 +209,22 @@ useFyHead({
             </div>
           </li>
           <li v-if="items.page_no + 2 < items.page_max">
-            <a
+            <router-link
               class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
-              href="javascript:void(0);"
-              @click="page(items.page_max)"
+              :to="currentUrl + items.page_max"
             >
               {{ items.page_max }}
-            </a>
+            </router-link>
           </li>
           <li v-if="items.page_no < items.page_max - 1">
-            <a
-              href="javascript:void(0);"
+            <button
               @click="next()"
+              type="button"
               class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
             >
               <span class="sr-only">{{ $t("next_paging") }}</span>
               <ChevronRightIcon class="w-4 h-4" />
-            </a>
+            </button>
           </li>
         </ul>
       </nav>
