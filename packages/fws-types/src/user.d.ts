@@ -28,6 +28,8 @@ interface User {
     EnabledDarkMode: boolean;
     EnabledAdultContent: boolean;
     UserProfile?: UserProfile;
+    IsPremium: boolean;
+    UserService?: string;
 }
 
 interface UserProfile {

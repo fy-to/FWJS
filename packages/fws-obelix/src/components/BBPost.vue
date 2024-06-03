@@ -11,9 +11,11 @@ import {
   EyeIcon,
   EllipsisVerticalIcon,
   PaperClipIcon,
+  HeartIcon,
 } from "@heroicons/vue/24/solid";
 import BBReply from "./BBReply.vue";
-import BBReplies from "./BBReplies.vue";
+import BBRepliesClassic from "./BBRepliesClassic.vue";
+import RepliesClassic from "./RepliesClassic.vue";
 import { useBBStore } from "./bbStore";
 
 const md = markdownit();
@@ -115,7 +117,12 @@ watch(isAuth, () => {
 });
 onMounted(() => {
   mounted.value = true;
-  if (isAuth.value && props.isSingle) {
+  if (
+    isAuth.value &&
+    props.isSingle &&
+    userMenu.value &&
+    userMenuButton.value
+  ) {
     useMenuInstance.value = new Dropdown(userMenu.value, userMenuButton.value, {
       offsetDistance: -5,
     });
@@ -129,8 +136,10 @@ onMounted(() => {
     :to="isSingle ? undefined : `/forums/${$route.params.uuid}/${post.Slug}`"
     class="gap-1 bb-container-base !rounded-none block"
     :itemid="`/forums/${$route.params.uuid}/${post.Slug}`"
-    itemscope
-    itemtype="https://schema.org/DiscussionForumPosting"
+    :itemscope="isSingle ? true : undefined"
+    :itemtype="
+      isSingle ? 'https://schema.org/DiscussionForumPosting' : undefined
+    "
     :class="{
       '!border-b-0': !isSingle && idx !== total,
       'bb-data': !isSingle,
@@ -319,7 +328,7 @@ onMounted(() => {
               }}
             </div>
             <div class="flex gap-2 lg:w-full justify-start items-center">
-              <ChatBubbleLeftRightIcon class="w-4 h-4" />
+              <HeartIcon class="w-4 h-4" />
               {{ $t("bb_user_likes", { count: post.User.ForumsLikesCount }) }}
             </div>
             <div class="flex gap-2 lg:w-full justify-start items-center">
@@ -486,24 +495,63 @@ onMounted(() => {
                 </span>
               </div>
             </RouterLink>
+            <div>•</div>
+            <div itemprop="datePublished">
+              <time :datetime="post.CreatedAt.iso">{{
+                $formatDate(post.CreatedAt.iso)
+              }}</time>
+            </div>
           </div>
         </div>
       </div>
-      <h2 class="h3 px-1 mt-5">
-        {{
-          $t("bb_comment", {
-            count: post.ReplyCount ? post.ReplyCount : 0,
-          })
-        }}
-      </h2>
-      <div v-if="isSingle" class="px-2 bb-data !rounded-none mt-3">
-        <BBReply v-if="isSingle" :post="post" :posts="posts" />
 
-        <BBReplies :post="post" />
+      <div id="replies">
+        <BBRepliesClassic
+          v-if="isSingle"
+          :post="post"
+          :posts="posts"
+          :rank-component="rankComponent"
+          :avatar-component="avatarComponent"
+        />
       </div>
+      <!--
+      <div v-if="isSingle" class="px-2 bb-data !rounded-none mt-3">
+         <BBReplies :post="post" /> 
+      </div>
+      -->
     </template>
     <template v-else>
-      <div class="flex gap-2 items-center py-1.5">
+      <article
+        class="flex gap-2 items-center py-1.5"
+        itemtype="https://schema.org/DiscussionForumPosting"
+        itemscope
+      >
+        <meta
+          itemprop="url"
+          :content="`/forums/${$route.params.uuid}/${post.Slug}`"
+        />
+        <meta itemprop="headline" :content="post.Title" />
+        <meta
+          v-if="post.PostType === 3"
+          itemprop="image"
+          :content="post.LinkData"
+        />
+        <meta
+          v-else-if="post.LinkType === 'yt'"
+          itemprop="video"
+          :content="`https://www.youtube.com/embed/${post.LinkData}`"
+        />
+        <meta v-else itemprop="articleBody" :content="post.Message" />
+        <meta itemprop="datePublished" :content="post.CreatedAt.iso" />
+        <div
+          class="absolute opacity-0 w-0 h-0 overflow-hidden"
+          itemprop="author"
+          itemscope
+          itemtype="https://schema.org/Person"
+        >
+          <meta itemprop="name" :content="post.User.UserProfile.Username" />
+        </div>
+
         <div class="flex items-center justify-center pl-3 pr-1">
           <component
             :is="avatarComponent"
@@ -528,7 +576,7 @@ onMounted(() => {
                 'h3 gap-2 items-center flex ': !isSingle,
               }"
             >
-              <span itemprop="headline">{{ post.Title }}</span>
+              <span>{{ post.Title }}</span>
 
               <div class="hidden lg:flex items-center gap-1">
                 <span
@@ -578,21 +626,16 @@ onMounted(() => {
           <div class="mt-0">
             <div class="text-white/[.5] text-xs">
               Posted by
-              <span
-                itemprop="author"
-                itemscope
-                itemtype="https://schema.org/Person"
-              >
-                <b itemprop="name"
-                  >@{{
-                    post.User?.UserProfile?.Username
-                      ? post.User.UserProfile.Username
-                      : "Anonymous"
-                  }}</b
-                >
+              <span itemtype="https://schema.org/Person" itemprop="author">
+                <b itemprop="name">{{
+                  post.User?.UserProfile?.Username
+                    ? post.User.UserProfile.Username
+                    : "Anonymous"
+                }}</b>
               </span>
+
               on
-              <time itemprop="datePublished" :datetime="post.CreatedAt.iso">{{
+              <time :datetime="post.CreatedAt.iso">{{
                 $formatDate(post.CreatedAt.iso)
               }}</time
               >.
@@ -715,14 +758,21 @@ onMounted(() => {
             </div>
           </RouterLink>
         </div>
-        <div class="hidden lg:flex gap-4 items-center pr-3 w-44">
+        <div
+          class="hidden lg:flex gap-4 items-center justify-between pr-3 w-44"
+        >
           <div v-if="post.LastReplyID" class="text-sm">
-            {{ $formatTimeago(post.LastReply.CreatedAt.unixms) }}<br />
-            @{{
-              post.LastReply.User?.UserProfile?.Username
-                ? post.LastReply.User.UserProfile.Username
-                : "Anonymous"
-            }}
+            <span itemprop="dateModified">
+              {{ $formatTimeago(post.LastReply.CreatedAt.unixms) }}
+            </span>
+            <br />
+            <span>
+              @{{
+                post.LastReply.User?.UserProfile?.Username
+                  ? post.LastReply.User.UserProfile.Username
+                  : "Anonymous"
+              }}</span
+            >
           </div>
           <component
             :is="avatarComponent"
@@ -733,8 +783,7 @@ onMounted(() => {
                 : post.LastReply.User.UUID
             "
             :user="post.LastReply.User"
-            class="w-10 h-10"
-            cls="w-10 h-10"
+            class="w-10 h-10 shrink-0 grow-0"
           />
           <div
             v-if="!post.LastReplyID"
@@ -743,7 +792,7 @@ onMounted(() => {
             n/a
           </div>
         </div>
-      </div>
+      </article>
     </template>
   </component>
 </template>

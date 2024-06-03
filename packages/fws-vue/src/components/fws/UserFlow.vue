@@ -120,9 +120,6 @@ const userFlow = async (params: paramsType = { initial: false }) => {
     },
   )) as UserFlow;
   if (response.value?.result == "success") {
-    if (props.onSuccess) {
-      await props.onSuccess();
-    }
     if (response.value.data.complete == true && response.value.data.user) {
       store.setUser(response.value.data.user);
       const actualReturnTo = response.value.data.redirect
@@ -130,11 +127,19 @@ const userFlow = async (params: paramsType = { initial: false }) => {
         : returnTo.value;
       session.value = null;
       if (isExternalUrl(actualReturnTo)) {
-        window.location.href = actualReturnTo;
+        if (props.onSuccess) {
+          await props.onSuccess();
+        } else {
+          window.location.href = actualReturnTo;
+        }
       } else {
-        const routeExists = router.resolve(actualReturnTo);
-        if (routeExists.matched.length != 0) router.push(actualReturnTo);
-        else window.location.href = actualReturnTo;
+        if (props.onSuccess) {
+          await props.onSuccess();
+        } else {
+          const routeExists = router.resolve(actualReturnTo);
+          if (routeExists.matched.length != 0) router.push(actualReturnTo);
+          else window.location.href = actualReturnTo;
+        }
       }
       return;
     }

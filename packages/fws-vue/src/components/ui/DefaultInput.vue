@@ -28,6 +28,7 @@ const props = withDefaults(
     color?: string;
     errorVuelidate?: ErrorObject[];
     disabled?: boolean;
+    maxLengthPerTag?: number;
   }>(),
   {
     showLabel: true,
@@ -37,6 +38,7 @@ const props = withDefaults(
     checkboxTrueValue: true,
     checkboxFalseValue: false,
     disabled: false,
+    maxLengthPerTag: 0,
   },
 );
 const translate = useTranslation();
@@ -169,6 +171,7 @@ defineExpose({ focus, blur, getInputRef });
             :color="color"
             :error="checkErrors"
             :help="help"
+            :max-lenght-per-tag="maxLengthPerTag"
           />
         </div>
         <div class="group relative" v-else-if="type == 'textarea'">
@@ -241,6 +244,7 @@ defineExpose({ focus, blur, getInputRef });
           v-model="modelCheckbox"
           :true-value="checkboxTrueValue"
           :false-value="checkboxFalseValue"
+          :disabled="disabled"
           class="sr-only peer"
           @focus="handleFocus"
           @blur="handleBlur"
@@ -275,6 +279,7 @@ defineExpose({ focus, blur, getInputRef });
             :true-value="checkboxTrueValue"
             :false-value="checkboxFalseValue"
             v-model="modelCheckbox"
+            :disabled="disabled"
             class="w-4 h-4 text-fv-primary-600 bg-fv-neutral-100 border-fv-neutral-300 rounded focus:ring-fv-primary-500 dark:focus:ring-fv-primary-600 dark:ring-offset-fv-neutral-800 dark:focus:ring-offset-fv-neutral-800 focus:ring-2 dark:bg-fv-neutral-700 dark:border-fv-neutral-600"
           />
         </div>

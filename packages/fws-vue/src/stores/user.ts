@@ -65,6 +65,7 @@ export async function useUserCheckAsync(path = "/login", redirectLink = false) {
       }
     }
   };
+  checkUser(router.currentRoute);
 
   router._router.afterEach(async () => {
     await userStore.refreshUser();
@@ -92,7 +93,6 @@ export function useUserCheck(path = "/login", redirectLink = false) {
       }
     }
   };
-
   userStore.refreshUser().then(() => {
     if (router.currentRoute) {
       checkUser(router.currentRoute);

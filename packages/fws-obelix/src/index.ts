@@ -5,7 +5,7 @@ import BBPost from "./components/BBPost.vue";
 import BBPostNew from "./components/BBPostNew.vue";
 import BBReplies from "./components/BBReplies.vue";
 import BBReply from "./components/BBReply.vue";
-
+import BBRepliesClassic from "./components/BBRepliesClassic.vue";
 export {
   BBFooter,
   BBHome,
@@ -13,5 +13,6 @@ export {
   BBPost,
   BBPostNew,
   BBReplies,
+  BBRepliesClassic,
   BBReply,
 };

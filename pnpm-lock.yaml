@@ -155,10 +155,6 @@ importers:
         version: 5.4.5
 
   packages/fws-vue:
-    dependencies:
-      flowbite:
-        specifier: ^2.3.x
-        version: 2.3.0
     devDependencies:
       '@fy-/fws-js':
         specifier: workspace:*
@@ -217,6 +213,9 @@ importers:
       eslint-plugin-vue:
         specifier: ^9.19.2
         version: 9.25.0(eslint@8.57.0)
+      flowbite:
+        specifier: ^2.3.0
+        version: 2.3.0
       i18next:
         specifier: ^23.7.11
         version: 23.11.3
@@ -1464,7 +1463,6 @@ packages:
 
   /@popperjs/core@2.11.8:
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
-    dev: false
 
   /@rollup/plugin-replace@5.0.5:
     resolution: {integrity: sha512-rYO4fOi8lMaTg/z5Jb+hKnrHHVn8j2lwkqwyS4kTRhKyWOLf2wST2sWXr4WzWiTcoHTp2sTjqUbqIj2E39slKQ==}
@@ -3237,7 +3235,6 @@ packages:
     dependencies:
       '@popperjs/core': 2.11.8
       mini-svg-data-uri: 1.4.4
-    dev: false
 
   /foreground-child@3.1.1:
     resolution: {integrity: sha512-TMKDUnIte6bfb5nWv7V/caI169OHgvwjb7V4WkeUvbQQdjr5rWKqHFiKWb/fcOwB+CzBT+qbWjvj+DVwRskpIg==}

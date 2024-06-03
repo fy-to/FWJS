@@ -5,17 +5,30 @@ import { useUserStore } from "../../stores/user";
 import { useRest } from "../../composables/rest";
 import { useEventBus } from "../../composables/event-bus";
 import { computed, reactive, watchEffect, ref } from "vue";
-import { required } from "@vuelidate/validators";
+import { required, helpers } from "@vuelidate/validators";
+import { useTranslation } from "../../composables/translations";
 
 const rest = useRest();
 const props = withDefaults(
   defineProps<{
     onCompleted?: (data: any) => void;
+    termsText?: string;
+    force18?: boolean;
   }>(),
   {
     onCompleted: () => {},
+    termsText: "",
+    force18: false,
   },
 );
+const ageValidator = (value: any) => {
+  const today = new Date();
+  const birthDate = new Date(value);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+  return age >= 18 && age <= 2020;
+};
 const userStore = useUserStore();
 const userData = computed(() => userStore.user);
 const eventBus = useEventBus();
@@ -39,6 +52,7 @@ watchEffect(() => {
     AcceptedTerms: userData.value?.AcceptedTerms || true,
   };
 });
+const translate = useTranslation();
 const rules = {
   userData: {
     Username: {
@@ -48,7 +62,13 @@ const rules = {
       required: required,
     },
     Birthdate: {
-      required: required,
+      required,
+      ageValidator: props.force18
+        ? helpers.withMessage(
+            translate("fws_under_18_error_message"),
+            ageValidator,
+          )
+        : undefined,
     },
     AcceptedTerms: {
       required: required,
@@ -120,6 +140,7 @@ const patchUser = async () => {
       :help="$t('fws_accepted_terms_help')"
       :error-vuelidate="v$.userData.AcceptedTerms.$errors"
     />
+    <p class="terms-box" v-if="props.termsText">{{ props.termsText }}</p>
 
     <div class="flex">
       <button type="submit" class="btn defaults primary">

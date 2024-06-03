@@ -43,6 +43,7 @@ import DefaultGallery from "./components/ui/DefaultGallery.vue";
 import DefaultDropdown from "./components/ui/DefaultDropdown.vue";
 import DefaultDropdownLink from "./components/ui/DefaultDropdownLink.vue";
 import DefaultTagInput from "./components/ui/DefaultTagInput.vue";
+import DefaultNotif from "./components/ui/DefaultNotif.vue";
 // Components/FWS
 import UserFlow from "./components/fws/UserFlow.vue";
 import DataTable from "./components/fws/DataTable.vue";
@@ -135,6 +136,7 @@ export {
   DefaultDropdown,
   DefaultDropdownLink,
   DefaultTagInput,
+  DefaultNotif,
 
   // FWS
   UserFlow,

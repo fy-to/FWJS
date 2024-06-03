@@ -11,7 +11,7 @@ import {
 import type { APIPaging } from "../../composables/rest";
 import { useEventBus } from "../../composables/event-bus";
 import { useServerRouter } from "../../stores/serverRouter";
-import { useRoute } from "vue-router";
+import { LocationQueryValue, RouteLocationRaw, useRoute } from "vue-router";
 import { useFyHead } from "@fy-/head";
 import { hasFW, getURL } from "@fy-/fws-js";
 
@@ -42,33 +42,35 @@ const next = () => {
   const page = props.items.page_no + 1;
 
   if (!isNewPage(page)) return;
-
+  const newQuery = { ...route.query };
+  newQuery.page = page.toString();
   history.push({
     path: history.currentRoute.path,
-    query: { page: page.toString() },
-    hash: props.hash != "" ? props.hash : undefined,
+    query: newQuery,
+    hash: props.hash != "" ? "#" + props.hash : undefined,
   });
 };
 const prev = () => {
   const page = props.items.page_no - 1;
   if (!isNewPage(page)) return;
-
+  const newQuery = { ...route.query };
+  newQuery.page = page.toString();
   history.push({
     path: history.currentRoute.path,
-    query: { page: page.toString() },
-    hash: props.hash != "" ? props.hash : undefined,
-  });
-};
-const page = (page: number) => {
-  if (!isNewPage(page)) return;
-
-  history.push({
-    path: history.currentRoute.path,
-    query: { page: page.toString() },
-    hash: props.hash != "" ? props.hash : undefined,
+    query: newQuery,
+    hash: props.hash != "" ? "#" + props.hash : undefined,
   });
 };
 
+const page = (page: number): RouteLocationRaw => {
+  const newQuery = { ...route.query };
+  newQuery.page = page.toString();
+  return {
+    path: history.currentRoute.path,
+    query: newQuery,
+    hash: props.hash != "" ? "#" + props.hash : undefined,
+  };
+};
 const currentUrl = computed(() => {
   /*
   const url = getURL();
@@ -100,9 +102,7 @@ const checkPageNumber = (page: number = 1) => {
 pageWatcher.value = watch(
   () => route.query.page,
   (v) => {
-    if (props.hash == "" || route.hash == props.hash) {
-      eventBus.emit(`${props.id}GoToPage`, v ? v : 1);
-    }
+    eventBus.emit(`${props.id}GoToPage`, v ? v : 1);
   },
 );
 onMounted(() => {
@@ -129,6 +129,15 @@ useFyHead({
         rel: "prev",
         key: "prev",
       });
+    // add canonical
+    const url = getURL();
+    if (url) {
+      result.push({
+        href: `${url.Scheme}://${url.Host}${url.Path}`,
+        rel: "canonical",
+        key: "canonical",
+      });
+    }
     return result;
   }),
 });
@@ -154,7 +163,7 @@ useFyHead({
           <li v-if="items.page_no - 2 > 1">
             <router-link
               class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
-              :to="currentUrl + '1'"
+              :to="page(1)"
             >
               1
             </router-link>
@@ -174,7 +183,7 @@ useFyHead({
             >
               <router-link
                 class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
-                :to="currentUrl + (items.page_no - (3 - i))"
+                :to="page(items.page_no - (3 - i))"
               >
                 {{ items.page_no - (3 - i) }}
               </router-link>
@@ -195,7 +204,7 @@ useFyHead({
             >
               <router-link
                 class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
-                :to="currentUrl + (items.page_no + i)"
+                :to="page(items.page_no + i)"
               >
                 {{ items.page_no + i }}
               </router-link>
@@ -211,7 +220,7 @@ useFyHead({
           <li v-if="items.page_no + 2 < items.page_max">
             <router-link
               class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
-              :to="currentUrl + items.page_max"
+              :to="page(items.page_max)"
             >
               {{ items.page_max }}
             </router-link>

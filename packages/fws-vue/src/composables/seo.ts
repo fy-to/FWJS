@@ -84,6 +84,8 @@ export const useSeo = (seo: Ref<LazyHead>, initial: boolean = false) => {
 
       if (seo.value.isAdult) {
         metas.push(
+          { name: "rating", content: "adult" },
+          { name: "RATING", content: "RTA-5042-1996-1400-1577-RTA" },
           { property: "rating", content: "adult" },
           { property: "RATING", content: "RTA-5042-1996-1400-1577-RTA" },
         );
@@ -92,25 +94,43 @@ export const useSeo = (seo: Ref<LazyHead>, initial: boolean = false) => {
       const metaPairs = [
         ["name", "og:site_name"],
         ["title", "og:title", "twitter:title"],
-        ["description", "og:description", "twitter:description", "description"],
+        ["description", "og:description", "twitter:description"],
         ["published", "article:published_time"],
         ["modified", "article:modified_time"],
         ["imageWidth", "og:image:width"],
         ["imageHeight", "og:image:height"],
         ["imageType", "og:image:type", "twitter:image:type"],
         ["image", "og:image", "twitter:image"],
+        ["keywords"],
       ];
 
       metaPairs.forEach(([seoKey, ...properties]) => {
-        properties.forEach((property) => {
-          if (seo.value[seoKey as keyof LazyHead]) {
-            metas.push({
-              property,
-              content: seo.value[seoKey as keyof LazyHead] as string,
-            });
-          }
-        });
+        const seoValue = seo.value[seoKey as keyof LazyHead];
+
+        if (seoValue !== undefined && seoValue !== null && seoValue !== "") {
+          properties.forEach((property) => {
+            if (
+              property === "description" ||
+              property === "keywords" ||
+              property.startsWith("twitter")
+            ) {
+              metas.push({
+                name: property,
+                content: seoValue,
+              });
+            } else {
+              metas.push({
+                property,
+                content: seoValue as string,
+              });
+            }
+          });
+        }
       });
+
+      if (seo.value.description) {
+        metas.push({ name: "description", content: seo.value.description });
+      }
 
       return metas;
     }),

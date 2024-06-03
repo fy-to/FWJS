@@ -5,6 +5,8 @@ import { Emitter } from "mitt";
 import { useServerRouter } from "./stores/serverRouter";
 import { useAudioRecorder } from "./composables/audioRecorder";
 import { useKlbAgent } from "./composables/klbAgent";
+import { useSpeechRecognition } from "./composables/speechRecognition";
+import { useKlbAgentSpeech } from "./composables/KlbAgentSpeech";
 import { useEventBus, Events } from "./composables/event-bus";
 import { i18nextPromise, useTranslation } from "./composables/translations";
 import { initVueClient, initVueServer, isServerRendered } from "./misc/ssr";
@@ -119,6 +121,8 @@ export {
   ClientOnly,
   useAudioRecorder,
   useKlbAgent,
+  useSpeechRecognition,
+  useKlbAgentSpeech,
   // Components
   // UI/Transitions
   SlideTransition,

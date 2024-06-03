@@ -6,6 +6,7 @@ import {
   useRest,
   useSeo,
   useTranslation,
+  DefaultPaging,
 } from "@fy-/fws-vue";
 import { useRoute } from "vue-router";
 import BBPost from "./BBPost.vue";
@@ -33,19 +34,27 @@ const eventBus = useEventBus();
 const posts = ref();
 const order = useLocalStorage("bb_order", "t");
 const is404 = ref(false);
-async function getPosts() {
+const paging = ref();
+async function getPosts(page = 1) {
   eventBus.emit("main-loading", true);
   is404.value = false;
+  if (route.query.page) page = Number.parseInt(route.query.page as string);
+
   if (!props.isSingle && route.params.uuid) {
     const data = await rest(
       `ObelixBB/${route.params.uuid.toString()}/${order.value}`,
       "GET",
+      {
+        results_per_page: 15,
+        page_no: page,
+      },
     ).catch(() => {
       is404.value = true;
       eventBus.emit("main-loading", false);
     });
     if (data && data.result === "success") {
       posts.value = data.data;
+      paging.value = data.paging;
     } else {
       is404.value = true;
     }
@@ -75,9 +84,11 @@ onMounted(() => {
     mounted.value = true;
   }
   eventBus.on("reloadBB", getPosts);
+  eventBus.on("bbpostsGoToPage", getPosts);
 });
 onUnmounted(() => {
   eventBus.off("reloadBB", getPosts);
+  eventBus.off("bbpostsGoToPage", getPosts);
 });
 
 watch(
@@ -236,6 +247,12 @@ const nav = computed(() => {
               >
                 {{ $t("bb_new_post_cta") }}
               </router-link>
+              <DefaultPaging
+                v-if="paging"
+                id="bbposts"
+                :items="paging"
+                :show-legend="false"
+              />
             </div>
             <BBPost
               v-for="post in posts.Posts"
@@ -245,6 +262,9 @@ const nav = computed(() => {
               :avatar-component="avatarComponent"
               :img-domain="imgDomain"
             />
+          </div>
+          <div class="flex items-center justify-end mt-2">
+            <DefaultPaging v-if="paging" id="bbposts" :items="paging" />
           </div>
         </div>
       </template>

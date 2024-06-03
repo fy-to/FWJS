@@ -83,7 +83,7 @@ onUnmounted(() => {
       />
       <div class="text-fv-neutral-500 text-xs mb-1">
         <span class="text-fv-neutral-400">
-          <b itemprop="author">@{{ reply.User.Username }}</b>
+          <b itemprop="author">@{{ reply.User.UserProfile.Username }}</b>
         </span>
         on
         <time itemprop="dateCreated" :datetime="reply.CreatedAt.iso">{{

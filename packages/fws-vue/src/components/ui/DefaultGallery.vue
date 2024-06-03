@@ -339,6 +339,7 @@ onUnmounted(() => {
           'custom-grid': mode == 'custom',
         }"
       >
+        <slot name="thumbnail" />
         <template v-for="i in images.length" :key="`g_${id}_${i}`">
           <template v-if="mode == 'mason'">
             <div

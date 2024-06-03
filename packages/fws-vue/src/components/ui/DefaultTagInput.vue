@@ -5,7 +5,15 @@
     @keydown.delete.prevent="removeLastTag"
     @keydown.enter.prevent="addTag"
   >
-    <span v-for="(tag, index) in model" :key="index" :class="`tag ${color}`">
+    <span
+      v-for="(tag, index) in model"
+      :key="index"
+      class="tag"
+      :class="{
+        red: maxLenghtPerTag > 0 && tag.length > maxLenghtPerTag,
+        [color]: maxLenghtPerTag === 0 || tag.length <= maxLenghtPerTag,
+      }"
+    >
       {{ tag }}
       <button type="button" @click.prevent="removeTag(index)">
         <svg
@@ -49,9 +57,11 @@ const props = withDefaults(
     separators?: string[];
     autofocus?: boolean;
     help?: string;
+    maxLenghtPerTag?: number;
     error?: string;
   }>(),
   {
+    maxLenghtPerTag: 0,
     color: "blue",
     label: "Tags",
     separators: () => [","],
