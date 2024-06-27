@@ -23,8 +23,8 @@ export function useSpeechRecognition(
   };
 
   recognition.onend = () => {
-    isRecording.value = false;
     if (transcript) {
+      isRecording.value = false;
       onTextAvailableCallback(transcript);
       transcript = "";
     }
