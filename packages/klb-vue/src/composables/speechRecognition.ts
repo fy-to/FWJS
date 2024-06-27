@@ -48,6 +48,10 @@ export function useSpeechRecognition(
     }
   };
 
+  const changeLanguage = (newLanguage: string) => {
+    recognition.lang = newLanguage;
+  };
+
   const startRecording = () => {
     if (
       !("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
@@ -86,5 +90,6 @@ export function useSpeechRecognition(
     stopRecording,
     isRecording,
     resumeRecording,
+    changeLanguage,
   };
 }

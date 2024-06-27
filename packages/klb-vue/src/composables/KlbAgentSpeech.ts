@@ -30,23 +30,25 @@ export function useKlbAgentSpeech(language = "en-US") {
       console.error("Failed to send text", e);
     });
   };
-  const audioRecorder = useSpeechRecognition(
+  const speechToText = useSpeechRecognition(
     onTextAvailableCallback,
     language,
     1000,
   );
-  const isRecordingMic = computed(() => audioRecorder.isRecording.value);
+  const isRecordingMic = computed(() => speechToText.isRecording.value);
 
   const getSession = async (agentId: string) => {
     eventBus.emit("main-loading", true);
     sessionStarted.value = true;
-    const r = await rest(`HIAgent/${agentId}/Session:get`, "GET");
+    const r = await rest(`HIAgent/${agentId}/Session:get`, "GET", {_expand: "/HIAgent"});
 
     if (r && r.result == "success") {
       sessionData.value = r.data.Session;
       session.value = r.data.HIAgent_Session__;
       videoIdleURL.value = r.data.Idle_Url;
       bgImage.value = r.data.Background;
+      if (r.data.HIAgent.Language__)
+        speechToText.changeLanguage(r.data.HIAgent.Language__);
       setTimeout(() => {
         playIdleVideo();
       }, 1000);
@@ -66,7 +68,7 @@ export function useKlbAgentSpeech(language = "en-US") {
     if (!videoElement.value) return;
     videoElement.value.classList.add("hidden");
     if (!isRecordingMic.value) {
-      audioRecorder.startRecording();
+      speechToText.startRecording();
     }
     if (!idleVideoElement.value) return;
 
@@ -133,7 +135,7 @@ export function useKlbAgentSpeech(language = "en-US") {
     if (r && r.result == "success") {
       saying.value = true;
       if (isRecordingMic.value) {
-        audioRecorder.stopRecording();
+        speechToText.stopRecording();
       }
       return r.data;
     }
@@ -293,7 +295,7 @@ export function useKlbAgentSpeech(language = "en-US") {
     const dc = await peerConnection.value.createDataChannel("JanusDataChannel");
     dc.onopen = () => {
       if (!isRecordingMic.value) {
-        audioRecorder.startRecording();
+        speechToText.startRecording();
       }
       eventBus.emit("main-loading", false);
     };
@@ -313,7 +315,7 @@ export function useKlbAgentSpeech(language = "en-US") {
         playIdleVideo();
         saying.value = false;
         if (!isRecordingMic.value) {
-          audioRecorder.startRecording();
+          speechToText.startRecording();
         }
       } else {
         //console.log("datachannel message", msg);
@@ -331,7 +333,7 @@ export function useKlbAgentSpeech(language = "en-US") {
     getSession,
     closePeerConnection,
     sendSay,
-    audioRecorder,
+    audioRecorder: speechToText,
     sessionStarted,
     iceStatus,
     peerStatus,
