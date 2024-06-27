@@ -255,6 +255,9 @@ importers:
       vue:
         specifier: ^3.3.13
         version: 3.4.26(typescript@5.4.5)
+      vue-picture-cropper:
+        specifier: ^0.7.0
+        version: 0.7.0(vue@3.4.26)
       vue-router:
         specifier: ^4.2.5
         version: 4.3.2(vue@3.4.26)

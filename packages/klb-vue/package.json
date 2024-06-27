@@ -5,12 +5,12 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/fy-to/FWJS.git"
+        "url": "git+https://github.com/KarpelesLab/FWJS.git"
     },
     "bugs": {
-        "url": "https://github.com/fy-to/FWJS/issues"
+        "url": "https://github.com/KarpelesLab/FWJS/issues"
     },
-    "homepage": "https://github.com/fy-to/FWJS#readme",
+    "homepage": "https://github.com/KarpelesLab/FWJS#readme",
     "main": "src/index.ts",
     "module": "src/index.ts",
     "typings": "src/index.ts",
