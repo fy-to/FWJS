@@ -27,6 +27,8 @@ export function useSpeechRecognition(
       isRecording.value = false;
       onTextAvailableCallback(transcript);
       transcript = "";
+    } else {
+      recognition.start()
     }
   };
 
