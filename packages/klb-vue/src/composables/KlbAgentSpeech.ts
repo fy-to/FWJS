@@ -40,7 +40,9 @@ export function useKlbAgentSpeech(language = "en-US") {
   const getSession = async (agentId: string) => {
     eventBus.emit("main-loading", true);
     sessionStarted.value = true;
-    const r = await rest(`HIAgent/${agentId}/Session:get`, "GET", {_expand: "/HIAgent"});
+    const r = await rest(`HIAgent/${agentId}/Session:get`, "GET", {
+      _expand: "/HIAgent",
+    });
 
     if (r && r.result == "success") {
       sessionData.value = r.data.Session;

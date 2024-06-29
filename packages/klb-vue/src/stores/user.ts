@@ -58,7 +58,7 @@ export function useUserCheck(path = "/login", redirectLink = false) {
         if (!redirectLink) router.push(path);
         else {
           router.status = 307;
-          router.push(`${path}?return_to=${route.path}`);
+          router.push(`${path}?return_to=${route.fullPath}`);
         }
       }
     }
