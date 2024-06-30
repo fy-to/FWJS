@@ -58,7 +58,8 @@ export function useUserCheck(path = "/login", redirectLink = false) {
         if (!redirectLink) router.push(path);
         else {
           router.status = 307;
-          router.push(`${path}?return_to=${route.fullPath}`);
+          // encodeURIComponent because while the documentation says fullPath is percent encoded, that is a big fat lie
+          router.push(`${path}?return_to=${encodeURIComponent(route.fullPath)}`);
         }
       }
     }
