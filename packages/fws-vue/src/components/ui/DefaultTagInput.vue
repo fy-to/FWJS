@@ -1,51 +1,59 @@
 <template>
-  <div
-    :class="`tags-input ${$props.error ? 'error' : ''}`"
-    @click="focusInput"
-    @keydown.delete.prevent="removeLastTag"
-    @keydown.enter.prevent="addTag"
-  >
-    <span
-      v-for="(tag, index) in model"
-      :key="index"
-      class="tag"
-      :class="{
-        red: maxLenghtPerTag > 0 && tag.length > maxLenghtPerTag,
-        [color]: maxLenghtPerTag === 0 || tag.length <= maxLenghtPerTag,
-      }"
-    >
-      {{ tag }}
-      <button type="button" @click.prevent="removeTag(index)">
-        <svg
-          class="w-4 h-4"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-          />
-        </svg>
-      </button>
-    </span>
+  <div>
     <div
-      contenteditable
-      class="input"
-      :id="`tags_${id}`"
-      ref="textInput"
-      @input="handleInput"
-      @paste.prevent="handlePaste"
-      placeholder="Add a tag..."
-    ></div>
+      :class="`tags-input ${$props.error ? 'error' : ''}`"
+      @click="focusInput"
+      @keydown.delete.prevent="removeLastTag"
+      @keydown.enter.prevent="addTag"
+    >
+      <span
+        v-for="(tag, index) in model"
+        :key="index"
+        class="tag"
+        :class="{
+          red: maxLenghtPerTag > 0 && tag.length > maxLenghtPerTag,
+          [color]: maxLenghtPerTag === 0 || tag.length <= maxLenghtPerTag,
+        }"
+      >
+        {{ tag }}
+        <button type="button" @click.prevent="removeTag(index)">
+          <svg
+            class="w-4 h-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+            />
+          </svg>
+        </button>
+      </span>
+      <div
+        contenteditable
+        class="input"
+        :id="`tags_${id}`"
+        ref="textInput"
+        @input="handleInput"
+        @paste.prevent="handlePaste"
+        placeholder="Add a tag..."
+      ></div>
+    </div>
+    <div class="flex justify-end mt-1" v-if="copyButton">
+      <button class="btn neutral small" type="button" @click.prevent="copyText">
+        Copy tags
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useEventBus } from "../../composables/event-bus";
 type colorType = "blue" | "red" | "green" | "purple" | "orange" | "neutral";
 
 const props = withDefaults(
@@ -59,8 +67,10 @@ const props = withDefaults(
     help?: string;
     maxLenghtPerTag?: number;
     error?: string;
+    copyButton?: boolean;
   }>(),
   {
+    copyButton: false,
     maxLenghtPerTag: 0,
     color: "blue",
     label: "Tags",
@@ -84,6 +94,16 @@ onMounted(() => {
     focusInput();
   }
 });
+const eventBus = useEventBus();
+const copyText = async () => {
+  const text = model.value.join(", ");
+  await navigator.clipboard.writeText(text);
+  eventBus.emit("SendNotif", {
+    title: "Text copied!",
+    type: "success",
+    time: 2500,
+  });
+};
 
 const handleInput = (event: any) => {
   const separatorsRegex = new RegExp(props.separators.join("|"));

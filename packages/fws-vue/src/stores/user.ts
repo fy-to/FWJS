@@ -48,6 +48,35 @@ export const useUserStore = defineStore({
   },
 });
 
+export async function useUserCheckAsyncSimple(
+  path = "/login",
+  redirectLink = false,
+) {
+  const userStore = useUserStore();
+  await userStore.refreshUser();
+  const isAuth = computed(() => userStore.isAuth);
+  const router = useServerRouter();
+
+  const checkUser = (route: RouteLocation) => {
+    if (route.meta.reqLogin) {
+      if (!isAuth.value) {
+        if (!redirectLink) router.push(path);
+        else {
+          router.status = 307;
+          router.push(`${path}?return_to=${route.path}`);
+        }
+      }
+    }
+  };
+  checkUser(router.currentRoute);
+
+  router._router.beforeEach((to: any) => {
+    if (to.fullPath != path) {
+      checkUser(to);
+    }
+  });
+}
+
 export async function useUserCheckAsync(path = "/login", redirectLink = false) {
   const userStore = useUserStore();
   await userStore.refreshUser();

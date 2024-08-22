@@ -18,8 +18,8 @@ export const useServerRouter = defineStore({
       results: {},
     }) as ServerRouterState,
   getters: {
-    currentRoute: (state) => state._router!.currentRoute,
-    route: (state) => state._router!.currentRoute,
+    currentRoute: (state) => state._router?.currentRoute,
+    route: (state) => state._router?.currentRoute,
   },
   actions: {
     setStatus(status: number) {

@@ -10,6 +10,10 @@ defineProps({
     type: String,
     default: "blog",
   },
+  imageDomain: {
+    type: String,
+    default: "https://s.nocachenocry.com",
+  },
 });
 </script>
 
@@ -27,7 +31,7 @@ defineProps({
     <meta
       itemprop="thumbnailUrl"
       v-if="article.CoverUUID"
-      :content="`https://s.nocachenocry.com/${article.CoverUUID}?vars=format=webp:resize=512x512`"
+      :content="`${imageDomain}/${article.CoverUUID}?vars=format=webp:resize=512x512`"
     />
     <RouterLink
       :to="`/${type}/${article.Slug}`"
@@ -35,7 +39,7 @@ defineProps({
       :alt="article.Title"
       ><img
         v-if="article.CoverUUID"
-        :src="`https://s.nocachenocry.com/${article.CoverUUID}?vars=format=webp:scale_crop_center=400x195`"
+        :src="`${imageDomain}/${article.CoverUUID}?vars=format=webp:scale_crop_center=400x195`"
         loading="lazy"
         :title="article.Title"
         :alt="article.Title"

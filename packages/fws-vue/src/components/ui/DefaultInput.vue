@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import { LinkIcon } from "@heroicons/vue/24/solid";
-import { computed, ref, toRef } from "vue";
+import {
+  computed,
+  defineAsyncComponent,
+  onMounted,
+  onUnmounted,
+  ref,
+  toRef,
+} from "vue";
 import type { ErrorObject } from "@vuelidate/core";
 import { useTranslation } from "../../composables/translations";
 import DefaultTagInput from "./DefaultTagInput.vue";
+//import VueTailwindDatepicker from "vue-tailwind-datepicker";
+
 type modelValueType = string | number | string[] | number[] | undefined;
 
 type checkboxValueType = any[] | Set<any> | undefined | boolean;
@@ -23,12 +32,15 @@ const props = withDefaults(
     modelValue?: modelValueType;
     checkboxValue?: checkboxValueType;
     options?: string[][];
+    dpOptions?: Record<string, any>;
     help?: string;
     error?: string;
     color?: string;
     errorVuelidate?: ErrorObject[];
     disabled?: boolean;
     maxLengthPerTag?: number;
+    disableDatesUnder18?: boolean;
+    copyButton?: boolean;
   }>(),
   {
     showLabel: true,
@@ -39,13 +51,27 @@ const props = withDefaults(
     checkboxFalseValue: false,
     disabled: false,
     maxLengthPerTag: 0,
+    disableDatesUnder18: false,
+    copyButton: false,
+    dpOptions: () => ({}),
   },
 );
+const disableDatesAdult = (date: Date) => {
+  if (!props.disableDatesUnder18) return false;
+  const today = new Date();
+  const date18YearsAgo = new Date(
+    today.getFullYear() - 18,
+    today.getMonth(),
+    today.getDate(),
+  );
+
+  return date >= date18YearsAgo;
+};
+
 const translate = useTranslation();
 const inputRef = ref<HTMLInputElement>();
 const errorProps = toRef(props, "error");
 const errorVuelidateProps = toRef(props, "errorVuelidate");
-
 const checkErrors = computed(() => {
   if (errorProps.value) return errorProps.value;
   if (errorVuelidateProps.value && errorVuelidateProps.value.length > 0) {
@@ -73,6 +99,7 @@ const handleFocus = () => {
 const handleBlur = () => {
   emit("blur", props.id);
 };
+
 const emit = defineEmits([
   "update:modelValue",
   "update:checkboxValue",
@@ -106,11 +133,13 @@ defineExpose({ focus, blur, getInputRef });
           'datetime',
           'url',
           'textarea',
+          'textarea-grow',
           'select',
           'phone',
           'chips',
           'tags',
           'mask',
+          'datepicker',
         ].includes(type)
       "
     >
@@ -127,6 +156,7 @@ defineExpose({ focus, blur, getInputRef });
               'mask',
               'date',
               'datetime',
+              'datepicker',
             ].includes(type)
           "
           class="relative"
@@ -139,7 +169,7 @@ defineExpose({ focus, blur, getInputRef });
           </label>
           <input
             ref="inputRef"
-            :type="type"
+            :type="type === 'datepicker' ? 'date' : type"
             :id="id"
             :name="id"
             :class="{
@@ -156,6 +186,29 @@ defineExpose({ focus, blur, getInputRef });
             @blur="handleBlur"
           />
         </div>
+        <!--
+        <div v-if="type == 'datepicker'">
+          <label
+            :for="id"
+            v-if="label || placeholder"
+            class="block mb-2 text-sm font-medium text-fv-neutral-900 dark:text-white"
+            >{{ label ? label : placeholder }}
+          </label>
+          <div class="relative">
+            <VueTailwindDatepicker
+              v-model="model"
+              :disable-date="disableDatesAdult"
+              :formatter="{
+                date: 'YYYY-MM-DD',
+                month: 'MMM',
+              }"
+              :placeholder="placeholder"
+              as-single
+            ></VueTailwindDatepicker>
+          </div>
+        </div>
+        -->
+
         <div v-if="type == 'chips' || type == 'tags'">
           <label
             :for="id"
@@ -170,9 +223,48 @@ defineExpose({ focus, blur, getInputRef });
             :disabled="disabled"
             :color="color"
             :error="checkErrors"
+            :copyButton="copyButton"
             :help="help"
             :max-lenght-per-tag="maxLengthPerTag"
           />
+        </div>
+        <div class="group relative" v-else-if="type == 'textarea-grow'">
+          <label
+            v-if="label"
+            :for="id"
+            class="block mb-2 text-sm font-medium text-fv-neutral-900 dark:text-white"
+            >{{ label }}</label
+          >
+          <div class="grow-wrap">
+            <!-- @vue-skip -->
+            <textarea
+              :id="id"
+              :name="id"
+              ref="inputRef"
+              :class="{
+                error: checkErrors,
+              }"
+              v-model="model"
+              :placeholder="placeholder"
+              :disabled="disabled"
+              :aria-describedby="help ? `${id}-help` : id"
+              :required="req"
+              @focus="handleFocus"
+              @blur="handleBlur"
+              class="block p-2.5 w-full text-sm text-fv-neutral-900 bg-fv-neutral-50 rounded-lg border border-fv-neutral-300 focus:ring-fv-primary-500 focus:border-fv-primary-500 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500"
+            ></textarea>
+          </div>
+          <div
+            v-if="dpOptions.counterMax && model"
+            class="text-sm text-fv-neutral-500 dark:text-fv-neutral-400"
+            :class="{
+              'text-red-500 dark:text-red-300':
+                model?.toString().length > dpOptions.counterMax,
+            }"
+          >
+            {{ model?.toString().length }} /
+            {{ dpOptions.counterMax }} characters
+          </div>
         </div>
         <div class="group relative" v-else-if="type == 'textarea'">
           <label
@@ -198,6 +290,17 @@ defineExpose({ focus, blur, getInputRef });
             @blur="handleBlur"
             class="block p-2.5 w-full text-sm text-fv-neutral-900 bg-fv-neutral-50 rounded-lg border border-fv-neutral-300 focus:ring-fv-primary-500 focus:border-fv-primary-500 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500"
           ></textarea>
+          <div
+            v-if="dpOptions.counterMax && model"
+            class="text-sm text-fv-neutral-500 dark:text-fv-neutral-400"
+            :class="{
+              'text-red-500 dark:text-red-300':
+                model?.toString().length > dpOptions.counterMax,
+            }"
+          >
+            {{ model?.toString().length }} /
+            {{ dpOptions.counterMax }} characters
+          </div>
         </div>
         <div class="relative" v-else-if="type == 'select'">
           <label

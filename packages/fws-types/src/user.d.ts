@@ -30,6 +30,7 @@ interface User {
     UserProfile?: UserProfile;
     IsPremium: boolean;
     UserService?: string;
+    IsDeleted?: boolean;
 }
 
 interface UserProfile {

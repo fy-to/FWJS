@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-ignore
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/vue/24/solid";
 import {
   watch,
@@ -12,7 +13,7 @@ import type { APIPaging } from "../../composables/rest";
 import { useEventBus } from "../../composables/event-bus";
 import { useServerRouter } from "../../stores/serverRouter";
 import { LocationQueryValue, RouteLocationRaw, useRoute } from "vue-router";
-import { useFyHead } from "@fy-/head";
+import { useHead } from "@unhead/vue";
 import { hasFW, getURL } from "@fy-/fws-js";
 
 const props = withDefaults(
@@ -83,17 +84,18 @@ const currentUrl = computed(() => {
 const checkPageNumber = (page: number = 1) => {
   prevNextSeo.value.next = undefined;
   prevNextSeo.value.prev = undefined;
-
+  const pagePlus = page + 1;
+  const pageMinus = page - 1;
   if (hasFW()) {
     const url = getURL();
-    if (page + 1 <= props.items.page_max && url) {
+    if (pagePlus <= props.items.page_max && url) {
       prevNextSeo.value.next =
-        `${url.Scheme}://${url.Host}${url.Path}?page=${page + 1}` +
+        `${url.Scheme}://${url.Host}${route.path}?page=${pagePlus}` +
         (props.hash != "" ? `#${props.hash}` : "");
     }
-    if (page - 1 >= 1 && url) {
+    if (pageMinus >= 1 && url) {
       prevNextSeo.value.prev =
-        `${url.Scheme}://${url.Host}${url.Path}?page=${page - 1}` +
+        `${url.Scheme}://${url.Host}${route.path}?page=${pageMinus}` +
         (props.hash != "" ? `#${props.hash}` : "");
     }
   }
@@ -114,8 +116,8 @@ onUnmounted(() => {
 });
 
 checkPageNumber(props.items.page_no);
-useFyHead({
-  links: computed(() => {
+useHead({
+  link: computed(() => {
     const result: any = [];
     if (prevNextSeo.value.next)
       result.push({
@@ -129,15 +131,7 @@ useFyHead({
         rel: "prev",
         key: "prev",
       });
-    // add canonical
-    const url = getURL();
-    if (url) {
-      result.push({
-        href: `${url.Scheme}://${url.Host}${url.Path}`,
-        rel: "canonical",
-        key: "canonical",
-      });
-    }
+
     return result;
   }),
 });

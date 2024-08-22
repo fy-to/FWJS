@@ -1,6 +1,6 @@
 {
     "name": "@fy-/fws-obelix",
-    "version": "0.0.54",
+    "version": "0.0.70",
     "description": "BB for FWS",
     "author": "Florian 'Fy' Gasquez <m@fy.to>",
     "license": "MIT",
@@ -39,7 +39,6 @@
         "timeago.js": "^4.0.x",
         "vue": "^3.3.x",
         "vue-router": "^4.1.x",
-        "flowbite": "^2.3.x",
         "@fy-/fws-vue": "^0.3.x",
         "markdown-it": "^14.x.x"
     },

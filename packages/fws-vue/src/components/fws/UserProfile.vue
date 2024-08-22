@@ -6,7 +6,7 @@ import { useUserStore } from "../../stores/user";
 import { useRest } from "../../composables/rest";
 import { useEventBus } from "../../composables/event-bus";
 import { computed, reactive, watchEffect, ref } from "vue";
-import { required } from "@vuelidate/validators";
+import { required, maxLength } from "@vuelidate/validators";
 import VuePictureCropper, { cropper } from "vue-picture-cropper";
 import { Uploader } from "@fy-/fws-js";
 
@@ -14,22 +14,36 @@ const props = withDefaults(
   defineProps<{
     imageDomain?: string;
     onCompleted?: (data: any) => void;
+    hidePublic?: boolean;
+    hideBirthdate?: boolean;
+    hideGender?: boolean;
   }>(),
   {
     imageDomain: "https://s.nocachenocry.com",
     onCompleted: () => {},
+    hidePublic: false,
+    hideBirthdate: false,
+    hideGender: false,
   },
 );
 const rest = useRest();
 const userStore = useUserStore();
 const userData = computed(() => userStore.user);
 const eventBus = useEventBus();
+// Default date = 18y from now
+const currentDate = new Date();
+const defaultDate = new Date(
+  currentDate.setFullYear(currentDate.getFullYear() - 18),
+)
+  .toISOString()
+  .split("T")[0];
+
 const state = reactive({
   userData: {
     Username: userData.value?.UserProfile?.Username || "",
     Gender: userData.value?.UserProfile?.Gender || "",
     Bio: userData.value?.UserProfile?.Bio || "",
-    Birthdate: userData.value?.UserProfile?.Birthdate || "",
+    Birthdate: userData.value?.UserProfile?.Birthdate || defaultDate,
     PublicGender: userData.value?.UserProfile?.PublicGender || false,
     PublicBio: userData.value?.UserProfile?.PublicBio || false,
     PublicBirthdate: userData.value?.UserProfile?.PublicBirthdate || false,
@@ -44,7 +58,7 @@ watchEffect(() => {
       ? new Date(userData.value?.UserProfile?.Birthdate.unixms)
           .toISOString()
           .split("T")[0]
-      : "",
+      : defaultDate,
     PublicGender: userData.value?.UserProfile?.PublicGender || false,
     PublicBio: userData.value?.UserProfile?.PublicBio || false,
     PublicBirthdate: userData.value?.UserProfile?.PublicBirthdate || false,
@@ -56,7 +70,9 @@ const rules = {
       required: required,
     },
     Gender: {},
-    Bio: {},
+    Bio: {
+      maxLength: maxLength(1000),
+    },
     Birthdate: {},
     PublicGender: {},
     PublicBio: {},
@@ -70,9 +86,15 @@ const patchUser = async () => {
   if (await v$.value.userData.$validate()) {
     const data = { ...state.userData };
     const birtdate = new Date(`${data.Birthdate}T00:00:00Z`);
-    const birtdateAtUnixms = birtdate.getTime();
+    try {
+      const birtdateAtUnixms = birtdate.getTime();
+      // @ts-ignore
+      data.Birthdate = new Date(birtdateAtUnixms).toISOString().split("T")[0];
+    } catch (e) {
+      // @ts-ignore
+      data.Birthdate = data.Birthdate.toISOString().split("T")[0];
+    }
     // @ts-ignore
-    data.Birthdate = birtdateAtUnixms;
     const response = await rest("User/_Profile", "PATCH", data);
     if (response && response.result == "success") {
       if (props.onCompleted) {
@@ -211,7 +233,8 @@ function selectFile(e: Event) {
       id="birthdateFWS"
       v-model="state.userData.Birthdate"
       class="mb-4"
-      type="date"
+      type="datepicker"
+      :disableDatesUnder18="true"
       :label="$t('fws_birthdate_label')"
       :error-vuelidate="v$.userData.Birthdate.$errors"
     />
@@ -219,32 +242,35 @@ function selectFile(e: Event) {
       id="bioFWS"
       v-model="state.userData.Bio"
       class="mb-4"
-      type="text"
+      type="textarea"
       :label="$t('fws_bio_label')"
       :error-vuelidate="v$.userData.Bio.$errors"
     />
-    <DefaultInput
-      id="publicGenderFWS"
-      v-model:checkbox-value="state.userData.PublicGender"
-      type="toggle"
-      :label="$t('fws_public_gender')"
-      :error-vuelidate="v$.userData.PublicGender.$errors"
-    />
-    <DefaultInput
-      id="publicBioFWS"
-      v-model:checkbox-value="state.userData.PublicBio"
-      type="toggle"
-      :label="$t('fws_public_bio')"
-      :error-vuelidate="v$.userData.PublicBio.$errors"
-    />
-    <DefaultInput
-      id="publicBirthdateFWS"
-      v-model:checkbox-value="state.userData.PublicBirthdate"
-      type="toggle"
-      :label="$t('fws_public_birthdate')"
-      :error-vuelidate="v$.userData.PublicBirthdate.$errors"
-    />
-
+    <template v-if="!hidePublic">
+      <DefaultInput
+        id="publicGenderFWS"
+        v-model:checkbox-value="state.userData.PublicGender"
+        type="toggle"
+        :label="$t('fws_public_gender')"
+        :error-vuelidate="v$.userData.PublicGender.$errors"
+        v-if="!hideGender"
+      />
+      <DefaultInput
+        id="publicBioFWS"
+        v-model:checkbox-value="state.userData.PublicBio"
+        type="toggle"
+        :label="$t('fws_public_bio')"
+        :error-vuelidate="v$.userData.PublicBio.$errors"
+      />
+      <DefaultInput
+        id="publicBirthdateFWS"
+        v-model:checkbox-value="state.userData.PublicBirthdate"
+        type="toggle"
+        :label="$t('fws_public_birthdate')"
+        :error-vuelidate="v$.userData.PublicBirthdate.$errors"
+        v-if="!hideBirthdate"
+      />
+    </template>
     <div class="flex">
       <button type="submit" class="btn defaults primary">
         {{ $t("fws_save_user_cta") }}

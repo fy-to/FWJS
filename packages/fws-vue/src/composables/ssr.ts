@@ -3,6 +3,7 @@ import { Pinia } from "pinia";
 import { renderToString } from "@vue/server-renderer";
 import { getInitialState, getPath, getURL, getUUID } from "@fy-/fws-js";
 import { useServerRouter } from "../stores/serverRouter";
+import { renderSSRHead } from "@unhead/ssr";
 
 export interface SSRResult {
   initial: {
@@ -13,6 +14,7 @@ export interface SSRResult {
   meta?: string;
   link?: string;
   bodyAttributes?: string;
+  bodyTagsOpen?: string;
   htmlAttributes?: string;
   bodyTags?: string;
   app?: string;
@@ -42,10 +44,10 @@ export async function initVueServer(
   const url =
     options.url || `${getPath()}${getURL().Query ? `?${getURL().Query}` : ""}`;
   const { app, router, head, pinia } = await createApp(true);
-  await router.push(url);
-  await router.isReady();
   const serverRouter = useServerRouter(pinia);
   serverRouter._setRouter(router);
+  await router.push(url);
+  await router.isReady();
 
   const result: SSRResult = {
     uuid: getUUID(),
@@ -64,13 +66,13 @@ export async function initVueServer(
 
   try {
     const html = await renderToString(app);
-    const { headTags, htmlAttrs, bodyAttrs, bodyTags } =
-      head.renderHeadToString();
+    const payload = await renderSSRHead(head);
 
-    result.meta = headTags;
-    result.bodyAttributes = bodyAttrs;
-    result.htmlAttributes = htmlAttrs;
-    result.bodyTags = bodyTags;
+    result.meta = payload.headTags;
+    result.bodyAttributes = payload.bodyAttrs;
+    result.htmlAttributes = payload.htmlAttrs;
+    result.bodyTags = payload.bodyTags;
+    result.bodyTagsOpen = payload.bodyTagsOpen;
     result.app = html;
     if (serverRouter.status != 200) {
       if ([301, 302, 303, 307].includes(serverRouter.status)) {

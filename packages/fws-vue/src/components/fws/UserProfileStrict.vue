@@ -21,6 +21,13 @@ const props = withDefaults(
     force18: false,
   },
 );
+const currentDate = new Date();
+const defaultDate = new Date(
+  currentDate.setFullYear(currentDate.getFullYear() - 18),
+)
+  .toISOString()
+  .split("T")[0];
+
 const ageValidator = (value: any) => {
   const today = new Date();
   const birthDate = new Date(value);
@@ -36,7 +43,7 @@ const state = reactive({
   userData: {
     Username: userData.value?.UserProfile?.Username || "",
     Gender: userData.value?.UserProfile?.Gender || "",
-    Birthdate: userData.value?.UserProfile?.Birthdate || "",
+    Birthdate: userData.value?.UserProfile?.Birthdate || defaultDate,
     AcceptedTerms: userData.value?.AcceptedTerms || true,
   },
 });
@@ -48,7 +55,7 @@ watchEffect(() => {
       ? new Date(userData.value?.UserProfile?.Birthdate.unixms)
           .toISOString()
           .split("T")[0]
-      : "",
+      : defaultDate,
     AcceptedTerms: userData.value?.AcceptedTerms || true,
   };
 });
@@ -82,9 +89,14 @@ const patchUser = async () => {
   if (await v$.value.userData.$validate()) {
     const data = { ...state.userData };
     const birtdate = new Date(`${data.Birthdate}T00:00:00Z`);
-    const birtdateAtUnixms = birtdate.getTime();
-    // @ts-ignore
-    data.Birthdate = birtdateAtUnixms;
+    try {
+      const birtdateAtUnixms = birtdate.getTime();
+      // @ts-ignore
+      data.Birthdate = new Date(birtdateAtUnixms).toISOString().split("T")[0];
+    } catch (e) {
+      // @ts-ignore
+      data.Birthdate = data.Birthdate.toISOString().split("T")[0];
+    }
     const response = await rest("User/_ForceProfile", "PATCH", data);
     if (response && response.result == "success") {
       if (props.onCompleted) {
@@ -109,6 +121,17 @@ const patchUser = async () => {
       :error-vuelidate="v$.userData.Username.$errors"
       :disabled="userData?.UserProfile?.HasUsernameAndSlug ? true : false"
     />
+    <!-- @vue-skip -->
+    <DefaultInput
+      id="birthdateFWS"
+      v-model="state.userData.Birthdate"
+      class="mb-4"
+      :disableDatesUnder18="true"
+      type="datepicker"
+      :label="$t('fws_birthdate_label')"
+      :error-vuelidate="v$.userData.Birthdate.$errors"
+    />
+
     <DefaultInput
       id="genderFWS"
       v-model="state.userData.Gender"
@@ -121,15 +144,6 @@ const patchUser = async () => {
       ]"
       :label="$t('fws_gender_label')"
       :error-vuelidate="v$.userData.Gender.$errors"
-    />
-    <!-- @vue-skip -->
-    <DefaultInput
-      id="birthdateFWS"
-      v-model="state.userData.Birthdate"
-      class="mb-4"
-      type="date"
-      :label="$t('fws_birthdate_label')"
-      :error-vuelidate="v$.userData.Birthdate.$errors"
     />
 
     <DefaultInput

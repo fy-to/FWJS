@@ -222,36 +222,15 @@ onUnmounted(() => {
               itemprop="author"
               itemscope
               itemtype="https://schema.org/Person"
-              class="text-2xl flex-0 grow-0"
+              class="text-xl flex-0 grow-0"
             >
               <b itemprop="name"
                 >@{{
                   reply.User?.UserProfile?.Username
-                    ? reply.User.UserProfile.Username
+                    ? $cropText(reply.User.UserProfile.Username, 14)
                     : "Anonymous"
                 }}</b
               >
-            </div>
-
-            <div
-              class="flex gap-2 lg:w-full lg:flex-col justify-start mt-2 lg:mt-0 lg:justify-start items-center text-xs lg:text-sm"
-            >
-              <div class="flex gap-2 lg:w-full justify-start items-center">
-                <ChatBubbleLeftRightIcon class="w-4 h-4" />
-                {{
-                  $t("bb_user_messages", {
-                    count: post.User.ForumsMessagesCount,
-                  })
-                }}
-              </div>
-              <div class="flex gap-2 lg:w-full justify-start items-center">
-                <HeartIcon class="w-4 h-4" />
-                {{ $t("bb_user_likes", { count: post.User.ForumsLikesCount }) }}
-              </div>
-              <div class="flex gap-2 lg:w-full justify-start items-center">
-                <UserIcon class="w-4 h-4" />
-                {{ $formatDate(post.User.CreatedAt.iso) }}
-              </div>
             </div>
           </div>
           <div class="flex-1 flex flex-col justify-between py-2">

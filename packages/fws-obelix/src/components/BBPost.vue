@@ -4,7 +4,8 @@ import { useEventBus, useRest, useUserStore } from "@fy-/fws-vue";
 import { getRealm } from "@fy-/fws-js";
 import { RouterLink } from "vue-router";
 import markdownit from "markdown-it";
-import { Dropdown } from "flowbite";
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
+
 import {
   UserIcon,
   ChatBubbleLeftRightIcon,
@@ -13,9 +14,7 @@ import {
   PaperClipIcon,
   HeartIcon,
 } from "@heroicons/vue/24/solid";
-import BBReply from "./BBReply.vue";
 import BBRepliesClassic from "./BBRepliesClassic.vue";
-import RepliesClassic from "./RepliesClassic.vue";
 import { useBBStore } from "./bbStore";
 
 const md = markdownit();
@@ -104,29 +103,11 @@ async function deletePost(id: string) {
     },
   });
 }
-const userMenu = ref();
-const useMenuInstance = ref();
-const userMenuButton = ref();
+
 const mounted = ref(false);
-watch(isAuth, () => {
-  if (isAuth.value && mounted.value && props.isSingle) {
-    useMenuInstance.value = new Dropdown(userMenu.value, userMenuButton.value, {
-      offsetDistance: -5,
-    });
-  }
-});
+
 onMounted(() => {
   mounted.value = true;
-  if (
-    isAuth.value &&
-    props.isSingle &&
-    userMenu.value &&
-    userMenuButton.value
-  ) {
-    useMenuInstance.value = new Dropdown(userMenu.value, userMenuButton.value, {
-      offsetDistance: -5,
-    });
-  }
 });
 </script>
 
@@ -147,7 +128,7 @@ onMounted(() => {
   >
     <template v-if="isSingle">
       <h1
-        class="h1 px-2 lg:px-1 mt-5 flex flex-col lg:flex-row justify-between gap-2 lg:items-center"
+        class="h3 lg:h1 px-2 lg:px-1 mt-5 flex flex-col lg:flex-row justify-between gap-2 lg:items-center"
       >
         <span itemprop="headline" class="flex-1 w-full">{{ post.Title }}</span>
 
@@ -174,48 +155,47 @@ onMounted(() => {
               >{{ $t("bb_post_locked") }}</span
             >
           </div>
-          <div
+          <Menu
             v-if="isAuth && (post.User.UUID === userID || isAdmin)"
-            class="flex items-center justify-end"
+            class="relative flex-0 flex-grow-0 shrink-0 flex flex-col group:focus-visible:block items-center"
+            as="div"
           >
-            <button
-              ref="userMenuButton"
+            <MenuButton
               :id="`userMenuButton_${post.ID}`"
               type="button"
-              class="open-top-menu group flex items-center justify-center gap-2"
+              class="open-top-menu group flex items-center gap-2 btn neutral !rounded-sm h-full px-1.5 flex-1"
             >
               <EllipsisVerticalIcon class="w-6 h-6" />
-            </button>
+            </MenuButton>
 
-            <div
-              ref="userMenu"
+            <MenuItems
               :id="`userMenu_${post.ID}`"
-              class="z-[20] hidden bg-white divide-y divide-fv-neutral-100 rounded-lg shadow w-44 dark:bg-fv-neutral-800 dark:divide-fv-neutral-600"
+              class="zz-[20] top-8 overflow-hidden absolute bg-white divide-y divide-fv-neutral-100 rounded-lg shadow w-44 dark:bg-fv-neutral-800 dark:divide-fv-neutral-600"
             >
               <ul
                 class="py-2 text-sm text-fv-neutral-800 dark:text-fv-neutral-200"
                 aria-labelledby="userMenu"
               >
-                <li v-if="isAdmin">
+                <MenuItem as="li" v-slot="{ close }" v-if="isAdmin">
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
                     @click.prevent="
                       () => {
                         updatePostState(post.ID, 'Pin');
-                        useMenuInstance.hide();
+                        close();
                       }
                     "
                   >
                     {{ post.IsPinned ? $t("bb_unpin_cta") : $t("bb_pin_cta") }}
                   </button>
-                </li>
-                <li v-if="isAdmin">
+                </MenuItem>
+                <MenuItem as="li" v-slot="{ close }" v-if="isAdmin">
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
                     @click.prevent="
                       () => {
                         updatePostState(post.ID, 'Lock');
-                        useMenuInstance.hide();
+                        close();
                       }
                     "
                   >
@@ -223,27 +203,35 @@ onMounted(() => {
                       post.IsLocked ? $t("bb_unlock_cta") : $t("bb_lock_cta")
                     }}
                   </button>
-                </li>
-                <li v-if="post.User.UUID === userID || isAdmin">
+                </MenuItem>
+                <MenuItem
+                  as="li"
+                  v-slot="{ close }"
+                  v-if="post.User.UUID === userID || isAdmin"
+                >
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
                     @click.prevent="
                       () => {
                         updatePostState(post.ID, 'NSFW');
-                        useMenuInstance.hide();
+                        close();
                       }
                     "
                   >
                     {{ post.IsNSFW ? $t("bb_unnsfw_cta") : $t("bb_nsfw_cta") }}
                   </button>
-                </li>
-                <li v-if="post.User.UUID === userID || isAdmin">
+                </MenuItem>
+                <MenuItem
+                  as="li"
+                  v-slot="{ close }"
+                  v-if="post.User.UUID === userID || isAdmin"
+                >
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
                     @click.prevent="
                       () => {
                         updatePostState(post.ID, 'Spoiler');
-                        useMenuInstance.hide();
+                        close();
                       }
                     "
                   >
@@ -253,8 +241,12 @@ onMounted(() => {
                         : $t("bb_spoiler_cta")
                     }}
                   </button>
-                </li>
-                <li v-if="post.User.UUID === userID || isAdmin">
+                </MenuItem>
+                <MenuItem
+                  as="li"
+                  v-slot="{ close }"
+                  v-if="post.User.UUID === userID || isAdmin"
+                >
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
                     @click.prevent="
@@ -262,29 +254,33 @@ onMounted(() => {
                         $router.push(
                           `/forums/${post.BoardUUID}/new?edit=${post.Slug}`,
                         );
-                        useMenuInstance.hide();
+                        close();
                       }
                     "
                   >
                     {{ $t("bb_edit_cta") }}
                   </button>
-                </li>
-                <li v-if="post.User.UUID === userID || isAdmin">
+                </MenuItem>
+                <MenuItem
+                  as="li"
+                  v-slot="{ close }"
+                  v-if="post.User.UUID === userID || isAdmin"
+                >
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
                     @click.prevent="
                       () => {
                         deletePost(post.ID);
-                        useMenuInstance.hide();
+                        close();
                       }
                     "
                   >
                     {{ $t("bb_delete_cta") }}
                   </button>
-                </li>
+                </MenuItem>
               </ul>
-            </div>
-          </div>
+            </MenuItems>
+          </Menu>
         </div>
       </h1>
 
@@ -761,8 +757,15 @@ onMounted(() => {
         <div
           class="hidden lg:flex gap-4 items-center justify-between pr-3 w-44"
         >
-          <div v-if="post.LastReplyID" class="text-sm">
-            <span itemprop="dateModified">
+          <div v-if="post.LastReply.UUID" class="text-sm">
+            <span
+              itemprop="dateModified"
+              v-if="
+                post.LastReply &&
+                post.LastReply.CreatedAt &&
+                post.LastReply.CreatedAt.unixms
+              "
+            >
               {{ $formatTimeago(post.LastReply.CreatedAt.unixms) }}
             </span>
             <br />
@@ -776,7 +779,7 @@ onMounted(() => {
           </div>
           <component
             :is="avatarComponent"
-            v-if="post.LastReplyID"
+            v-if="post.LastReply.UUID"
             :name="
               post.LastReply.User?.UserProfile?.Username
                 ? post.LastReply.User.UserProfile.Username

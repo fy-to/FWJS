@@ -44,7 +44,7 @@ onUnmounted(() => {
 <template>
   <DefaultModal id="confirm" :title="title ? title : ''">
     <div
-      class="relative bg-fv-neutral-200 rounded-lg shadow dark:bg-fv-neutral-800"
+      class="relative bg-fv-neutral-200 rounded-lg shadow dark:bg-fv-neutral-900"
     >
       <div class="p-6 text-center">
         <ExclamationCircleIcon

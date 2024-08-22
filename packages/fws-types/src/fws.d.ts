@@ -6,6 +6,7 @@ export interface IFWSUrl {
     Host: string,
     Query: string,
     Scheme: string,
+    Canonical: string
 }
 
 export interface IFWS {

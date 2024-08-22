@@ -19,7 +19,7 @@ export const getHostname = (): string =>
    (typeof FW !== "undefined") ? FW?.Hostname : window.location.hostname;
 
 export const getURL = (): IFWSUrl =>
-   (typeof FW !== "undefined") ? FW?.URL : {Path: window.location.pathname, Full: window.location.href, Host: window.location.host, Query: window.location.search, Scheme: window.location.protocol};
+   (typeof FW !== "undefined") ? FW?.URL : {Path: window.location.pathname, Full: window.location.href, Host: window.location.host, Query: window.location.search, Scheme: window.location.protocol, Canonical: window.location.href};
 
 export const getInitialState = (): any =>
    (typeof FW !== "undefined") ? FW?.Initial : {};

@@ -1,8 +1,9 @@
 <script lang="ts" setup>
 import { HomeIcon, ChevronRightIcon } from "@heroicons/vue/24/solid";
 import type { BreadcrumbLink } from "../../types";
+import { defineBreadcrumb, useSchemaOrg } from "@unhead/schema-org";
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     nav: BreadcrumbLink[];
     showHome: Boolean;
@@ -12,23 +13,26 @@ withDefaults(
     showHome: () => true,
   },
 );
+
+const breadcrumbsSchemaFormat = props.nav.map((item, index) => {
+  return {
+    position: index + 1,
+    name: item.name,
+    item: item.to,
+  };
+});
+
+useSchemaOrg([
+  defineBreadcrumb({
+    itemListElement: breadcrumbsSchemaFormat,
+  }),
+]);
 </script>
 
 <template>
-  <ol
-    class="inline-flex items-center flex-wrap"
-    itemscope
-    itemtype="https://schema.org/BreadcrumbList"
-  >
+  <ol class="inline-flex items-center flex-wrap">
     <template v-for="(item, index) in nav" :key="`bc_${index.toString()}`">
-      <li
-        class="inline-flex items-center"
-        itemprop="itemListElement"
-        itemscope
-        itemtype="https://schema.org/ListItem"
-      >
-        <meta itemprop="position" :content="(index + 1).toString()" />
-
+      <li class="inline-flex items-center">
         <ChevronRightIcon
           v-if="index != 0"
           :class="
@@ -46,7 +50,6 @@ withDefaults(
               ? 'text-xs font-medium text-fv-neutral-700 hover:text-fv-neutral-900 dark:text-fv-neutral-200 dark:hover:text-white'
               : 'text-xs font-medium text-fv-neutral-700 hover:text-fv-neutral-900 dark:text-fv-neutral-200 dark:hover:text-white'
           "
-          itemprop="item"
         >
           <HomeIcon
             v-if="showHome && index === 0"
@@ -56,12 +59,11 @@ withDefaults(
                 : 'w-4 h-4 text-fv-neutral-400 inline-block mx-0.5 md:mx-1.5'
             "
           />
-          <span itemprop="name">{{ item.name }}</span>
+          <span>{{ item.name }}</span>
         </router-link>
         <span
           v-else
           class="text-xs font-medium text-fv-neutral-500 dark:text-fv-neutral-200"
-          itemprop="name"
         >
           {{ item.name }}
         </span>

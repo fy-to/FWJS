@@ -134,7 +134,7 @@ const userFlow = async (params: paramsType = { initial: false }) => {
         }
       } else {
         if (props.onSuccess) {
-          await props.onSuccess();
+          await props.onSuccess(actualReturnTo);
         } else {
           const routeExists = router.resolve(actualReturnTo);
           if (routeExists.matched.length != 0) router.push(actualReturnTo);

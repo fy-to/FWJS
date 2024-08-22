@@ -6,6 +6,7 @@ import { useRest } from "../../composables/rest";
 import { LazyHead, useSeo } from "../../composables/seo";
 import type { BreadcrumbLink } from "../../types";
 import DefaultBreadcrumb from "../ui/DefaultBreadcrumb.vue";
+import { defineWebPage, useSchemaOrg } from "@unhead/schema-org";
 
 const props = withDefaults(
   defineProps<{
@@ -18,6 +19,9 @@ const props = withDefaults(
     showTitle?: boolean;
     postValue?: any;
     passData?: boolean;
+    imageDomain?: string;
+    multLanguage?: boolean;
+    urlSlug?: string;
   }>(),
   {
     baseBreadcrumb: () => [],
@@ -26,6 +30,9 @@ const props = withDefaults(
     showTitle: true,
     postValue: () => undefined,
     passData: false,
+    imageDomain: "https://s.nocachenocry.com",
+    multLanguage: true,
+    urlSlug: "blog",
   },
 );
 
@@ -47,7 +54,7 @@ const getBlogPost = async () => {
     seo.value.description = post.value.Overview;
 
     if (post.value.CoverUUID) {
-      seo.value.image = `https://s.nocachenocry.com/${post.value.CoverUUID}?vars=format=png:resize=512x512`;
+      seo.value.image = `${props.imageDomain}/${post.value.CoverUUID}?vars=format=png:resize=512x512`;
       seo.value.imageWidth = "512";
       seo.value.imageHeight = "512";
       seo.value.imageType = "image/png";
@@ -57,8 +64,11 @@ const getBlogPost = async () => {
     } else {
       seo.value.locale = "en-US";
     }
-    seo.value.canonical = `https://${props.baseUrl}/l/${seo.value.locale}/blog/${post.value.Slug}`;
-    seo.value.url = `https://${props.baseUrl}/l/${seo.value.locale}/blog/${post.value.Slug}`;
+    if (props.multLanguage) {
+      seo.value.url = `https://${props.baseUrl}/l/${seo.value.locale}/${props.urlSlug}/${post.value.Slug}`;
+    } else {
+      seo.value.url = `https://${props.baseUrl}/${props.urlSlug}/${post.value.Slug}`;
+    }
     if (post.value.Locales && post.value.Locales.length > 1) {
       seo.value.alternateLocales = post.value.Locales;
     }
@@ -73,6 +83,12 @@ watchEffect(() => {
   getBlogPost();
 });
 useSeo(seo);
+useSchemaOrg([
+  defineWebPage({
+    datePublished: post.value.CreatedAt.iso,
+    dateModified: post.value.UpdatedAt.iso,
+  }),
+]);
 </script>
 <template>
   <div>
@@ -94,7 +110,7 @@ useSeo(seo);
         <meta
           itemprop="thumbnailUrl"
           v-if="post.CoverUUID"
-          :content="`https://s.nocachenocry.com/${post.CoverUUID}?vars=format=webp:resize=512x512`"
+          :content="`${props.imageDomain}/${post.CoverUUID}?vars=format=webp:resize=512x512`"
         />
         <div class="py-4 px-4 max-w-6xl mx-auto" v-if="showTitle">
           <h1
@@ -111,7 +127,7 @@ useSeo(seo);
         </div>
         <img
           v-if="post.CoverUUID && showImage"
-          :src="`https://s.nocachenocry.com/${post.CoverUUID}?vars=format=webp:resize=768x768`"
+          :src="`${props.imageDomain}/${post.CoverUUID}?vars=format=webp:resize=768x768`"
           :alt="post.Title"
           class="h-auto rounded-xl shadow max-w-[768px] max-h-[280px] mx-auto mb-6"
         />

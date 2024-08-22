@@ -36,6 +36,7 @@ const props = withDefaults(
     videoComponent?: Component | string;
     imageComponent?: Component | string;
     isVideo?: Function;
+    ranking?: boolean;
   }>(),
   {
     modelValue: 0,
@@ -49,6 +50,7 @@ const props = withDefaults(
     getThumbnailUrl: (image: any) => `${image.image_url}?s=250x250&m=autocrop`,
     paging: undefined,
     borderColor: undefined,
+    ranking: false,
   },
 );
 const emit = defineEmits(["update:modelValue"]);
@@ -343,9 +345,11 @@ onUnmounted(() => {
         <template v-for="i in images.length" :key="`g_${id}_${i}`">
           <template v-if="mode == 'mason'">
             <div
-              class="grid gap-4 items-start"
+              class="grid gap-4 items-start relative"
               v-if="i + (1 % gridHeight) == 0"
             >
+              <div v-if="ranking" class="img-gallery-ranking">{{ i }}</div>
+
               <template v-for="j in gridHeight" :key="`gi_${id}_${i + j}`">
                 <div>
                   <img
@@ -367,7 +371,8 @@ onUnmounted(() => {
               </template>
             </div>
           </template>
-          <div v-else>
+          <div class="relative" v-else>
+            <div v-if="ranking" class="img-gallery-ranking">{{ i }}</div>
             <img
               @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
               class="h-auto max-w-full rounded-lg cursor-pointer"

@@ -70,7 +70,7 @@ await getBoards();
           itemscope
           itemtype="http://schema.org/ListItem"
         >
-          <metameta itemprop="position" :content="idx2" />
+          <meta itemprop="position" :content="idx2.toString()" />
           <meta itemprop="url" :content="`/forums/${bb.UUID}`" />
           <div
             class="mx-2 flex w-auto items-center divide-x divide-fv-neutral-900/[.2] dark:divide-fv-neutral-300/[.2]"
@@ -100,9 +100,11 @@ await getBoards();
                     :to="`/forums/${bb.UUID}/${bb.LastPost.Slug}`"
                     :title="bb.LastPost.Title"
                   >
-                    <b>{{ bb.LastPost.Title }}</b> </RouterLink
-                  >,
-                  <small>{{ $formatTimeago(bb.LastPost.CreatedAt.iso) }}</small>
+                    <b>{{ $cropText(bb.LastPost.Title, 25) }}</b> </RouterLink
+                  ><br />
+                  <small class="!text-black dark:!text-white">{{
+                    $formatTimeago(bb.LastPost.CreatedAt.iso)
+                  }}</small>
                 </div>
                 <span v-else>
                   {{ $t("bb_no_post") }}

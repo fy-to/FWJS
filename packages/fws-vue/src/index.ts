@@ -1,5 +1,5 @@
 import type { Plugin, App } from "vue";
-import i18next from "i18next";
+import i18next, { t } from "i18next";
 import mitt from "mitt";
 import { Emitter } from "mitt";
 import { useServerRouter } from "./stores/serverRouter";
@@ -11,7 +11,12 @@ import {
   isServerRendered,
 } from "./composables/ssr";
 import { useSeo } from "./composables/seo";
-import { useUserStore, useUserCheck, useUserCheckAsync } from "./stores/user";
+import {
+  useUserStore,
+  useUserCheck,
+  useUserCheckAsync,
+  useUserCheckAsyncSimple,
+} from "./stores/user";
 import { ClientOnly } from "./components/ssr/ClientOnly";
 import {
   cropText,
@@ -23,6 +28,7 @@ import {
 } from "./composables/templating";
 import { useRest } from "./composables/rest";
 export * from "./stores/serverRouter";
+export type * from "./types";
 
 // Components/UI/Transitions
 import SlideTransition from "./components/ui/transitions/SlideTransition.vue";
@@ -85,22 +91,6 @@ function createFWS(): Plugin {
   };
 }
 
-declare module "vue" {
-  export interface ComponentCustomProperties {
-    $t: typeof i18next.t;
-    $eventBus: Emitter<Events>;
-    $cropText: typeof cropText;
-    $formatBytes: typeof formatBytes;
-    $formatTimeago: typeof formatTimeago;
-    $formatDatetime: typeof formatDatetime;
-    $formatDate: typeof formatDate;
-    $getContrastingTextColor: typeof getContrastingTextColor;
-  }
-  export interface GlobalComponents {
-    ClientOnly: typeof ClientOnly;
-  }
-}
-
 export {
   i18nextPromise,
   useTranslation,
@@ -115,6 +105,7 @@ export {
   useUserCheck,
   useUserCheckAsync,
   useRest,
+  useUserCheckAsyncSimple,
 
   // Components
   // UI/Transitions
