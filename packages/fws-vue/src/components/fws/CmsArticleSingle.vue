@@ -112,7 +112,7 @@ useSchemaOrg([
           v-if="post.CoverUUID"
           :content="`${props.imageDomain}/${post.CoverUUID}?vars=format=webp:resize=512x512`"
         />
-        <div class="py-4 px-4 max-w-6xl mx-auto" v-if="showTitle">
+        <div class="py-4 px-4 !max-w-full mx-auto w-full" v-if="showTitle">
           <h1
             class="mb-4 text-4xl tracking-tight font-extrabold text-center text-fv-neutral-900 dark:text-white"
           >
@@ -133,7 +133,7 @@ useSchemaOrg([
         />
         <section
           itemprop="articleBody"
-          class="prose dark:prose-invert max-w-6xl mx-auto mb-6"
+          class="prose dark:prose-invert !max-w-full mx-auto w-full mb-6"
           v-html="post.Body"
         ></section>
       </article>

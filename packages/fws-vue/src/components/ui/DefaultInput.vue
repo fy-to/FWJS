@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import { LinkIcon } from "@heroicons/vue/24/solid";
-import {
-  computed,
-  defineAsyncComponent,
-  onMounted,
-  onUnmounted,
-  ref,
-  toRef,
-} from "vue";
+import { computed, ref, toRef } from "vue";
 import type { ErrorObject } from "@vuelidate/core";
 import { useTranslation } from "../../composables/translations";
 import DefaultTagInput from "./DefaultTagInput.vue";
@@ -41,6 +33,8 @@ const props = withDefaults(
     maxLengthPerTag?: number;
     disableDatesUnder18?: boolean;
     copyButton?: boolean;
+    maxRange?: number;
+    minRange?: number;
   }>(),
   {
     showLabel: true,
@@ -51,6 +45,8 @@ const props = withDefaults(
     checkboxFalseValue: false,
     disabled: false,
     maxLengthPerTag: 0,
+    maxRange: 100,
+    minRange: 0,
     disableDatesUnder18: false,
     copyButton: false,
     dpOptions: () => ({}),
@@ -136,6 +132,7 @@ defineExpose({ focus, blur, getInputRef });
           'textarea-grow',
           'select',
           'phone',
+          'range',
           'chips',
           'tags',
           'mask',
@@ -150,6 +147,7 @@ defineExpose({ focus, blur, getInputRef });
               'text',
               'phone',
               'password',
+              'range',
               'email',
               'search',
               'url',
@@ -166,6 +164,7 @@ defineExpose({ focus, blur, getInputRef });
             v-if="label"
             class="block mb-2 text-sm font-medium text-fv-neutral-900 dark:text-white"
             >{{ label }}
+            <template v-if="type === 'range'"> ({{ model }}) </template>
           </label>
           <input
             ref="inputRef"
@@ -174,17 +173,41 @@ defineExpose({ focus, blur, getInputRef });
             :name="id"
             :class="{
               error: checkErrors,
+              'bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-lg focus:ring-fv-primary-500 focus:border-fv-primary-500 block w-full p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500':
+                type !== 'range',
+              'w-full h-2 bg-fv-neutral-200 rounded-lg appearance-none cursor-pointer dark:bg-fv-neutral-700':
+                type === 'range',
             }"
             v-model="model"
             :autocomplete="autocomplete"
+            :min="type === 'range' ? minRange : undefined"
+            :max="type === 'range' ? maxRange : undefined"
             :placeholder="placeholder"
             :disabled="disabled"
             :aria-describedby="help ? `${id}-help` : id"
-            class="bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-lg focus:ring-fv-primary-500 focus:border-fv-primary-500 block w-full p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500"
             :required="req"
             @focus="handleFocus"
             @blur="handleBlur"
           />
+          <template v-if="type === 'range'">
+            <span
+              class="text-sm text-gray-500 dark:text-gray-400 absolute start-0 -bottom-6"
+              >Min ({{ minRange }})
+            </span>
+            <span
+              class="text-sm text-gray-500 dark:text-gray-400 absolute start-1/3 -translate-x-1/2 rtl:translate-x-1/2 -bottom-6"
+              >{{ ((maxRange - minRange) / 3 + minRange).toFixed(0) }}</span
+            >
+            <span
+              class="text-sm text-gray-500 dark:text-gray-400 absolute start-2/3 -translate-x-1/2 rtl:translate-x-1/2 -bottom-6"
+            >
+              {{ (((maxRange - minRange) / 3) * 2 + minRange).toFixed(0) }}
+            </span>
+            <span
+              class="text-sm text-gray-500 dark:text-gray-400 absolute end-0 -bottom-6"
+              >Max ({{ maxRange }})</span
+            >
+          </template>
         </div>
         <!--
         <div v-if="type == 'datepicker'">

@@ -322,7 +322,9 @@ onUnmounted(() => {
                     :image="getThumbnailUrl(images[i - 1]).image"
                     :variant="getThumbnailUrl(images[i - 1]).variant"
                     :alt="getThumbnailUrl(images[i - 1]).alt"
-                    class="h-auto max-w-full rounded-lg cursor-pointer shadow"
+                    :class="`h-auto max-w-full rounded-lg cursor-pointer shadow ${getBorderColor(
+                      images[i - 1],
+                    )}`"
                   />
                 </div>
               </div>
@@ -364,8 +366,14 @@ onUnmounted(() => {
                     :image="getThumbnailUrl(images[i + j - 2]).image"
                     :variant="getThumbnailUrl(images[i + j - 2]).variant"
                     :alt="getThumbnailUrl(images[i + j - 2]).alt"
-                    class="h-auto max-w-full rounded-lg cursor-pointer"
+                    :class="`h-auto max-w-full rounded-lg cursor-pointer ${getBorderColor(
+                      images[i + j - 2],
+                    )}`"
                     @click="$eventBus.emit(`${id}GalleryImage`, i + j - 2)"
+                    :likes="getThumbnailUrl(images[i + j - 2]).likes"
+                    :show-likes="getThumbnailUrl(images[i + j - 2]).showLikes"
+                    :isAuthor="getThumbnailUrl(images[i + j - 2]).isAuthor"
+                    :user-uuid="getThumbnailUrl(images[i + j - 2]).userUUID"
                   />
                 </div>
               </template>
@@ -385,8 +393,14 @@ onUnmounted(() => {
               :image="getThumbnailUrl(images[i - 1]).image"
               :variant="getThumbnailUrl(images[i - 1]).variant"
               :alt="getThumbnailUrl(images[i - 1]).alt"
-              class="h-auto max-w-full rounded-lg cursor-pointer"
+              :class="`h-auto max-w-full rounded-lg cursor-pointer ${getBorderColor(
+                images[i - 1],
+              )}`"
               @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+              :likes="getThumbnailUrl(images[i - 1]).likes"
+              :show-likes="getThumbnailUrl(images[i - 1]).showLikes"
+              :isAuthor="getThumbnailUrl(images[i - 1]).isAuthor"
+              :user-uuid="getThumbnailUrl(images[i - 1]).userUUID"
             />
           </div>
         </template>

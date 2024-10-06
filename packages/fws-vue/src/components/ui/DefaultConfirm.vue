@@ -51,11 +51,10 @@ onUnmounted(() => {
           class="mx-auto mb-4 text-fv-neutral-400 w-12 h-12 dark:text-fv-neutral-200"
         />
 
-        <h3
-          class="mb-5 text-lg font-normal text-fv-neutral-500 dark:text-fv-neutral-400"
-        >
-          {{ desc ? desc : title }}
-        </h3>
+        <p
+          class="mb-5 !text-left prose prose-invert prose-sm !min-w-full"
+          v-html="desc ? desc : title"
+        ></p>
         <div class="flex justify-between gap-3 mt-4">
           <button class="btn danger defaults" @click="_onConfirm()">
             {{ $t("confirm_modal_cta_confirm") }}
