@@ -457,9 +457,9 @@ onUnmounted(() => {
 .slide-next-enter-active,
 .slide-next-leave-active {
   transition:
-    opacity 0.25s,
-    transform 0.25s,
-    filter 0.25s;
+    opacity 0.15s,
+    transform 0.15s,
+    filter 0.15s;
 }
 
 .slide-next-enter-from {
@@ -490,9 +490,9 @@ onUnmounted(() => {
 .slide-prev-enter-active,
 .slide-prev-leave-active {
   transition:
-    opacity 0.5s,
-    transform 0.5s,
-    filter 0.5s;
+    opacity 0.15s,
+    transform 0.15s,
+    filter 0.15s;
 }
 
 .slide-prev-enter-from {
