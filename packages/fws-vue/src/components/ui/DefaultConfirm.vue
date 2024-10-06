@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
-import { ExclamationCircleIcon } from "@heroicons/vue/24/solid";
 import { useEventBus } from "../../composables/event-bus";
 import DefaultModal from "./DefaultModal.vue";
 
@@ -42,18 +41,16 @@ onUnmounted(() => {
 });
 </script>
 <template>
-  <DefaultModal id="confirm" :title="title ? title : ''">
+  <DefaultModal id="confirm">
     <div
       class="relative bg-fv-neutral-200 rounded-lg shadow dark:bg-fv-neutral-900"
     >
-      <div class="p-6 text-center">
-        <ExclamationCircleIcon
-          class="mx-auto mb-4 text-fv-neutral-400 w-12 h-12 dark:text-fv-neutral-200"
-        />
-
+      <div class="p-1.5 lg:p-5 text-center">
         <p
-          class="mb-5 !text-left prose prose-invert prose-sm !min-w-full"
-          v-html="desc ? desc : title"
+          class="mb-3 !text-left prose prose-invert prose-sm !min-w-full"
+          v-html="
+            desc ? '<h2>' + title + '</h2>' + desc : '<h2>' + title + '</h2>'
+          "
         ></p>
         <div class="flex justify-between gap-3 mt-4">
           <button class="btn danger defaults" @click="_onConfirm()">

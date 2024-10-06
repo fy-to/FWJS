@@ -12,9 +12,11 @@ import {
 } from "@heroicons/vue/24/solid";
 import DefaultPaging from "./DefaultPaging.vue";
 import type { Component } from "vue";
+
 const isGalleryOpen = ref<boolean>(false);
 const eventBus = useEventBus();
 const sidePanel = ref<boolean>(true);
+
 const props = withDefaults(
   defineProps<{
     id: string;
@@ -53,6 +55,7 @@ const props = withDefaults(
     ranking: false,
   },
 );
+
 const emit = defineEmits(["update:modelValue"]);
 const modelValue = computed({
   get: () => props.modelValue,
@@ -60,6 +63,9 @@ const modelValue = computed({
     emit("update:modelValue", i);
   },
 });
+
+const direction = ref<"next" | "prev">("next");
+
 const setModal = (value: boolean) => {
   if (value === true) {
     if (props.onOpen) props.onOpen();
@@ -68,6 +74,7 @@ const setModal = (value: boolean) => {
   }
   isGalleryOpen.value = value;
 };
+
 const openGalleryImage = (index: number | undefined) => {
   if (index === undefined) modelValue.value = 0;
   else {
@@ -75,14 +82,18 @@ const openGalleryImage = (index: number | undefined) => {
   }
   setModal(true);
 };
+
 const goNextImage = () => {
+  direction.value = "next";
   if (modelValue.value < props.images.length - 1) {
     modelValue.value++;
   } else {
     modelValue.value = 0;
   }
 };
+
 const goPrevImage = () => {
+  direction.value = "prev";
   if (modelValue.value > 0) {
     modelValue.value--;
   } else {
@@ -90,14 +101,17 @@ const goPrevImage = () => {
       props.images.length - 1 > 0 ? props.images.length - 1 : 0;
   }
 };
+
 const modelValueSrc = computed(() => {
   if (props.images.length == 0) return false;
   if (props.images[modelValue.value] == undefined) return false;
   return props.getImageUrl(props.images[modelValue.value]);
 });
+
 const start = reactive({ x: 0, y: 0 });
 
 const touchStart = (event: TouchEvent) => {
+  event.preventDefault();
   const touch = event.touches[0];
   start.x = touch.screenX;
   start.y = touch.screenY;
@@ -110,44 +124,55 @@ const touchEnd = (event: TouchEvent) => {
   const diffX = start.x - end.x;
   const diffY = start.y - end.y;
 
-  if (Math.abs(diffX) > Math.abs(diffY)) {
+  // Add a threshold to prevent accidental swipes
+  if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
     if (diffX > 0) {
+      direction.value = "next";
       goNextImage();
     } else {
+      direction.value = "prev";
       goPrevImage();
     }
   }
 };
+
 const getBorderColor = (i: any) => {
   if (props.borderColor !== undefined) {
     return props.borderColor(i);
   }
   return "";
 };
+
 const isKeyPressed = ref<boolean>(false);
+
 const handleKeyboardInput = (event: KeyboardEvent) => {
   if (isKeyPressed.value) return;
   switch (event.key) {
     case "ArrowRight":
       isKeyPressed.value = true;
+      direction.value = "next";
       goNextImage();
       break;
     case "ArrowLeft":
       isKeyPressed.value = true;
+      direction.value = "prev";
       goPrevImage();
       break;
     default:
       break;
   }
 };
+
 const handleKeyboardRelease = (event: KeyboardEvent) => {
   if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
     isKeyPressed.value = false;
   }
 };
+
 const closeGallery = () => {
   setModal(false);
 };
+
 onMounted(() => {
   eventBus.on(`${props.id}GalleryImage`, openGalleryImage);
   eventBus.on(`${props.id}Gallery`, openGalleryImage);
@@ -157,6 +182,7 @@ onMounted(() => {
     window.addEventListener("keyup", handleKeyboardRelease);
   }
 });
+
 onUnmounted(() => {
   eventBus.off(`${props.id}Gallery`, openGalleryImage);
   eventBus.off(`${props.id}GalleryImage`, openGalleryImage);
@@ -167,6 +193,7 @@ onUnmounted(() => {
   }
 });
 </script>
+
 <template>
   <div>
     <TransitionRoot
@@ -214,47 +241,56 @@ onUnmounted(() => {
                   </button>
                 </div>
                 <div
-                  class="flex-1 flex flex-col items-center justify-center max-w-full lg:max-w-[calc(100vw - 256px)]"
+                  class="flex-1 flex flex-col items-center justify-center max-w-full lg:max-w-[calc(100vw - 256px)] relative"
+                  @touchstart="touchStart"
+                  @touchend="touchEnd"
                 >
-                  <div
-                    class="flex-1 w-full max-w-full flex items-center justify-center"
+                  <transition
+                    :name="direction === 'next' ? 'slide-next' : 'slide-prev'"
+                    mode="out-in"
                   >
-                    <template
-                      v-if="videoComponent && isVideo(images[modelValue])"
+                    <div
+                      v-if="true"
+                      :key="`image-display-${modelValue}`"
+                      class="flex-1 w-full max-w-full flex flex-col items-center justify-center absolute inset-0"
                     >
-                      <ClientOnly>
-                        <component
-                          :is="videoComponent"
-                          :src="isVideo(images[modelValue])"
-                          class="shadow max-w-full h-auto object-contain max-h-[85vh]"
-                          @touchstart="touchStart"
-                          @touchend="touchEnd"
-                        />
-                      </ClientOnly>
-                    </template>
-                    <template v-else>
-                      <img
-                        class="shadow max-w-full h-auto object-contain max-h-[85vh]"
-                        :src="modelValueSrc"
-                        v-if="modelValueSrc && imageComponent == 'img'"
-                        @touchstart="touchStart"
-                        @touchend="touchEnd"
-                      />
-                      <component
-                        v-else-if="modelValueSrc && imageComponent"
-                        :is="imageComponent"
-                        :image="modelValueSrc.image"
-                        :variant="modelValueSrc.variant"
-                        :alt="modelValueSrc.alt"
-                        class="shadow max-w-full h-auto object-contain max-h-[85vh]"
-                      />
-                    </template>
-                  </div>
-                  <div
-                    class="flex-0 py-2 flex items-center justify-center max-w-full w-full"
-                  >
-                    <slot :value="images[modelValue]"></slot>
-                  </div>
+                      <div
+                        class="flex-1 w-full max-w-full flex items-center justify-center"
+                      >
+                        <template
+                          v-if="videoComponent && isVideo(images[modelValue])"
+                        >
+                          <ClientOnly>
+                            <component
+                              :is="videoComponent"
+                              :src="isVideo(images[modelValue])"
+                              class="shadow max-w-full h-auto object-contain max-h-[85vh]"
+                            />
+                          </ClientOnly>
+                        </template>
+                        <template v-else>
+                          <img
+                            class="shadow max-w-full h-auto object-contain max-h-[85vh]"
+                            :src="modelValueSrc"
+                            v-if="modelValueSrc && imageComponent == 'img'"
+                          />
+                          <component
+                            v-else-if="modelValueSrc && imageComponent"
+                            :is="imageComponent"
+                            :image="modelValueSrc.image"
+                            :variant="modelValueSrc.variant"
+                            :alt="modelValueSrc.alt"
+                            class="shadow max-w-full h-auto object-contain max-h-[85vh]"
+                          />
+                        </template>
+                      </div>
+                      <div
+                        class="flex-0 py-2 flex items-center justify-center max-w-full w-full"
+                      >
+                        <slot :value="images[modelValue]"></slot>
+                      </div>
+                    </div>
+                  </transition>
                 </div>
                 <div
                   class="hidden lg:flex w-10 flex-shrink-0 items-center justify-center"
@@ -293,6 +329,7 @@ onUnmounted(() => {
               leave-to="translate-x-full"
               class="hidden lg:block flex-shrink-0 w-64 bg-fv-neutral-800 h-[100vh] max-h-[100vh] overflow-y-auto"
             >
+              <!-- Side panel content -->
               <div v-if="paging" class="flex items-center justify-center">
                 <DefaultPaging :items="paging" :id="id" />
               </div>
@@ -301,11 +338,10 @@ onUnmounted(() => {
                   v-for="i in images.length"
                   :key="`bg_${id}_${i}`"
                   class="hover:!brightness-100"
-                  :style="`${
-                    i - 1 == modelValue
-                      ? 'filter: brightness(1)'
-                      : 'filter: brightness(0.5)'
-                  }`"
+                  :style="{
+                    filter:
+                      i - 1 == modelValue ? 'brightness(1)' : 'brightness(0.5)',
+                  }"
                 >
                   <img
                     @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
@@ -333,6 +369,7 @@ onUnmounted(() => {
         </DialogPanel>
       </Dialog>
     </TransitionRoot>
+
     <template v-if="mode == 'grid' || mode == 'mason' || mode == 'custom'">
       <div
         :class="{
@@ -415,3 +452,85 @@ onUnmounted(() => {
     </button>
   </div>
 </template>
+<style scoped>
+/* Transition styles for next (right) navigation */
+.slide-next-enter-active,
+.slide-next-leave-active {
+  transition:
+    opacity 0.5s,
+    transform 0.5s,
+    filter 0.5s;
+}
+
+.slide-next-enter-from {
+  opacity: 0;
+  transform: translateX(100%);
+  filter: blur(10px);
+}
+
+.slide-next-enter-to {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+}
+
+.slide-next-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+}
+
+.slide-next-leave-to {
+  opacity: 0;
+  transform: translateX(-100%);
+  filter: blur(10px);
+}
+
+/* Transition styles for prev (left) navigation */
+.slide-prev-enter-active,
+.slide-prev-leave-active {
+  transition:
+    opacity 0.5s,
+    transform 0.5s,
+    filter 0.5s;
+}
+
+.slide-prev-enter-from {
+  opacity: 0;
+  transform: translateX(-100%);
+  filter: blur(10px);
+}
+
+.slide-prev-enter-to {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+}
+
+.slide-prev-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+}
+
+.slide-prev-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+  filter: blur(10px);
+}
+
+/* Ensure the images are positioned correctly to prevent overlap */
+.relative-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.relative-container > div {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+</style>
