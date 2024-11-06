@@ -1,3 +1,119 @@
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import { useEventBus } from '../../composables/event-bus'
+
+type colorType = 'blue' | 'red' | 'green' | 'purple' | 'orange' | 'neutral'
+
+const props = withDefaults(
+  defineProps<{
+    modelValue: string[]
+    color?: colorType
+    label?: string
+    id: string
+    separators?: string[]
+    autofocus?: boolean
+    help?: string
+    maxLenghtPerTag?: number
+    error?: string
+    copyButton?: boolean
+  }>(),
+  {
+    copyButton: false,
+    maxLenghtPerTag: 0,
+    color: 'blue',
+    label: 'Tags',
+    separators: () => [','],
+    autofocus: false,
+  },
+)
+
+const textInput = ref<HTMLElement>()
+
+const emit = defineEmits(['update:modelValue'])
+const model = computed({
+  get: () => props.modelValue,
+  set: (items) => {
+    emit('update:modelValue', items)
+  },
+})
+
+onMounted(() => {
+  if (props.autofocus) {
+    focusInput()
+  }
+})
+const eventBus = useEventBus()
+async function copyText() {
+  const text = model.value.join(', ')
+  await navigator.clipboard.writeText(text)
+  eventBus.emit('SendNotif', {
+    title: 'Text copied!',
+    type: 'success',
+    time: 2500,
+  })
+}
+
+function handleInput(event: any) {
+  const separatorsRegex = new RegExp(props.separators.join('|'))
+  if (separatorsRegex.test(event.data)) {
+    addTag()
+  }
+}
+
+function addTag() {
+  if (!textInput.value) return
+
+  const separatorsRegex = new RegExp(props.separators.join('|'))
+  if (!textInput.value.textContent) return
+  const newTags = textInput.value.textContent
+    .split(separatorsRegex)
+    .map((tag: string) => tag.trim())
+    .filter((tag: string) => tag.length > 0)
+  model.value.push(...newTags)
+  textInput.value.textContent = ''
+}
+
+function removeTag(index: number) {
+  model.value.splice(index, 1)
+  focusInput()
+}
+
+function removeLastTag() {
+  if (!textInput.value) return
+  if (textInput.value.textContent === '') {
+    model.value.pop()
+  }
+  else {
+    if (!textInput.value.textContent) return
+    textInput.value.textContent = textInput.value.textContent.slice(0, -1)
+
+    const range = document.createRange()
+    const sel = window.getSelection()
+    range.selectNodeContents(textInput.value)
+    range.collapse(false)
+    if (!sel) return
+    sel.removeAllRanges()
+    sel.addRange(range)
+  }
+}
+function focusInput() {
+  if (!textInput.value) return
+
+  textInput.value.focus()
+}
+
+function handlePaste(e: any) {
+  if (!textInput.value) return
+  // @ts-expect-error: Property 'clipboardData' does not exist on type 'ClipboardEvent'.
+  const text = (e.clipboardData || window.clipboardData).getData('text')
+  const separatorsRegex = new RegExp(props.separators.join('|'), 'g')
+  const pasteText = text.replace(separatorsRegex, ',')
+  textInput.value.textContent += pasteText
+  e.preventDefault()
+  addTag()
+}
+</script>
+
 <template>
   <div>
     <div
@@ -34,136 +150,22 @@
         </button>
       </span>
       <div
-        contenteditable
-        class="input"
         :id="`tags_${id}`"
         ref="textInput"
+        contenteditable
+        class="input"
+        placeholder="Add a tag..."
         @input="handleInput"
         @paste.prevent="handlePaste"
-        placeholder="Add a tag..."
-      ></div>
+      />
     </div>
-    <div class="flex justify-end mt-1" v-if="copyButton">
+    <div v-if="copyButton" class="flex justify-end mt-1">
       <button class="btn neutral small" type="button" @click.prevent="copyText">
         Copy tags
       </button>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { useEventBus } from "../../composables/event-bus";
-type colorType = "blue" | "red" | "green" | "purple" | "orange" | "neutral";
-
-const props = withDefaults(
-  defineProps<{
-    modelValue: string[];
-    color?: colorType;
-    label?: string;
-    id: string;
-    separators?: string[];
-    autofocus?: boolean;
-    help?: string;
-    maxLenghtPerTag?: number;
-    error?: string;
-    copyButton?: boolean;
-  }>(),
-  {
-    copyButton: false,
-    maxLenghtPerTag: 0,
-    color: "blue",
-    label: "Tags",
-    separators: () => [","],
-    autofocus: false,
-  },
-);
-
-const textInput = ref<HTMLElement>();
-
-const emit = defineEmits(["update:modelValue"]);
-const model = computed({
-  get: () => props.modelValue,
-  set: (items) => {
-    emit("update:modelValue", items);
-  },
-});
-
-onMounted(() => {
-  if (props.autofocus) {
-    focusInput();
-  }
-});
-const eventBus = useEventBus();
-const copyText = async () => {
-  const text = model.value.join(", ");
-  await navigator.clipboard.writeText(text);
-  eventBus.emit("SendNotif", {
-    title: "Text copied!",
-    type: "success",
-    time: 2500,
-  });
-};
-
-const handleInput = (event: any) => {
-  const separatorsRegex = new RegExp(props.separators.join("|"));
-  if (separatorsRegex.test(event.data)) {
-    addTag();
-  }
-};
-
-const addTag = () => {
-  if (!textInput.value) return;
-
-  const separatorsRegex = new RegExp(props.separators.join("|"));
-  const newTags = textInput.value.innerText
-    .split(separatorsRegex)
-    .map((tag: string) => tag.trim())
-    .filter((tag: string) => tag.length > 0);
-  model.value.push(...newTags);
-  textInput.value.innerText = "";
-};
-
-const removeTag = (index: number) => {
-  model.value.splice(index, 1);
-  focusInput();
-};
-
-const removeLastTag = () => {
-  if (!textInput.value) return;
-  if (textInput.value.innerText === "") {
-    model.value.pop();
-  } else {
-    const currentLength = textInput.value.innerText.length;
-    textInput.value.innerText = textInput.value.innerText.slice(0, -1);
-
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.selectNodeContents(textInput.value);
-    range.collapse(false);
-    if (!sel) return;
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-};
-const focusInput = () => {
-  if (!textInput.value) return;
-
-  textInput.value.focus();
-};
-
-const handlePaste = (e: any) => {
-  if (!textInput.value) return;
-
-  // @ts-ignore
-  const text = (e.clipboardData || window.clipboardData).getData("text");
-  const separatorsRegex = new RegExp(props.separators.join("|"), "g");
-  const pasteText = text.replace(separatorsRegex, ",");
-  textInput.value.innerText += pasteText;
-  e.preventDefault();
-  addTag();
-};
-</script>
 
 <style scoped>
 .tags-input {

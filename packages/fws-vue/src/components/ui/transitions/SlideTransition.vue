@@ -1,12 +1,12 @@
 <script setup lang="ts">
 const props = defineProps<{
-  animation: string;
-}>();
+  animation: string
+}>()
 </script>
 
 <template>
   <Transition :name="props.animation" mode="out-in">
-    <slot></slot>
+    <slot />
   </Transition>
 </template>
 

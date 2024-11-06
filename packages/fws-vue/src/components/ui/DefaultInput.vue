@@ -1,44 +1,44 @@
 <script setup lang="ts">
-import { computed, ref, toRef } from "vue";
-import type { ErrorObject } from "@vuelidate/core";
-import { useTranslation } from "../../composables/translations";
-import DefaultTagInput from "./DefaultTagInput.vue";
-//import VueTailwindDatepicker from "vue-tailwind-datepicker";
+import type { ErrorObject } from '@vuelidate/core'
+import { computed, ref, toRef } from 'vue'
+import { useTranslation } from '../../composables/translations'
+import DefaultTagInput from './DefaultTagInput.vue'
+// import VueTailwindDatepicker from "vue-tailwind-datepicker";
 
-type modelValueType = string | number | string[] | number[] | undefined;
+type modelValueType = string | number | string[] | number[] | undefined
 
-type checkboxValueType = any[] | Set<any> | undefined | boolean;
+type checkboxValueType = any[] | Set<any> | undefined | boolean
 const props = withDefaults(
   defineProps<{
-    id: string;
-    showLabel?: boolean;
-    label?: string;
-    type?: string;
-    placeholder?: string;
-    autocomplete?: string;
-    mask?: string;
-    checkboxTrueValue?: string | boolean;
-    checkboxFalseValue?: string | boolean;
-    req?: boolean;
-    linkIcon?: string;
-    modelValue?: modelValueType;
-    checkboxValue?: checkboxValueType;
-    options?: string[][];
-    dpOptions?: Record<string, any>;
-    help?: string;
-    error?: string;
-    color?: string;
-    errorVuelidate?: ErrorObject[];
-    disabled?: boolean;
-    maxLengthPerTag?: number;
-    disableDatesUnder18?: boolean;
-    copyButton?: boolean;
-    maxRange?: number;
-    minRange?: number;
+    id: string
+    showLabel?: boolean
+    label?: string
+    type?: string
+    placeholder?: string
+    autocomplete?: string
+    mask?: string
+    checkboxTrueValue?: string | boolean
+    checkboxFalseValue?: string | boolean
+    req?: boolean
+    linkIcon?: string
+    modelValue?: modelValueType
+    checkboxValue?: checkboxValueType
+    options?: string[][]
+    dpOptions?: Record<string, any>
+    help?: string
+    error?: string
+    color?: string
+    errorVuelidate?: ErrorObject[]
+    disabled?: boolean
+    maxLengthPerTag?: number
+    disableDatesUnder18?: boolean
+    copyButton?: boolean
+    maxRange?: number
+    minRange?: number
   }>(),
   {
     showLabel: true,
-    type: "text",
+    type: 'text',
     req: false,
     options: () => [],
     checkboxTrueValue: true,
@@ -51,71 +51,71 @@ const props = withDefaults(
     copyButton: false,
     dpOptions: () => ({}),
   },
-);
-const disableDatesAdult = (date: Date) => {
-  if (!props.disableDatesUnder18) return false;
-  const today = new Date();
+)
+/* function disableDatesAdult(date: Date) {
+  if (!props.disableDatesUnder18) return false
+  const today = new Date()
   const date18YearsAgo = new Date(
     today.getFullYear() - 18,
     today.getMonth(),
     today.getDate(),
-  );
+  )
 
-  return date >= date18YearsAgo;
-};
+  return date >= date18YearsAgo
+} */
 
-const translate = useTranslation();
-const inputRef = ref<HTMLInputElement>();
-const errorProps = toRef(props, "error");
-const errorVuelidateProps = toRef(props, "errorVuelidate");
+const translate = useTranslation()
+const inputRef = ref<HTMLInputElement>()
+const errorProps = toRef(props, 'error')
+const errorVuelidateProps = toRef(props, 'errorVuelidate')
 const checkErrors = computed(() => {
-  if (errorProps.value) return errorProps.value;
+  if (errorProps.value) return errorProps.value
   if (errorVuelidateProps.value && errorVuelidateProps.value.length > 0) {
-    const err = `vuelidate_validator_${errorVuelidateProps.value[0].$validator.toString()}`;
-    return translate(err);
+    const err = `vuelidate_validator_${errorVuelidateProps.value[0].$validator.toString()}`
+    return translate(err)
   }
 
-  return null;
-});
+  return null
+})
 
-const focus = () => {
-  if (inputRef.value) inputRef.value.focus();
-};
-const blur = () => {
-  if (inputRef.value) inputRef.value.blur();
-};
-const getInputRef = () => {
-  if (inputRef.value) return inputRef.value;
-};
-
-const handleFocus = () => {
-  emit("focus", props.id);
-};
-
-const handleBlur = () => {
-  emit("blur", props.id);
-};
-
+function focus() {
+  if (inputRef.value) inputRef.value.focus()
+}
+function blur() {
+  if (inputRef.value) inputRef.value.blur()
+}
+function getInputRef() {
+  if (inputRef.value) return inputRef.value
+}
 const emit = defineEmits([
-  "update:modelValue",
-  "update:checkboxValue",
-  "focus",
-  "blur",
-]);
+  'update:modelValue',
+  'update:checkboxValue',
+  'focus',
+  'blur',
+])
+function handleFocus() {
+  emit('focus', props.id)
+}
+
+function handleBlur() {
+  emit('blur', props.id)
+}
+
 const model = computed({
   get: () => props.modelValue,
   set: (items) => {
-    emit("update:modelValue", items);
+    emit('update:modelValue', items)
   },
-});
+})
 const modelCheckbox = computed({
   get: () => props.checkboxValue,
   set: (items) => {
-    emit("update:checkboxValue", items);
+    emit('update:checkboxValue', items)
   },
-});
-defineExpose({ focus, blur, getInputRef });
+})
+defineExpose({ focus, blur, getInputRef })
 </script>
+
 <template>
   <div>
     <template
@@ -160,25 +160,25 @@ defineExpose({ focus, blur, getInputRef });
           class="relative"
         >
           <label
-            :for="id"
             v-if="label"
+            :for="id"
             class="block mb-2 text-sm font-medium text-fv-neutral-900 dark:text-white"
-            >{{ label }}
+          >{{ label }}
             <template v-if="type === 'range'"> ({{ model }}) </template>
           </label>
           <input
-            ref="inputRef"
-            :type="type === 'datepicker' ? 'date' : type"
             :id="id"
+            ref="inputRef"
+            v-model="model"
+            :type="type === 'datepicker' ? 'date' : type"
             :name="id"
             :class="{
-              error: checkErrors,
+              'error': checkErrors,
               'bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-lg focus:ring-fv-primary-500 focus:border-fv-primary-500 block w-full p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500':
                 type !== 'range',
               'w-full h-2 bg-fv-neutral-200 rounded-lg appearance-none cursor-pointer dark:bg-fv-neutral-700':
                 type === 'range',
             }"
-            v-model="model"
             :autocomplete="autocomplete"
             :min="type === 'range' ? minRange : undefined"
             :max="type === 'range' ? maxRange : undefined"
@@ -188,16 +188,15 @@ defineExpose({ focus, blur, getInputRef });
             :required="req"
             @focus="handleFocus"
             @blur="handleBlur"
-          />
+          >
           <template v-if="type === 'range'">
             <span
               class="text-sm text-gray-500 dark:text-gray-400 absolute start-0 -bottom-6"
-              >Min ({{ minRange }})
+            >Min ({{ minRange }})
             </span>
             <span
               class="text-sm text-gray-500 dark:text-gray-400 absolute start-1/3 -translate-x-1/2 rtl:translate-x-1/2 -bottom-6"
-              >{{ ((maxRange - minRange) / 3 + minRange).toFixed(0) }}</span
-            >
+            >{{ ((maxRange - minRange) / 3 + minRange).toFixed(0) }}</span>
             <span
               class="text-sm text-gray-500 dark:text-gray-400 absolute start-2/3 -translate-x-1/2 rtl:translate-x-1/2 -bottom-6"
             >
@@ -205,8 +204,7 @@ defineExpose({ focus, blur, getInputRef });
             </span>
             <span
               class="text-sm text-gray-500 dark:text-gray-400 absolute end-0 -bottom-6"
-              >Max ({{ maxRange }})</span
-            >
+            >Max ({{ maxRange }})</span>
           </template>
         </div>
         <!--
@@ -232,50 +230,49 @@ defineExpose({ focus, blur, getInputRef });
         </div>
         -->
 
-        <div v-if="type == 'chips' || type == 'tags'">
+        <div v-if="type === 'chips' || type === 'tags'">
           <label
-            :for="id"
             v-if="label || placeholder"
+            :for="id"
             class="block mb-2 text-sm font-medium text-fv-neutral-900 dark:text-white"
-            >{{ label ? label : placeholder }}
+          >{{ label ? label : placeholder }}
           </label>
           <!-- @vue-skip -->
           <DefaultTagInput
-            v-model="model"
             :id="id"
+            v-model="model"
             :disabled="disabled"
             :color="color"
             :error="checkErrors"
-            :copyButton="copyButton"
+            :copy-button="copyButton"
             :help="help"
             :max-lenght-per-tag="maxLengthPerTag"
           />
         </div>
-        <div class="group relative" v-else-if="type == 'textarea-grow'">
+        <div v-else-if="type === 'textarea-grow'" class="group relative">
           <label
             v-if="label"
             :for="id"
             class="block mb-2 text-sm font-medium text-fv-neutral-900 dark:text-white"
-            >{{ label }}</label
-          >
+          >{{ label }}</label>
           <div class="grow-wrap">
             <!-- @vue-skip -->
             <textarea
               :id="id"
-              :name="id"
               ref="inputRef"
+              v-model="model"
+              :name="id"
               :class="{
                 error: checkErrors,
               }"
-              v-model="model"
               :placeholder="placeholder"
               :disabled="disabled"
               :aria-describedby="help ? `${id}-help` : id"
               :required="req"
+              class="block p-2.5 w-full text-sm text-fv-neutral-900 bg-fv-neutral-50 rounded-lg border border-fv-neutral-300 focus:ring-fv-primary-500 focus:border-fv-primary-500 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500"
               @focus="handleFocus"
               @blur="handleBlur"
-              class="block p-2.5 w-full text-sm text-fv-neutral-900 bg-fv-neutral-50 rounded-lg border border-fv-neutral-300 focus:ring-fv-primary-500 focus:border-fv-primary-500 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500"
-            ></textarea>
+            />
           </div>
           <div
             v-if="dpOptions.counterMax && model"
@@ -289,30 +286,29 @@ defineExpose({ focus, blur, getInputRef });
             {{ dpOptions.counterMax }} characters
           </div>
         </div>
-        <div class="group relative" v-else-if="type == 'textarea'">
+        <div v-else-if="type === 'textarea'" class="group relative">
           <label
             v-if="label"
             :for="id"
             class="block mb-2 text-sm font-medium text-fv-neutral-900 dark:text-white"
-            >{{ label }}</label
-          >
+          >{{ label }}</label>
           <!-- @vue-skip -->
           <textarea
             :id="id"
-            :name="id"
             ref="inputRef"
+            v-model="model"
+            :name="id"
             :class="{
               error: checkErrors,
             }"
-            v-model="model"
             :placeholder="placeholder"
             :disabled="disabled"
             :aria-describedby="help ? `${id}-help` : id"
             :required="req"
+            class="block p-2.5 w-full text-sm text-fv-neutral-900 bg-fv-neutral-50 rounded-lg border border-fv-neutral-300 focus:ring-fv-primary-500 focus:border-fv-primary-500 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500"
             @focus="handleFocus"
             @blur="handleBlur"
-            class="block p-2.5 w-full text-sm text-fv-neutral-900 bg-fv-neutral-50 rounded-lg border border-fv-neutral-300 focus:ring-fv-primary-500 focus:border-fv-primary-500 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500"
-          ></textarea>
+          />
           <div
             v-if="dpOptions.counterMax && model"
             class="text-sm text-fv-neutral-500 dark:text-fv-neutral-400"
@@ -325,32 +321,31 @@ defineExpose({ focus, blur, getInputRef });
             {{ dpOptions.counterMax }} characters
           </div>
         </div>
-        <div class="relative" v-else-if="type == 'select'">
+        <div v-else-if="type === 'select'" class="relative">
           <label
-            :for="id"
             v-if="label"
+            :for="id"
             class="block mb-2 text-sm font-medium text-fv-neutral-900 dark:text-white"
-            >{{ label }}</label
-          >
+          >{{ label }}</label>
           <select
             :id="id"
-            :name="id"
             ref="inputRef"
             v-model="model"
+            :name="id"
             :disabled="disabled"
             :aria-describedby="help ? `${id}-help` : id"
             :required="req"
-            @focus="handleFocus"
-            @blur="handleBlur"
             :class="{
               error: checkErrors,
             }"
             class="bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-lg focus:ring-fv-primary-500 focus:border-fv-primary-500 block w-full p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500"
+            @focus="handleFocus"
+            @blur="handleBlur"
           >
             <option
               v-for="opt in options"
-              :value="opt[0]"
               :key="opt[0].toString()"
+              :value="opt[0]"
             >
               {{ opt[1] }}
             </option>
@@ -366,18 +361,18 @@ defineExpose({ focus, blur, getInputRef });
         }"
       >
         <input
-          type="checkbox"
           v-model="modelCheckbox"
+          type="checkbox"
           :true-value="checkboxTrueValue"
           :false-value="checkboxFalseValue"
           :disabled="disabled"
           class="sr-only peer"
           @focus="handleFocus"
           @blur="handleBlur"
-        />
+        >
         <div
           class="relative flex-0 flex-shrink-0 w-11 h-6 bg-fv-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-fv-primary-300 dark:peer-focus:ring-fv-primary-800 rounded-full peer dark:bg-fv-neutral-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-fv-neutral-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all dark:border-fv-neutral-600 peer-checked:bg-fv-primary-600"
-        ></div>
+        />
         <span
           class="ms-3 text-sm font-medium text-fv-neutral-900 dark:text-fv-neutral-300"
         >
@@ -390,34 +385,33 @@ defineExpose({ focus, blur, getInputRef });
         </span>
       </label>
     </template>
-    <template v-else-if="type == 'checkbox' || type == 'radio'">
+    <template v-else-if="type === 'checkbox' || type === 'radio'">
       <div class="flex mb-4">
         <div class="flex items-center h-5">
           <input
             :id="id"
+            v-model="modelCheckbox"
             :class="{
               error: checkErrors,
             }"
             :aria-describedby="help ? `${id}-help` : id"
             :type="type"
-            @focus="handleFocus"
-            @blur="handleBlur"
             :true-value="checkboxTrueValue"
             :false-value="checkboxFalseValue"
-            v-model="modelCheckbox"
             :disabled="disabled"
             class="w-4 h-4 text-fv-primary-600 bg-fv-neutral-100 border-fv-neutral-300 rounded focus:ring-fv-primary-500 dark:focus:ring-fv-primary-600 dark:ring-offset-fv-neutral-800 dark:focus:ring-offset-fv-neutral-800 focus:ring-2 dark:bg-fv-neutral-700 dark:border-fv-neutral-600"
-          />
+            @focus="handleFocus"
+            @blur="handleBlur"
+          >
         </div>
         <div class="ms-2 text-sm">
           <label
             :for="id"
             class="font-medium text-fv-neutral-900 dark:text-fv-neutral-300"
-            >{{ label }}</label
-          >
+          >{{ label }}</label>
           <p
-            :id="`${id}-help`"
             v-if="help"
+            :id="`${id}-help`"
             class="text-xs font-normal text-fv-neutral-500 dark:text-fv-neutral-400"
           >
             {{ help }}
@@ -430,14 +424,15 @@ defineExpose({ focus, blur, getInputRef });
     </p>
 
     <p
+      v-if="help && !['checkbox', 'radio', 'toggle'].includes(type)"
       :id="`${id}-help`"
       class="mt-1 text-sm text-fv-neutral-500 dark:text-fv-neutral-400"
-      v-if="help && !['checkbox', 'radio', 'toggle'].includes(type)"
     >
       {{ help }}
     </p>
   </div>
 </template>
+
 <style scoped>
 input,
 textarea,

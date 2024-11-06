@@ -1,73 +1,73 @@
 <script setup lang="ts">
-import useVuelidate from "@vuelidate/core";
-import DefaultInput from "../ui/DefaultInput.vue";
-import DefaultModal from "../ui/DefaultModal.vue";
-import { useUserStore } from "../../stores/user";
-import { useRest } from "../../composables/rest";
-import { useEventBus } from "../../composables/event-bus";
-import { computed, reactive, watchEffect, ref } from "vue";
-import { required, maxLength } from "@vuelidate/validators";
-import VuePictureCropper, { cropper } from "vue-picture-cropper";
-import { Uploader } from "@fy-/fws-js";
+import { Uploader } from '@fy-/fws-js'
+import useVuelidate from '@vuelidate/core'
+import { maxLength, required } from '@vuelidate/validators'
+import { computed, reactive, ref, watchEffect } from 'vue'
+import VuePictureCropper, { cropper } from 'vue-picture-cropper'
+import { useEventBus } from '../../composables/event-bus'
+import { useRest } from '../../composables/rest'
+import { useUserStore } from '../../stores/user'
+import DefaultInput from '../ui/DefaultInput.vue'
+import DefaultModal from '../ui/DefaultModal.vue'
 
 const props = withDefaults(
   defineProps<{
-    imageDomain?: string;
-    onCompleted?: (data: any) => void;
-    hidePublic?: boolean;
-    hideBirthdate?: boolean;
-    hideGender?: boolean;
+    imageDomain?: string
+    onCompleted?: (data: any) => void
+    hidePublic?: boolean
+    hideBirthdate?: boolean
+    hideGender?: boolean
   }>(),
   {
-    imageDomain: "https://s.nocachenocry.com",
+    imageDomain: 'https://s.nocachenocry.com',
     onCompleted: () => {},
     hidePublic: false,
     hideBirthdate: false,
     hideGender: false,
   },
-);
-const rest = useRest();
-const userStore = useUserStore();
-const userData = computed(() => userStore.user);
-const eventBus = useEventBus();
+)
+const rest = useRest()
+const userStore = useUserStore()
+const userData = computed(() => userStore.user)
+const eventBus = useEventBus()
 // Default date = 18y from now
-const currentDate = new Date();
+const currentDate = new Date()
 const defaultDate = new Date(
   currentDate.setFullYear(currentDate.getFullYear() - 18),
 )
   .toISOString()
-  .split("T")[0];
+  .split('T')[0]
 
 const state = reactive({
   userData: {
-    Username: userData.value?.UserProfile?.Username || "",
-    Gender: userData.value?.UserProfile?.Gender || "",
-    Bio: userData.value?.UserProfile?.Bio || "",
+    Username: userData.value?.UserProfile?.Username || '',
+    Gender: userData.value?.UserProfile?.Gender || '',
+    Bio: userData.value?.UserProfile?.Bio || '',
     Birthdate: userData.value?.UserProfile?.Birthdate || defaultDate,
     PublicGender: userData.value?.UserProfile?.PublicGender || false,
     PublicBio: userData.value?.UserProfile?.PublicBio || false,
     PublicBirthdate: userData.value?.UserProfile?.PublicBirthdate || false,
   },
-});
+})
 watchEffect(() => {
   state.userData = {
-    Username: userData.value?.UserProfile?.Username || "",
-    Gender: userData.value?.UserProfile?.Gender || "",
-    Bio: userData.value?.UserProfile?.Bio || "",
+    Username: userData.value?.UserProfile?.Username || '',
+    Gender: userData.value?.UserProfile?.Gender || '',
+    Bio: userData.value?.UserProfile?.Bio || '',
     Birthdate: userData.value?.UserProfile?.Birthdate
       ? new Date(userData.value?.UserProfile?.Birthdate.unixms)
-          .toISOString()
-          .split("T")[0]
+        .toISOString()
+        .split('T')[0]
       : defaultDate,
     PublicGender: userData.value?.UserProfile?.PublicGender || false,
     PublicBio: userData.value?.UserProfile?.PublicBio || false,
     PublicBirthdate: userData.value?.UserProfile?.PublicBirthdate || false,
-  };
-});
+  }
+})
 const rules = {
   userData: {
     Username: {
-      required: required,
+      required,
     },
     Gender: {},
     Bio: {
@@ -78,85 +78,84 @@ const rules = {
     PublicBio: {},
     PublicBirthdate: {},
   },
-};
-const v$ = useVuelidate(rules, state);
+}
+const v$ = useVuelidate(rules, state)
 
-const patchUser = async () => {
-  eventBus.emit("main-loading", true);
+async function patchUser() {
+  eventBus.emit('main-loading', true)
   if (await v$.value.userData.$validate()) {
-    const data = { ...state.userData };
-    const birtdate = new Date(`${data.Birthdate}T00:00:00Z`);
+    const data = { ...state.userData }
+    const birtdate = new Date(`${data.Birthdate}T00:00:00Z`)
     try {
-      const birtdateAtUnixms = birtdate.getTime();
-      // @ts-ignore
-      data.Birthdate = new Date(birtdateAtUnixms).toISOString().split("T")[0];
-    } catch (e) {
-      // @ts-ignore
-      data.Birthdate = data.Birthdate.toISOString().split("T")[0];
+      const birtdateAtUnixms = birtdate.getTime()
+      data.Birthdate = new Date(birtdateAtUnixms).toISOString().split('T')[0]
     }
-    // @ts-ignore
-    const response = await rest("User/_Profile", "PATCH", data);
-    if (response && response.result == "success") {
+    catch {
+      // @ts-expect-error: Birthdate is a string
+      data.Birthdate = data.Birthdate.toISOString().split('T')[0]
+    }
+    const response = await rest('User/_Profile', 'PATCH', data)
+    if (response && response.result === 'success') {
       if (props.onCompleted) {
-        props.onCompleted(response);
+        props.onCompleted(response)
       }
-      eventBus.emit("user:refresh", true);
+      eventBus.emit('user:refresh', true)
     }
   }
-  eventBus.emit("main-loading", false);
-};
-const uploadInput = ref<HTMLInputElement | null>(null);
-const pic = ref<string>("");
+  eventBus.emit('main-loading', false)
+}
+const uploadInput = ref<HTMLInputElement | null>(null)
+const pic = ref<string>('')
 const cropResult = reactive({
-  dataURL: "",
-  blobURL: "",
-});
-const uploader = ref(new Uploader());
+  dataURL: '',
+  blobURL: '',
+})
+const uploader = ref(new Uploader())
 
 async function getCropResult() {
-  if (!cropper) return;
-  const base64 = cropper.getDataURL({});
-  const blob: Blob | null = await cropper.getBlob();
-  if (!blob) return;
-  eventBus.emit("main-loading", true);
+  if (!cropper) return
+  const base64 = cropper.getDataURL({})
+  const blob: Blob | null = await cropper.getBlob()
+  if (!blob) return
+  eventBus.emit('main-loading', true)
 
   const file = await cropper.getFile({
-    fileName: "avatar-" + userData.value?.UUID,
-  });
+    fileName: `avatar-${userData.value?.UUID}`,
+  })
 
-  cropResult.dataURL = base64;
-  cropResult.blobURL = URL.createObjectURL(blob);
+  cropResult.dataURL = base64
+  cropResult.blobURL = URL.createObjectURL(blob)
   if (file) {
-    uploader.value.addFile(file);
+    uploader.value.addFile(file)
   }
   const fileUploadCallback = (response: any) => {
     if (props.onCompleted) {
-      props.onCompleted(response);
+      props.onCompleted(response)
     }
-    eventBus.emit("avCropModal", false);
-    eventBus.emit("main-loading", false);
-    eventBus.emit("user:refresh", true);
-  };
-  uploader.value.startUpload(`/_special/rest/User/_Avatar`, fileUploadCallback);
+    eventBus.emit('avCropModal', false)
+    eventBus.emit('main-loading', false)
+    eventBus.emit('user:refresh', true)
+  }
+  uploader.value.startUpload(`/_special/rest/User/_Avatar`, fileUploadCallback)
 }
 
 function selectFile(e: Event) {
-  pic.value = "";
-  cropResult.dataURL = "";
-  cropResult.blobURL = "";
+  pic.value = ''
+  cropResult.dataURL = ''
+  cropResult.blobURL = ''
 
-  const { files } = e.target as HTMLInputElement;
-  if (!files || !files.length) return;
+  const { files } = e.target as HTMLInputElement
+  if (!files || !files.length) return
 
-  const file = files[0];
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
+  const file = files[0]
+  const reader = new FileReader()
+  reader.readAsDataURL(file)
   reader.onload = () => {
-    pic.value = String(reader.result);
-    eventBus.emit("avCropModal", true);
-    if (!uploadInput.value) return;
-    uploadInput.value.value = "";
-  };
+    pic.value = String(reader.result)
+    eventBus.emit('avCropModal', true)
+    if (!uploadInput.value) return
+    uploadInput.value.value = ''
+  }
 }
 </script>
 
@@ -174,32 +173,31 @@ function selectFile(e: Event) {
     />
     <div class="flex gap-2 items-center mb-4">
       <img
+        v-if="userData?.UserProfile?.AvatarUUID"
         :src="`${imageDomain}/${userData?.UserProfile?.AvatarUUID}?vars=format=png:resize=100x100`"
         class="w-16 h-16 rounded-full flex-0 shrink-0 grow-0"
-        v-if="userData?.UserProfile?.AvatarUUID"
-      />
+      >
       <div class="flex-1">
         <label
           class="block text-sm font-medium mb-2 text-neutral-900 dark:text-white"
           for="file_input"
-          >{{ $t("fws_upload_av_label") }}</label
-        >
+        >{{ $t("fws_upload_av_label") }}</label>
         <input
-          class="block text-sm w-full text-neutral-900 border border-neutral-300 rounded-lg cursor-pointer bg-neutral-50 dark:text-neutral-400 focus:outline-none dark:bg-neutral-700 dark:border-neutral-600 dark:placeholder-neutral-400"
           ref="uploadInput"
+          class="block text-sm w-full text-neutral-900 border border-neutral-300 rounded-lg cursor-pointer bg-neutral-50 dark:text-neutral-400 focus:outline-none dark:bg-neutral-700 dark:border-neutral-600 dark:placeholder-neutral-400"
           type="file"
           accept="image/jpg, image/jpeg, image/png, image/gif"
           @change="selectFile"
-        />
+        >
       </div>
     </div>
     <DefaultModal id="avCrop" :title="$t('fws_crop_av_title')">
-      <button @click="getCropResult" class="btn defaults primary">
+      <button class="btn defaults primary" @click="getCropResult">
         {{ $t("fws_crop_av_cta") }}
       </button>
       <div class="max-h-[80vh]">
         <VuePictureCropper
-          :boxStyle="{
+          :box-style="{
             width: 'auto',
             height: 'auto',
             backgroundColor: '#f8f8f8',
@@ -228,13 +226,12 @@ function selectFile(e: Event) {
       :label="$t('fws_gender_label')"
       :error-vuelidate="v$.userData.Gender.$errors"
     />
-    <!-- @vue-skip -->
     <DefaultInput
       id="birthdateFWS"
       v-model="state.userData.Birthdate"
       class="mb-4"
       type="datepicker"
-      :disableDatesUnder18="true"
+      :disable-dates-under18="true"
       :label="$t('fws_birthdate_label')"
       :error-vuelidate="v$.userData.Birthdate.$errors"
     />
@@ -248,12 +245,12 @@ function selectFile(e: Event) {
     />
     <template v-if="!hidePublic">
       <DefaultInput
+        v-if="!hideGender"
         id="publicGenderFWS"
         v-model:checkbox-value="state.userData.PublicGender"
         type="toggle"
         :label="$t('fws_public_gender')"
         :error-vuelidate="v$.userData.PublicGender.$errors"
-        v-if="!hideGender"
       />
       <DefaultInput
         id="publicBioFWS"
@@ -263,12 +260,12 @@ function selectFile(e: Event) {
         :error-vuelidate="v$.userData.PublicBio.$errors"
       />
       <DefaultInput
+        v-if="!hideBirthdate"
         id="publicBirthdateFWS"
         v-model:checkbox-value="state.userData.PublicBirthdate"
         type="toggle"
         :label="$t('fws_public_birthdate')"
         :error-vuelidate="v$.userData.PublicBirthdate.$errors"
-        v-if="!hideBirthdate"
       />
     </template>
     <div class="flex">

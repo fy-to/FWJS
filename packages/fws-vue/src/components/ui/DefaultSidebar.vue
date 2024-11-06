@@ -1,34 +1,37 @@
 <script lang="ts" setup>
-import { NavLink } from "../../types";
-import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/vue/24/solid";
-import { useStorage } from "@vueuse/core";
-import { useRoute } from "vue-router";
+import type { NavLink } from '../../types'
+import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/solid'
+import { useStorage } from '@vueuse/core'
+import { useRoute } from 'vue-router'
 
 const props = withDefaults(
   defineProps<{
-    links: NavLink[];
-    id?: string;
-    baseUrl?: string;
+    links: NavLink[]
+    id?: string
+    baseUrl?: string
   }>(),
   {
-    id: "main",
-    baseUrl: "/",
+    id: 'main',
+    baseUrl: '/',
   },
-);
-const route = useRoute();
-const isLinkActive = (link: NavLink) => {
-  if (link.to != props.baseUrl) {
-    if (route.path == link.to || route.path.includes(link.to))
-      return "fvside-active";
-  } else {
-    if (route.path == link.to) {
-      return "fvside-active";
+)
+const route = useRoute()
+function isLinkActive(link: NavLink) {
+  if (link.to !== props.baseUrl) {
+    if (route.path === link.to || route.path.includes(link.to)) {
+      return 'fvside-active'
     }
   }
-  return "";
-};
-const isOpen = useStorage(`isOpenSidebar-${props.id}`, true);
+  else {
+    if (route.path === link.to) {
+      return 'fvside-active'
+    }
+  }
+  return ''
+}
+const isOpen = useStorage(`isOpenSidebar-${props.id}`, true)
 </script>
+
 <template>
   <aside class="fui-sidebar" :class="isOpen ? '' : 'fui-sidebar__md'">
     <div class="fui-sidebar__controller">
@@ -42,8 +45,8 @@ const isOpen = useStorage(`isOpenSidebar-${props.id}`, true);
         <span class="sr-only">{{ $t("sidebar_size_control") }}</span>
       </button>
     </div>
-    <slot name="before"></slot>
-    <ul role="list" id="side-nav">
+    <slot name="before" />
+    <ul id="side-nav" role="list">
       <li v-for="(link, index) of links" :key="`aside_link_${index}`">
         <RouterLink
           :to="link.to"
@@ -58,11 +61,12 @@ const isOpen = useStorage(`isOpenSidebar-${props.id}`, true);
           <span class="sr-only">{{ link.name }}</span>
         </RouterLink>
       </li>
-      <slot name="lis"></slot>
+      <slot name="lis" />
     </ul>
-    <slot name="after"></slot>
+    <slot name="after" />
   </aside>
 </template>
+
 <style lang="scss" scoped>
 .fui-sidebar {
   @apply w-60 transition-all duration-300 ease-in-out;

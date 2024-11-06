@@ -1,46 +1,47 @@
 <script setup lang="ts">
-import useVuelidate from "@vuelidate/core";
-import DefaultInput from "../ui/DefaultInput.vue";
-import { useUserStore } from "../../stores/user";
-import { useRest } from "../../composables/rest";
-import { useEventBus } from "../../composables/event-bus";
-import { computed, reactive, watchEffect } from "vue";
-const rest = useRest();
-const userStore = useUserStore();
-const userData = computed(() => userStore.user);
-const eventBus = useEventBus();
+import useVuelidate from '@vuelidate/core'
+import { computed, reactive, watchEffect } from 'vue'
+import { useEventBus } from '../../composables/event-bus'
+import { useRest } from '../../composables/rest'
+import { useUserStore } from '../../stores/user'
+import DefaultInput from '../ui/DefaultInput.vue'
+
+const rest = useRest()
+const userStore = useUserStore()
+const userData = computed(() => userStore.user)
+const eventBus = useEventBus()
 const props = withDefaults(
   defineProps<{
-    onCompleted?: (data: any) => void;
+    onCompleted?: (data: any) => void
   }>(),
   {
     onCompleted: () => {},
   },
-);
+)
 const state = reactive({
   userData: {
-    Firstname: userData.value?.Firstname || "",
-    Lastname: userData.value?.Lastname || "",
-    Phone: userData.value?.Phone || "",
+    Firstname: userData.value?.Firstname || '',
+    Lastname: userData.value?.Lastname || '',
+    Phone: userData.value?.Phone || '',
     AcceptedTerms: userData.value?.AcceptedTerms || false,
     EnabledNotifications: userData.value?.EnabledNotifications || false,
     EnabledEmails: userData.value?.EnabledEmails || false,
     EnabledTrainingFromMyData:
       userData.value?.EnabledTrainingFromMyData || false,
   },
-});
+})
 watchEffect(() => {
   state.userData = {
-    Firstname: userData.value?.Firstname || "",
-    Lastname: userData.value?.Lastname || "",
-    Phone: userData.value?.Phone || "",
+    Firstname: userData.value?.Firstname || '',
+    Lastname: userData.value?.Lastname || '',
+    Phone: userData.value?.Phone || '',
     AcceptedTerms: userData.value?.AcceptedTerms || false,
     EnabledNotifications: userData.value?.EnabledNotifications || false,
     EnabledEmails: userData.value?.EnabledEmails || false,
     EnabledTrainingFromMyData:
       userData.value?.EnabledTrainingFromMyData || false,
-  };
-});
+  }
+})
 const rules = {
   userData: {
     Firstname: {},
@@ -52,22 +53,22 @@ const rules = {
     EnabledEmails: {},
     EnabledTrainingFromMyData: {},
   },
-};
-const v$ = useVuelidate(rules, state);
+}
+const v$ = useVuelidate(rules, state)
 
-const patchUser = async () => {
-  eventBus.emit("main-loading", true);
+async function patchUser() {
+  eventBus.emit('main-loading', true)
   if (await v$.value.userData.$validate()) {
-    const response = await rest("User", "PATCH", state.userData);
-    if (response && response.result == "success") {
-      eventBus.emit("user:refresh", true);
+    const response = await rest('User', 'PATCH', state.userData)
+    if (response && response.result === 'success') {
+      eventBus.emit('user:refresh', true)
       if (props.onCompleted) {
-        props.onCompleted(response);
+        props.onCompleted(response)
       }
     }
   }
-  eventBus.emit("main-loading", false);
-};
+  eventBus.emit('main-loading', false)
+}
 </script>
 
 <template>
@@ -100,8 +101,8 @@ const patchUser = async () => {
       :error-vuelidate="v$.userData.Phone.$errors"
     />
     <DefaultInput
-      id="acceptedTermsFWS"
       v-if="!userData?.AcceptedTerms"
+      id="acceptedTermsFWS"
       v-model:checkbox-value="state.userData.AcceptedTerms"
       type="toggle"
       :label="$t('fws_accepted_terms_label')"

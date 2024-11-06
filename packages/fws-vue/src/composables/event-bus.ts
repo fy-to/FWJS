@@ -1,14 +1,16 @@
-import { inject } from "vue";
-import type { Emitter } from "mitt";
+import type { Emitter } from 'mitt'
+import { inject } from 'vue'
 
-export type Events = {
-  [key: string]: any;
-};
+export interface Events {
+  [key: string]: any
+}
 
+// @ts-expect-error: Emitter is not exported
 export function useEventBus(): Emitter<Events> {
-  const eventBus = inject<Emitter<Events>>("fwsVueEventBus");
+  // @ts-expect-error: Emitter is not exported
+  const eventBus = inject<Emitter<Events>>('fwsVueEventBus')
 
-  if (!eventBus) throw new Error("Did you apply app.use(fwsVue)?");
+  if (!eventBus) throw new Error('Did you apply app.use(fwsVue)?')
 
-  return eventBus;
+  return eventBus
 }

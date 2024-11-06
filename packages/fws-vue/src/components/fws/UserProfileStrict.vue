@@ -1,112 +1,112 @@
 <script setup lang="ts">
-import useVuelidate from "@vuelidate/core";
-import DefaultInput from "../ui/DefaultInput.vue";
-import { useUserStore } from "../../stores/user";
-import { useRest } from "../../composables/rest";
-import { useEventBus } from "../../composables/event-bus";
-import { computed, reactive, watchEffect, ref } from "vue";
-import { required, helpers } from "@vuelidate/validators";
-import { useTranslation } from "../../composables/translations";
+import useVuelidate from '@vuelidate/core'
+import { helpers, required } from '@vuelidate/validators'
+import { computed, reactive, watchEffect } from 'vue'
+import { useEventBus } from '../../composables/event-bus'
+import { useRest } from '../../composables/rest'
+import { useTranslation } from '../../composables/translations'
+import { useUserStore } from '../../stores/user'
+import DefaultInput from '../ui/DefaultInput.vue'
 
-const rest = useRest();
+const rest = useRest()
 const props = withDefaults(
   defineProps<{
-    onCompleted?: (data: any) => void;
-    termsText?: string;
-    force18?: boolean;
+    onCompleted?: (data: any) => void
+    termsText?: string
+    force18?: boolean
   }>(),
   {
     onCompleted: () => {},
-    termsText: "",
+    termsText: '',
     force18: false,
   },
-);
-const currentDate = new Date();
+)
+const currentDate = new Date()
 const defaultDate = new Date(
   currentDate.setFullYear(currentDate.getFullYear() - 18),
 )
   .toISOString()
-  .split("T")[0];
+  .split('T')[0]
 
-const ageValidator = (value: any) => {
-  const today = new Date();
-  const birthDate = new Date(value);
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-  return age >= 18 && age <= 2020;
-};
-const userStore = useUserStore();
-const userData = computed(() => userStore.user);
-const eventBus = useEventBus();
+function ageValidator(value: any) {
+  const today = new Date()
+  const birthDate = new Date(value)
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const m = today.getMonth() - birthDate.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--
+  return age >= 18 && age <= 2020
+}
+const userStore = useUserStore()
+const userData = computed(() => userStore.user)
+const eventBus = useEventBus()
 const state = reactive({
   userData: {
-    Username: userData.value?.UserProfile?.Username || "",
-    Gender: userData.value?.UserProfile?.Gender || "",
+    Username: userData.value?.UserProfile?.Username || '',
+    Gender: userData.value?.UserProfile?.Gender || '',
     Birthdate: userData.value?.UserProfile?.Birthdate || defaultDate,
     AcceptedTerms: userData.value?.AcceptedTerms || true,
   },
-});
+})
 watchEffect(() => {
   state.userData = {
-    Username: userData.value?.UserProfile?.Username || "",
-    Gender: userData.value?.UserProfile?.Gender || "",
+    Username: userData.value?.UserProfile?.Username || '',
+    Gender: userData.value?.UserProfile?.Gender || '',
     Birthdate: userData.value?.UserProfile?.Birthdate
       ? new Date(userData.value?.UserProfile?.Birthdate.unixms)
-          .toISOString()
-          .split("T")[0]
+        .toISOString()
+        .split('T')[0]
       : defaultDate,
     AcceptedTerms: userData.value?.AcceptedTerms || true,
-  };
-});
-const translate = useTranslation();
+  }
+})
+const translate = useTranslation()
 const rules = {
   userData: {
     Username: {
-      required: required,
+      required,
     },
     Gender: {
-      required: required,
+      required,
     },
     Birthdate: {
       required,
       ageValidator: props.force18
         ? helpers.withMessage(
-            translate("fws_under_18_error_message"),
-            ageValidator,
-          )
+          translate('fws_under_18_error_message'),
+          ageValidator,
+        )
         : undefined,
     },
     AcceptedTerms: {
-      required: required,
+      required,
     },
   },
-};
-const v$ = useVuelidate(rules, state);
+}
+const v$ = useVuelidate(rules, state)
 
-const patchUser = async () => {
-  eventBus.emit("main-loading", true);
+async function patchUser() {
+  eventBus.emit('main-loading', true)
   if (await v$.value.userData.$validate()) {
-    const data = { ...state.userData };
-    const birtdate = new Date(`${data.Birthdate}T00:00:00Z`);
+    const data = { ...state.userData }
+    const birtdate = new Date(`${data.Birthdate}T00:00:00Z`)
     try {
-      const birtdateAtUnixms = birtdate.getTime();
-      // @ts-ignore
-      data.Birthdate = new Date(birtdateAtUnixms).toISOString().split("T")[0];
-    } catch (e) {
-      // @ts-ignore
-      data.Birthdate = data.Birthdate.toISOString().split("T")[0];
+      const birtdateAtUnixms = birtdate.getTime()
+      data.Birthdate = new Date(birtdateAtUnixms).toISOString().split('T')[0]
     }
-    const response = await rest("User/_ForceProfile", "PATCH", data);
-    if (response && response.result == "success") {
+    catch {
+      // @ts-expect-error: Birthdate is a string
+      data.Birthdate = data.Birthdate.toISOString().split('T')[0]
+    }
+    const response = await rest('User/_ForceProfile', 'PATCH', data)
+    if (response && response.result === 'success') {
       if (props.onCompleted) {
-        props.onCompleted(response);
+        props.onCompleted(response)
       }
-      eventBus.emit("user:refresh", true);
+      eventBus.emit('user:refresh', true)
     }
   }
-  eventBus.emit("main-loading", false);
-};
+  eventBus.emit('main-loading', false)
+}
 </script>
 
 <template>
@@ -121,12 +121,11 @@ const patchUser = async () => {
       :error-vuelidate="v$.userData.Username.$errors"
       :disabled="userData?.UserProfile?.HasUsernameAndSlug ? true : false"
     />
-    <!-- @vue-skip -->
     <DefaultInput
       id="birthdateFWS"
       v-model="state.userData.Birthdate"
       class="mb-4"
-      :disableDatesUnder18="true"
+      :disable-dates-under18="true"
       type="datepicker"
       :label="$t('fws_birthdate_label')"
       :error-vuelidate="v$.userData.Birthdate.$errors"
@@ -154,7 +153,9 @@ const patchUser = async () => {
       :help="$t('fws_accepted_terms_help')"
       :error-vuelidate="v$.userData.AcceptedTerms.$errors"
     />
-    <p class="terms-box" v-if="props.termsText">{{ props.termsText }}</p>
+    <p v-if="props.termsText" class="terms-box">
+      {{ props.termsText }}
+    </p>
 
     <div class="flex">
       <button type="submit" class="btn defaults primary">

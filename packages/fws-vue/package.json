@@ -1,93 +1,94 @@
 {
-    "name": "@fy-/fws-vue",
-    "version": "2.0.96",
-    "author": "Florian 'Fy' Gasquez <m@fy.to>",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/fy-to/FWJS.git"
+  "name": "@fy-/fws-vue",
+  "version": "2.1.22",
+  "author": "Florian 'Fy' Gasquez <m@fy.to>",
+  "license": "MIT",
+  "homepage": "https://github.com/fy-to/FWJS#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fy-to/FWJS.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fy-to/FWJS/issues"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
     },
-    "bugs": {
-        "url": "https://github.com/fy-to/FWJS/issues"
-    },
-    "homepage": "https://github.com/fy-to/FWJS#readme",
-    "main": "src/index.ts",
-    "module": "src/index.ts",
-    "typings": "src/index.ts",
-    "types": "src/index.ts",
-    "exports": {
-        ".": {
-            "import": "./src/index.ts",
-            "require": "./src/index.ts",
-            "types": "./src/index.ts"
-        },
-        "./style.css": {
-            "import": "./src/style.css",
-            "require": "./src/style.css"
-        }
-    },
-    "peerDependencies": {
-        "@fy-/fws-js": "^0.0.x",
-        "@fy-/fws-types": "^0.0.x",
-        "@unhead/ssr": "^1.9.x",
-        "@unhead/vue": "^1.9.x",
-        "@unhead/schema-org": "1.9.x", 
-        "@vuelidate/core": "^2.0.x",
-        "@vuelidate/validators": "^2.0.x",
-        "@vueuse/core": "^10.x.x",
-        "mitt": "^3.0.x",
-        "pinia": "2.x.x",
-        "timeago.js": "^4.0.x",
-        "vue": "^3.3.x",
-        "vue-picture-cropper": "^0.7.x",
-        "vue-router": "^4.1.x",
-        "vue-tailwind-datepicker": "^1.7.x"
-    },
-    "scripts": {
-        "clean": "rimraf dist",
-        "type-check": "tsc --noEmit",
-        "copy": "pnpm run clean && cp -r src/ dist/ && node copyPackage.js",
-        "build": "pnpm run lint:check --fix && pnpm run type-check && pnpm run copy",
-        "lint:check": "eslint --resolve-plugins-relative-to . src/ --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore --fix"
-    },
-    "devDependencies": {
-        "@fy-/fws-js": "workspace:*",
-        "@fy-/fws-types": "workspace:*",
-        "@headlessui/vue": "^1.7.22",
-        "@heroicons/vue": "^2.1.4",
-        "@rushstack/eslint-patch": "^1.10.3",
-        "@types/node": "^20.14.10",
-        "@typescript-eslint/eslint-plugin": "^7.15.0",
-        "@unhead/ssr": "^1.9.15",
-        "@unhead/vue": "^1.9.15",
-        "@unhead/schema-org": "^1.9.15",
-        "@vitejs/plugin-vue": "^5.0.5",
-        "@vitejs/plugin-vue-jsx": "^4.0.0",
-        "@vue/compiler-sfc": "^3.4.31",
-        "@vue/eslint-config-prettier": "^9.0.0",
-        "@vue/runtime-core": "^3.4.31",
-        "@vue/server-renderer": "^3.4.31",
-        "@vuelidate/core": "^2.0.3",
-        "@vuelidate/validators": "^2.0.4",
-        "@vueuse/core": "^10.11.0",
-        "eslint": "^8.56.0",
-        "eslint-plugin-vue": "^9.27.0",
-        "i18next": "^23.11.5",
-        "mitt": "^3.0.1",
-        "pinia": "^2.1.7",
-        "postcss": "^8.4.39",
-        "primevue": "^4.0.0",
-        "rollup": "^4.18.0",
-        "rollup-plugin-copy": "^3.5.0",
-        "sass": "^1.77.6",
-        "timeago.js": "^4.0.2",
-        "typescript": "^5.5.3",
-        "unplugin-vue-components": "^0.27.2",
-        "vite": "^5.3.3",
-        "vue": "^3.4.31",
-        "vue-picture-cropper": "^0.7.0",
-        "vue-router": "^4.4.0",
-        "vue-tailwind-datepicker": "^1.7.3",
-        "vue-tsc": "^2.0.26"
+    "./style.css": {
+      "import": "./src/style.css",
+      "require": "./src/style.css"
     }
+  },
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "typings": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "clean": "rimraf dist",
+    "type-check": "tsc --noEmit",
+    "copy": "pnpm run clean && cp -r src/ dist/ && node copyPackage.js",
+    "build": "pnpm run lint:check --fix && pnpm run type-check && pnpm run copy",
+    "lint:check": "eslint src/ --fix"
+  },
+  "peerDependencies": {
+    "@fy-/fws-js": "^0.0.x",
+    "@fy-/fws-types": "^0.0.x",
+    "@unhead/schema-org": "1.9.x",
+    "@unhead/ssr": "^1.9.x",
+    "@unhead/vue": "^1.9.x",
+    "@vuelidate/core": "^2.0.x",
+    "@vuelidate/validators": "^2.0.x",
+    "@vueuse/core": "^10.x.x",
+    "mitt": "^3.0.x",
+    "pinia": "2.x.x",
+    "timeago.js": "^4.0.x",
+    "vue": "^3.3.x",
+    "vue-picture-cropper": "^0.7.x",
+    "vue-router": "^4.1.x",
+    "vue-tailwind-datepicker": "^1.7.x"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^3.8.0",
+    "@fy-/fws-js": "workspace:*",
+    "@fy-/fws-types": "workspace:*",
+    "@headlessui/vue": "^1.7.23",
+    "@heroicons/vue": "^2.1.5",
+    "@rushstack/eslint-patch": "^1.10.4",
+    "@types/node": "^22.8.1",
+    "@typescript-eslint/eslint-plugin": "^8.11.0",
+    "@unhead/schema-org": "^1.11.10",
+    "@unhead/ssr": "^1.11.10",
+    "@unhead/vue": "^1.11.10",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "@vitejs/plugin-vue-jsx": "^4.0.1",
+    "@vue/compiler-sfc": "^3.5.12",
+    "@vue/eslint-config-prettier": "^10.1.0",
+    "@vue/runtime-core": "^3.5.12",
+    "@vue/server-renderer": "^3.5.12",
+    "@vuelidate/core": "^2.0.3",
+    "@vuelidate/validators": "^2.0.4",
+    "@vueuse/core": "^11.1.0",
+    "eslint": "^9.13.0",
+    "eslint-plugin-vue": "^9.29.1",
+    "i18next": "^23.16.4",
+    "mitt": "^3.0.1",
+    "pinia": "^2.2.4",
+    "postcss": "^8.4.47",
+    "primevue": "^4.1.1",
+    "rollup": "^4.24.2",
+    "rollup-plugin-copy": "^3.5.0",
+    "sass": "^1.80.4",
+    "timeago.js": "^4.0.2",
+    "typescript": "^5.6.3",
+    "unplugin-vue-components": "^0.27.4",
+    "vite": "^5.4.10",
+    "vue": "^3.5.12",
+    "vue-picture-cropper": "^0.7.0",
+    "vue-router": "^4.4.5",
+    "vue-tailwind-datepicker": "^1.7.3",
+    "vue-tsc": "^2.1.8"
+  }
 }

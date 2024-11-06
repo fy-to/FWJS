@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
-import { useEventBus } from "../../composables/event-bus";
+import { onMounted, onUnmounted, ref } from 'vue'
+import { useEventBus } from '../../composables/event-bus'
 
 const props = withDefaults(
   defineProps<{
-    image: string;
-    force?: boolean;
-    id?: string;
+    image: string
+    force?: boolean
+    id?: string
   }>(),
   {
     force: false,
-    id: "",
+    id: '',
   },
-);
-const eventBus = useEventBus();
-const loading = ref<boolean>(false);
+)
+const eventBus = useEventBus()
+const loading = ref<boolean>(false)
 function setLoading(value: boolean) {
-  loading.value = value;
+  loading.value = value
 }
 onMounted(() => {
-  if (props.id) eventBus.on(`${props.id}-loading`, setLoading);
-  else eventBus.on("loading", setLoading);
-});
+  if (props.id) eventBus.on(`${props.id}-loading`, setLoading)
+  else eventBus.on('loading', setLoading)
+})
 onUnmounted(() => {
-  if (props.id) eventBus.off(`${props.id}-loading`, setLoading);
-  else eventBus.off("loading", setLoading);
-});
+  if (props.id) eventBus.off(`${props.id}-loading`, setLoading)
+  else eventBus.off('loading', setLoading)
+})
 </script>
 
 <template>
@@ -40,7 +40,7 @@ onUnmounted(() => {
         :src="image"
         :alt="$t('global_loading')"
         class="w-full h-full relative"
-      />
+      >
     </div>
   </div>
 </template>

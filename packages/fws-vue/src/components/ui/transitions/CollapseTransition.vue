@@ -1,6 +1,6 @@
 <template>
   <Transition name="collapse">
-    <slot></slot>
+    <slot />
   </Transition>
 </template>
 

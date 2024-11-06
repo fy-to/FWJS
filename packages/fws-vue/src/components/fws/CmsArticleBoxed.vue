@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarDaysIcon } from "@heroicons/vue/24/solid";
+import { CalendarDaysIcon } from '@heroicons/vue/24/solid'
 
 defineProps({
   article: {
@@ -8,13 +8,13 @@ defineProps({
   },
   type: {
     type: String,
-    default: "blog",
+    default: 'blog',
   },
   imageDomain: {
     type: String,
-    default: "https://s.nocachenocry.com",
+    default: 'https://s.nocachenocry.com',
   },
-});
+})
 </script>
 
 <template>
@@ -23,21 +23,22 @@ defineProps({
     itemtype="https://schema.org/Article"
     class="p-3 flex flex-col justify-between bg-white noise rounded-lg border border-fv-neutral-200 shadow-md dark:bg-fv-neutral-800 dark:border-fv-neutral-700"
   >
-    <meta itemprop="wordCount" :content="article.WordCount" />
-    <meta itemprop="datePublished" :content="article.CreatedAt.iso" />
-    <meta itemprop="dateModified" :content="article.UpdatedAt.iso" />
-    <meta itemprop="inLanguage" :content="article.Locale" />
-    <meta itemprop="headline" :content="article.Title" />
+    <meta itemprop="wordCount" :content="article.WordCount">
+    <meta itemprop="datePublished" :content="article.CreatedAt.iso">
+    <meta itemprop="dateModified" :content="article.UpdatedAt.iso">
+    <meta itemprop="inLanguage" :content="article.Locale">
+    <meta itemprop="headline" :content="article.Title">
     <meta
-      itemprop="thumbnailUrl"
       v-if="article.CoverUUID"
+      itemprop="thumbnailUrl"
       :content="`${imageDomain}/${article.CoverUUID}?vars=format=webp:resize=512x512`"
-    />
+    >
     <RouterLink
       :to="`/${type}/${article.Slug}`"
       :title="article.Title"
       :alt="article.Title"
-      ><img
+    >
+      <img
         v-if="article.CoverUUID"
         :src="`${imageDomain}/${article.CoverUUID}?vars=format=webp:scale_crop_center=400x195`"
         loading="lazy"
@@ -46,15 +47,17 @@ defineProps({
         class="w-full rounded-lg bg-fv-neutral-800 shadow mb-3 flex-grow-0 flex-shrink-0"
         width="400"
         height="250"
-    /></RouterLink>
+      >
+    </RouterLink>
     <h2 class="title-1 font-semibold mb-2 flex-grow-0">
       <RouterLink
         :to="`/${type}/${article.Slug}`"
         :title="article.Title"
         :alt="article.Title"
         rel="bookmark"
-        >{{ article.Title }}</RouterLink
       >
+        {{ article.Title }}
+      </RouterLink>
     </h2>
     <p
       class="mb-5 font-light text-fv-neutral-500 dark:text-fv-neutral-400 flex-grow"
@@ -76,14 +79,14 @@ defineProps({
         <meta
           itemprop="dateModified"
           :content="new Date(parseInt(article.UpdatedAt.unixms)).toISOString()"
-        />
-        <meta itemprop="inLanguage" :content="article.Language__" />
+        >
+        <meta itemprop="inLanguage" :content="article.Language__">
         <meta
           itemprop="dateModified"
           :content="new Date(parseInt(article.UpdatedAt.unixms)).toISOString()"
-        />
+        >
       </div>
-      <!--<span
+      <!-- <span
         ><img
           class="h-4 shadow"
           :src="langs[article.Locale]"
@@ -91,7 +94,7 @@ defineProps({
           height="16"
           loading="lazy"
         />
-      </span>-->
+      </span> -->
       <RouterLink
         :to="`/${type}/${article.Slug}`"
         :title="article.Title"
@@ -109,7 +112,7 @@ defineProps({
             fill-rule="evenodd"
             d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
             clip-rule="evenodd"
-          ></path>
+          />
         </svg>
       </RouterLink>
     </div>

@@ -1,23 +1,33 @@
-import type { Plugin, App } from "vue";
-import i18next, { t } from "i18next";
-import mitt from "mitt";
-import { Emitter } from "mitt";
-import { useServerRouter } from "./stores/serverRouter";
-import { useEventBus, Events } from "./composables/event-bus";
-import { i18nextPromise, useTranslation } from "./composables/translations";
+import type { Emitter } from 'mitt'
+import type { App, Plugin } from 'vue'
+import type { Events } from './composables/event-bus'
+import i18next from 'i18next'
+import mitt from 'mitt'
+import CmsArticleBoxed from './components/fws/CmsArticleBoxed.vue'
+import CmsArticleSingle from './components/fws/CmsArticleSingle.vue'
+import DataTable from './components/fws/DataTable.vue'
+import FilterData from './components/fws/FilterData.vue'
+import UserData from './components/fws/UserData.vue'
+import { ClientOnly } from './components/ssr/ClientOnly'
+import DefaultBreadcrumb from './components/ui/DefaultBreadcrumb.vue'
+import DefaultConfirm from './components/ui/DefaultConfirm.vue'
+
+import DefaultDropdown from './components/ui/DefaultDropdown.vue'
+import DefaultDropdownLink from './components/ui/DefaultDropdownLink.vue'
+import DefaultGallery from './components/ui/DefaultGallery.vue'
+import CollapseTransition from './components/ui/transitions/CollapseTransition.vue'
+import ExpandTransition from './components/ui/transitions/ExpandTransition.vue'
+
+import FadeTransition from './components/ui/transitions/FadeTransition.vue'
+import ScaleTransition from './components/ui/transitions/ScaleTransition.vue'
+import { useEventBus } from './composables/event-bus'
+import { useRest } from './composables/rest'
+import { useSeo } from './composables/seo'
 import {
   initVueClient,
   initVueServer,
   isServerRendered,
-} from "./composables/ssr";
-import { useSeo } from "./composables/seo";
-import {
-  useUserStore,
-  useUserCheck,
-  useUserCheckAsync,
-  useUserCheckAsyncSimple,
-} from "./stores/user";
-import { ClientOnly } from "./components/ssr/ClientOnly";
+} from './composables/ssr'
 import {
   cropText,
   formatBytes,
@@ -25,118 +35,111 @@ import {
   formatDatetime,
   formatTimeago,
   getContrastingTextColor,
-} from "./composables/templating";
-import { useRest } from "./composables/rest";
-export * from "./stores/serverRouter";
-export type * from "./types";
-
+} from './composables/templating'
+import { i18nextPromise, useTranslation } from './composables/translations'
+import { useServerRouter } from './stores/serverRouter'
+import {
+  useUserCheck,
+  useUserCheckAsync,
+  useUserCheckAsyncSimple,
+  useUserStore,
+} from './stores/user'
 // Components/UI/Transitions
-import SlideTransition from "./components/ui/transitions/SlideTransition.vue";
-import ExpandTransition from "./components/ui/transitions/ExpandTransition.vue";
-import CollapseTransition from "./components/ui/transitions/CollapseTransition.vue";
-import ScaleTransition from "./components/ui/transitions/ScaleTransition.vue";
-import FadeTransition from "./components/ui/transitions/FadeTransition.vue";
-
+import SlideTransition from './components/ui/transitions/SlideTransition.vue'
 // Components/UI
-import DefaultInput from "./components/ui/DefaultInput.vue";
-import DefaultModal from "./components/ui/DefaultModal.vue";
-import DefaultConfirm from "./components/ui/DefaultConfirm.vue";
-import DefaultPaging from "./components/ui/DefaultPaging.vue";
-import DefaultBreadcrumb from "./components/ui/DefaultBreadcrumb.vue";
-import DefaultLoader from "./components/ui/DefaultLoader.vue";
-import DefaultSidebar from "./components/ui/DefaultSidebar.vue";
-import DefaultGallery from "./components/ui/DefaultGallery.vue";
-import DefaultDropdown from "./components/ui/DefaultDropdown.vue";
-import DefaultDropdownLink from "./components/ui/DefaultDropdownLink.vue";
-import DefaultTagInput from "./components/ui/DefaultTagInput.vue";
-import DefaultNotif from "./components/ui/DefaultNotif.vue";
+import DefaultInput from './components/ui/DefaultInput.vue'
+import DefaultLoader from './components/ui/DefaultLoader.vue'
+import DefaultModal from './components/ui/DefaultModal.vue'
+import DefaultNotif from './components/ui/DefaultNotif.vue'
+import DefaultPaging from './components/ui/DefaultPaging.vue'
+import DefaultSidebar from './components/ui/DefaultSidebar.vue'
+import DefaultTagInput from './components/ui/DefaultTagInput.vue'
 // Components/FWS
-import UserFlow from "./components/fws/UserFlow.vue";
-import DataTable from "./components/fws/DataTable.vue";
-import FilterData from "./components/fws/FilterData.vue";
-import CmsArticleBoxed from "./components/fws/CmsArticleBoxed.vue";
-import CmsArticleSingle from "./components/fws/CmsArticleSingle.vue";
-import UserOAuth2 from "./components/fws/UserOAuth2.vue";
-import UserData from "./components/fws/UserData.vue";
-import UserProfile from "./components/fws/UserProfile.vue";
-import UserProfileStrict from "./components/fws/UserProfileStrict.vue";
+import UserFlow from './components/fws/UserFlow.vue'
+import UserOAuth2 from './components/fws/UserOAuth2.vue'
+import UserProfile from './components/fws/UserProfile.vue'
+import UserProfileStrict from './components/fws/UserProfileStrict.vue'
 // Css
-import "./style.css";
+import './style.css'
+
+export * from './stores/serverRouter'
+export type * from './types'
 
 function createFWS(): Plugin {
-  const eventBus: Emitter<Events> = mitt<Events>();
+  // @ts-expect-error: Emitter<Events> is not assignable to Emitter<Events>
+  const eventBus: Emitter<Events> = mitt<Events>()
 
   return {
     install(app: App) {
       if (app.config.globalProperties) {
-        app.config.globalProperties.$eventBus = eventBus;
-        app.provide("fwsVueEventBus", eventBus);
+        app.config.globalProperties.$eventBus = eventBus
+        app.provide('fwsVueEventBus', eventBus)
 
         // i18next
-        app.config.globalProperties.$t = i18next.t;
-        app.provide("fwsVueTranslate", i18next.t);
+        app.config.globalProperties.$t = i18next.t
+        app.provide('fwsVueTranslate', i18next.t)
 
         // Templating
-        app.config.globalProperties.$cropText = cropText;
-        app.config.globalProperties.$formatBytes = formatBytes;
-        app.config.globalProperties.$formatTimeago = formatTimeago;
-        app.config.globalProperties.$formatDatetime = formatDatetime;
-        app.config.globalProperties.$formatDate = formatDate;
-        app.config.globalProperties.$getContrastingTextColor =
-          getContrastingTextColor;
+        app.config.globalProperties.$cropText = cropText
+        app.config.globalProperties.$formatBytes = formatBytes
+        app.config.globalProperties.$formatTimeago = formatTimeago
+        app.config.globalProperties.$formatDatetime = formatDatetime
+        app.config.globalProperties.$formatDate = formatDate
+        app.config.globalProperties.$getContrastingTextColor
+          = getContrastingTextColor
 
-        app.component("ClientOnly", ClientOnly);
+        app.component('ClientOnly', ClientOnly)
       }
     },
-  };
+  }
 }
 
 export {
-  i18nextPromise,
-  useTranslation,
+  CmsArticleBoxed,
+  CmsArticleSingle,
+  CollapseTransition,
   createFWS,
-  useServerRouter,
-  useEventBus,
+  DataTable,
+  DefaultBreadcrumb,
+  DefaultConfirm,
+  DefaultDropdown,
+  DefaultDropdownLink,
+  DefaultGallery,
+  // UI
+  DefaultInput,
+  DefaultLoader,
+  DefaultModal,
+  DefaultNotif,
+
+  DefaultPaging,
+  DefaultSidebar,
+  DefaultTagInput,
+  ExpandTransition,
+  FadeTransition,
+
+  FilterData,
+  i18nextPromise,
   initVueClient,
   initVueServer,
   isServerRendered,
-  useSeo,
-  useUserStore,
-  useUserCheck,
-  useUserCheckAsync,
-  useRest,
-  useUserCheckAsyncSimple,
-
+  ScaleTransition,
   // Components
   // UI/Transitions
   SlideTransition,
-  ExpandTransition,
-  CollapseTransition,
-  ScaleTransition,
-  FadeTransition,
-
-  // UI
-  DefaultInput,
-  DefaultModal,
-  DefaultConfirm,
-  DefaultPaging,
-  DefaultBreadcrumb,
-  DefaultLoader,
-  DefaultSidebar,
-  DefaultGallery,
-  DefaultDropdown,
-  DefaultDropdownLink,
-  DefaultTagInput,
-  DefaultNotif,
-
+  useEventBus,
+  UserData,
+  useRest,
   // FWS
   UserFlow,
   UserOAuth2,
-  DataTable,
-  FilterData,
-  CmsArticleBoxed,
-  CmsArticleSingle,
-  UserData,
+
   UserProfile,
   UserProfileStrict,
-};
+  useSeo,
+  useServerRouter,
+  useTranslation,
+  useUserCheck,
+  useUserCheckAsync,
+  useUserCheckAsyncSimple,
+  useUserStore,
+}
