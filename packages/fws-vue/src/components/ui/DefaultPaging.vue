@@ -6,11 +6,9 @@ import type { RouteLocationRaw } from 'vue-router'
 import type { APIPaging } from '../../composables/rest'
 import { getURL, hasFW } from '@fy-/fws-js'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/solid'
-import { useHead } from '@unhead/vue'
+import { useServerHead } from '@unhead/vue'
 import {
   computed,
-  onMounted,
-  onUnmounted,
   ref,
   watch,
 } from 'vue'
@@ -33,7 +31,6 @@ const props = withDefaults(
 const route = useRoute()
 const eventBus = useEventBus()
 const history = useServerRouter()
-const prevNextSeo = ref<any>({})
 function isNewPage(page: number) {
   return (
     page >= 1 && page <= props.items.page_max && page !== props.items.page_no
@@ -75,56 +72,48 @@ function page(page: number): RouteLocationRaw {
   }
 }
 
-function checkPageNumber(page: number = 1) {
-  prevNextSeo.value.next = undefined
-  prevNextSeo.value.prev = undefined
-  const pagePlus = page + 1
-  const pageMinus = page - 1
-  if (hasFW()) {
-    const url = getURL()
-    if (pagePlus <= props.items.page_max && url) {
-      prevNextSeo.value.next
-        = `${url.Scheme}://${url.Host}${route.path}?page=${pagePlus}${
-          props.hash !== '' ? `#${props.hash}` : ''}`
-    }
-    if (pageMinus >= 1 && url) {
-      prevNextSeo.value.prev
-        = `${url.Scheme}://${url.Host}${route.path}?page=${pageMinus}${
-          props.hash !== '' ? `#${props.hash}` : ''}`
-    }
-  }
-}
-
 pageWatcher.value = watch(
   () => route.query.page,
   (v) => {
     eventBus.emit(`${props.id}GoToPage`, v || 1)
   },
 )
-onMounted(() => {
-  eventBus.on(`${props.id}GoToPage`, checkPageNumber)
-})
-onUnmounted(() => {
-  eventBus.off(`${props.id}GoToPage`, checkPageNumber)
-  // if (pageWatcher.value) pageWatcher.value();
-})
 
-checkPageNumber(props.items.page_no)
-useHead({
+useServerHead({
   link: computed(() => {
     const result: any = []
-    if (prevNextSeo.value.next) {
+    const page = props.items.page_no
+    const page_max = props.items.page_max
+
+    let next
+    let prev
+
+    if (hasFW()) {
+      const url = getURL()
+      if (page + 1 <= page_max && url) {
+        next = `${url.Scheme}://${url.Host}${url.Path}?page=${page + 1}${
+          props.hash !== '' ? `#${props.hash}` : ''
+        }`
+      }
+      if (page - 1 >= 1 && url) {
+        prev = `${url.Scheme}://${url.Host}${url.Path}?page=${page - 1}${
+          props.hash !== '' ? `#${props.hash}` : ''
+        }`
+      }
+    }
+
+    if (next) {
       result.push({
-        href: prevNextSeo.value.next,
+        href: next,
         rel: 'next',
-        key: 'next',
+        key: 'paging-next',
       })
     }
-    if (prevNextSeo.value.prev) {
+    if (prev) {
       result.push({
-        href: prevNextSeo.value.prev,
+        href: prev,
         rel: 'prev',
-        key: 'prev',
+        key: 'paging-prev',
       })
     }
 
