@@ -1,17 +1,11 @@
 <script setup lang="ts">
-import type {
-  WatchStopHandle,
-} from 'vue'
+import type { WatchStopHandle } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import type { APIPaging } from '../../composables/rest'
 import { getURL, hasFW } from '@fy-/fws-js'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/solid'
 import { useServerHead } from '@unhead/vue'
-import {
-  computed,
-  ref,
-  watch,
-} from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEventBus } from '../../composables/event-bus'
 import { useServerRouter } from '../../stores/serverRouter'
@@ -28,14 +22,17 @@ const props = withDefaults(
     hash: '',
   },
 )
+
 const route = useRoute()
 const eventBus = useEventBus()
 const history = useServerRouter()
+
 function isNewPage(page: number) {
   return (
     page >= 1 && page <= props.items.page_max && page !== props.items.page_no
   )
 }
+
 const pageWatcher = ref<WatchStopHandle>()
 
 function next() {
@@ -50,6 +47,7 @@ function next() {
     hash: props.hash !== '' ? `#${props.hash}` : undefined,
   })
 }
+
 function prev() {
   const page = props.items.page_no - 1
   if (!isNewPage(page)) return
@@ -71,54 +69,84 @@ function page(page: number): RouteLocationRaw {
     hash: props.hash !== '' ? `#${props.hash}` : undefined,
   }
 }
-
+const isMounted = ref(false)
 pageWatcher.value = watch(
   () => route.query.page,
-  (v) => {
+  (v, oldValue) => {
+    if (v === oldValue || !isMounted.value) return
     eventBus.emit(`${props.id}GoToPage`, v || 1)
   },
 )
 
+// Compute pagination links for useHead
+const paginationLinks = computed(() => {
+  const result: any[] = []
+  const page_max = Number(props.items.page_max)
+
+  let next
+  let prev
+
+  if (hasFW()) {
+    const url = getURL()
+    if (url) {
+      // Parse the canonical URL to get the base URL and current query parameters
+      const canonicalUrl = new URL(url.Canonical)
+
+      const baseUrl = `${url.Scheme}://${url.Host}${url.Path}`
+      const currentQuery: Record<string, string> = {}
+      canonicalUrl.searchParams.forEach((value, key) => {
+        currentQuery[key] = value
+      })
+      // Remove the existing 'page' parameter to avoid duplicates
+      const page = Number(currentQuery.page)
+
+      delete currentQuery.page
+
+      const hashPart = props.hash !== '' ? `#${props.hash}` : ''
+
+      if (page + 1 <= page_max) {
+        const nextQuery = { ...currentQuery, page: (page + 1).toString() }
+        const nextQueryString = new URLSearchParams(nextQuery).toString()
+        next = `${baseUrl}?${nextQueryString}${hashPart}`
+      }
+
+      if (page - 1 >= 1) {
+        const prevQuery = { ...currentQuery, page: (page - 1).toString() }
+        const prevQueryString = new URLSearchParams(prevQuery).toString()
+        prev = `${baseUrl}?${prevQueryString}${hashPart}`
+      }
+    }
+  }
+
+  if (next) {
+    result.push({
+      rel: 'next',
+      href: next,
+      key: `paging-next${props.id}`,
+      hid: `paging-next${props.id}`,
+      id: `paging-next${props.id}`,
+    })
+  }
+  if (prev) {
+    result.push({
+      rel: 'prev',
+      href: prev,
+      key: `paging-prev${props.id}`,
+      hid: `paging-prev${props.id}`,
+      id: `paging-prev${props.id}`,
+    })
+  }
+
+  return result
+})
+
+// Use useHead outside of any reactive context to ensure it runs during SSR
 useServerHead({
-  link: computed(() => {
-    const result: any = []
-    const page = props.items.page_no
-    const page_max = props.items.page_max
+  link: paginationLinks.value,
+})
 
-    let next
-    let prev
-
-    if (hasFW()) {
-      const url = getURL()
-      if (page + 1 <= page_max && url) {
-        next = `${url.Scheme}://${url.Host}${url.Path}?page=${page + 1}${
-          props.hash !== '' ? `#${props.hash}` : ''
-        }`
-      }
-      if (page - 1 >= 1 && url) {
-        prev = `${url.Scheme}://${url.Host}${url.Path}?page=${page - 1}${
-          props.hash !== '' ? `#${props.hash}` : ''
-        }`
-      }
-    }
-
-    if (next) {
-      result.push({
-        href: next,
-        rel: 'next',
-        key: 'paging-next',
-      })
-    }
-    if (prev) {
-      result.push({
-        href: prev,
-        rel: 'prev',
-        key: 'paging-prev',
-      })
-    }
-
-    return result
-  }),
+onMounted(() => {
+  isMounted.value = true
 })
 </script>
 
@@ -150,8 +178,7 @@ useServerHead({
           </li>
           <li v-if="items.page_no - 2 > 2">
             <div
-              v-if="items.page_no - 2 > 2"
-              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400"
             >
               ...
             </div>
@@ -159,7 +186,7 @@ useServerHead({
           <template v-for="i in 2">
             <li
               v-if="items.page_no - (3 - i) >= 1"
-              :key="`page-${items.page_no + i}`"
+              :key="`page-${items.page_no - (3 - i)}`"
             >
               <router-link
                 class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
@@ -172,7 +199,7 @@ useServerHead({
           <li>
             <div
               aria-current="page"
-              class="z-10 flex items-center justify-center px-3 h-8 leading-tight text-primary-600 border border-primary-300 bg-primary-50 hover:bg-primary-100 hover:text-primary-700 dark:border-fv-neutral-700 dark:bg-fv-neutral-700 dark:text-white"
+              class="z-10 flex items-center justify-center px-3 h-8 leading-tight text-primary-600 border border-primary-300 bg-primary-50 dark:border-fv-neutral-700 dark:bg-fv-neutral-700 dark:text-white"
             >
               {{ items.page_no }}
             </div>
@@ -192,7 +219,7 @@ useServerHead({
           </template>
           <li v-if="items.page_no + 2 < items.page_max - 1">
             <div
-              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400"
             >
               ...
             </div>
@@ -205,7 +232,7 @@ useServerHead({
               {{ items.page_max }}
             </router-link>
           </li>
-          <li v-if="items.page_no < items.page_max - 1">
+          <li v-if="items.page_no < items.page_max">
             <button
               type="button"
               class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
@@ -223,8 +250,8 @@ useServerHead({
       >
         {{
           $t("global_paging", {
-            start: items.results_per_page * (items.page_no - 1),
-            end: items.results_per_page * items.page_no,
+            start: items.results_per_page * (items.page_no - 1) + 1,
+            end: Math.min(items.results_per_page * items.page_no, items.count),
             total: items.count >= 10000 ? $t("paging_a_lot_of") : items.count,
           })
         }}

@@ -59,6 +59,7 @@ import KlbUpdateEmail from "./components/klb/KlbUpdateEmail.vue";
 import KlbUpdatePassword from "./components/klb/KlbUpdatePassword.vue";
 import KlbContact from "./components/klb/KlbContact.vue";
 import "./style.css";
+export type * from "./types";
 
 function createKLB(): Plugin {
   const eventBus: Emitter<Events> = mitt<Events>();
@@ -86,22 +87,6 @@ function createKLB(): Plugin {
       }
     },
   };
-}
-
-declare module "vue" {
-  export interface ComponentCustomProperties {
-    $t: typeof i18next.t;
-    $eventBus: Emitter<Events>;
-    $cropText: typeof cropText;
-    $formatBytes: typeof formatBytes;
-    $formatTimeago: typeof formatTimeago;
-    $formatDatetime: typeof formatDatetime;
-    $formatDate: typeof formatDate;
-    $formatRecurringPaymentCycle: typeof formatRecurringPaymentCycle;
-  }
-  export interface GlobalComponents {
-    ClientOnly: typeof ClientOnly;
-  }
 }
 
 export {
