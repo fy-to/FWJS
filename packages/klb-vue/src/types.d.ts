@@ -13,19 +13,6 @@ import { ClientOnly } from "./components/ssr/ClientOnly";
 import type { Route } from "vue-router";
 import type VueRouter from "vue-router";
 
-export interface BreadcrumbLink {
-  name: string;
-  to?: string;
-}
-export type NavLink = {
-  to: string;
-  isExternal?: boolean;
-  name: string;
-  childrens?: NavLink[];
-  icon?: Component;
-  id?: string;
-};
-
 export type $t = typeof i18next.t;
 export type $eventBus = Emitter<Events>;
 export type $cropText = typeof cropText;
