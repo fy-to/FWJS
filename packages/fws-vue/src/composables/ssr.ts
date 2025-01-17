@@ -46,8 +46,8 @@ export async function initVueServer(
   const { app, router, head, pinia } = await createApp(true)
   const serverRouter = useServerRouter(pinia)
   serverRouter._setRouter(router)
-  await router.push(url)
-  await router.isReady()
+  await serverRouter._router.push(url)
+  await serverRouter._router.isReady()
 
   const result: SSRResult = {
     uuid: getUUID(),
@@ -86,8 +86,9 @@ export async function initVueServer(
       }
     }
 
-    serverRouter._router = null
+    // serverRouter._router = null
     result.initial.pinia = pinia.state.value
+    serverRouter._setRouter(null)
     callback(result)
     return result
   }

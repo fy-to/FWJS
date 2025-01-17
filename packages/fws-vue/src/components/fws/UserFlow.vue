@@ -315,6 +315,9 @@ onMounted(async () => {
                       || field.type === 'password'
                       || field.type === 'email'
                       || field.type === 'mask'
+                      || field.type === 'tel'
+                      || field.type === 'number'
+                      || field.type === 'phone'
                   "
                 >
                   <DefaultInput

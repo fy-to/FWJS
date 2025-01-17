@@ -388,14 +388,14 @@ onUnmounted(() => {
       </Dialog>
     </TransitionRoot>
 
-    <template v-if="mode === 'grid' || mode === 'mason' || mode === 'custom'">
+    <div v-if="mode === 'grid' || mode === 'mason' || mode === 'custom'" class="min-h-[600px]">
       <div
         :class="{
-          'grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4 items-start':
+          ' grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4 items-start':
             mode === 'mason',
-          'grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4 items-center':
+          '  grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4 items-center':
             mode === 'grid',
-          'custom-grid': mode === 'custom',
+          ' custom-grid': mode === 'custom',
         }"
       >
         <slot name="thumbnail" />
@@ -464,7 +464,7 @@ onUnmounted(() => {
           </div>
         </template>
       </div>
-    </template>
+    </div>
     <button
       v-if="mode === 'button'"
       :class="`btn ${buttonType ? buttonType : 'primary'} defaults`"

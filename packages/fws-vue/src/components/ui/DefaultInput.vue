@@ -132,6 +132,7 @@ defineExpose({ focus, blur, getInputRef })
           'textarea-grow',
           'select',
           'phone',
+          'tel',
           'range',
           'chips',
           'tags',
@@ -146,6 +147,7 @@ defineExpose({ focus, blur, getInputRef })
             [
               'text',
               'phone',
+              'tel',
               'password',
               'range',
               'email',
@@ -170,7 +172,7 @@ defineExpose({ focus, blur, getInputRef })
             :id="id"
             ref="inputRef"
             v-model="model"
-            :type="type === 'datepicker' ? 'date' : type"
+            :type="type === 'datepicker' ? 'date' : type === 'phone' ? 'tel' : type"
             :name="id"
             :class="{
               'error': checkErrors,

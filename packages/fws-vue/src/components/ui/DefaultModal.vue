@@ -32,11 +32,12 @@ function setModal(value: boolean) {
   if (value === true) {
     if (props.onOpen) props.onOpen()
   }
-  else {
+  if (value === false) {
     if (props.onClose) props.onClose()
   }
   isOpen.value = value
 }
+
 onMounted(() => {
   eventBus.on(`${props.id}Modal`, setModal)
 })
