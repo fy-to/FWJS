@@ -350,18 +350,4 @@ function handlePaste(e: ClipboardEvent) {
 .input {
   @apply flex-grow min-w-[100px] outline-none border-none break-words;
 }
-
-/* Example button classes */
-.btn {
-  @apply inline-flex items-center justify-center rounded text-sm px-3 py-1
-    border border-transparent font-medium focus:outline-none
-    focus-visible:ring-2 focus-visible:ring-offset-2;
-}
-.btn.small {
-  @apply text-xs px-2 py-1;
-}
-.btn.neutral {
-  @apply bg-fv-neutral-300 hover:bg-fv-neutral-400 text-black
-    dark:bg-fv-neutral-600 dark:hover:bg-fv-neutral-500;
-}
 </style>

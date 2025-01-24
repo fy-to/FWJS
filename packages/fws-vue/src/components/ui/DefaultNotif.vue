@@ -120,7 +120,7 @@ onUnmounted(() => {
     <div
       v-if="currentNotif !== null"
       id="base-notif"
-      class="p-2 mb-4 fixed bottom-4 right-8 !z-[2000] bg-fv-neutral-50/[.6] dark:bg-neutral-800/[.6] rounded-lg border"
+      class=" mb-4 fixed bottom-4 right-8 !z-[2000] bg-fv-neutral-50/[.6] dark:bg-neutral-800/[.85] rounded-lg border overflow-hidden shadow-lg"
       role="alert"
       :class="{
         'text-fv-neutral-800 border-fv-neutral-300 dark:text-fv-neutral-400 dark:border-fv-neutral-600':
@@ -133,49 +133,48 @@ onUnmounted(() => {
           currentNotif.type === 'secret',
       }"
     >
-      <!-- Title + icon or image -->
-      <div class="flex items-center gap-2">
-        <img
-          v-if="currentNotif.imgSrc"
-          class="flex-shrink-0 w-6 h-6"
-          :src="currentNotif.imgSrc"
-          :alt="currentNotif.title"
-        >
-        <component
-          :is="currentNotif.imgIcon"
-          v-else
-          class="flex-shrink-0 w-6 h-6"
-        />
-        <h3 class="text-lg font-medium" v-text="currentNotif.title" />
-      </div>
-
-      <!-- Optional content -->
-      <div
-        v-if="currentNotif.content"
-        class="mt-2 text-sm"
-        v-text="currentNotif.content"
-      />
-
-      <!-- Progress bar (3px) -->
-      <div class="relative mt-3 h-[3px] bg-gray-200 rounded-full overflow-hidden">
+      <div class="relative  h-[4px] bg-fv-neutral-900/[.2] rounded-full overflow-hidden ">
         <!-- We re-use text color (text-*) as background or define a custom color -->
         <div
           class="absolute left-0 top-0 h-full bg-current transition-[width]"
           :style="{ width: `${progress}%` }"
         />
       </div>
+      <div class="p-2">
+        <div class="flex items-center gap-2">
+          <img
+            v-if="currentNotif.imgSrc"
+            class="flex-shrink-0 w-6 h-6"
+            :src="currentNotif.imgSrc"
+            :alt="currentNotif.title"
+          >
+          <component
+            :is="currentNotif.imgIcon"
+            v-else
+            class="flex-shrink-0 w-6 h-6"
+          />
+          <h3 class="text-lg font-medium" v-text="currentNotif.title" />
+        </div>
 
-      <!-- CTA row (if you need more buttons, just extend it) -->
-      <div class="flex justify-end gap-2 pt-3">
-        <button
-          type="button"
-          class="btn neutral small"
-          aria-label="Close"
-          @click="hideNotif"
-        >
-          <!-- i18n example, or plain text like "Dismiss" -->
-          {{ $t("dismiss_cta") }}
-        </button>
+        <!-- Optional content -->
+        <div
+          v-if="currentNotif.content"
+          class="mt-2 text-sm prose-sm prose-invert"
+          v-html="currentNotif.content"
+        />
+
+        <!-- CTA row (if you need more buttons, just extend it) -->
+        <div class="flex justify-end gap-2 pt-3">
+          <button
+            type="button"
+            class="btn neutral small"
+            aria-label="Close"
+            @click="hideNotif"
+          >
+            <!-- i18n example, or plain text like "Dismiss" -->
+            {{ $t("dismiss_cta") }}
+          </button>
+        </div>
       </div>
     </div>
   </ScaleTransition>
