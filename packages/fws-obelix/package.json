@@ -1,6 +1,6 @@
 {
     "name": "@fy-/fws-obelix",
-    "version": "0.0.70",
+    "version": "0.1.2",
     "description": "BB for FWS",
     "author": "Florian 'Fy' Gasquez <m@fy.to>",
     "license": "MIT",
@@ -47,7 +47,7 @@
         "type-check": "tsc --noEmit",
         "copy": "pnpm run clean && cp -r src/ dist/ && node copyPackage.js",
         "build": "pnpm run lint:check --fix && pnpm run type-check && pnpm run copy",
-        "lint:check": "eslint --resolve-plugins-relative-to . src/ --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore --fix"
+        "lint:check": "eslint src/ --fix"
     },
     "devDependencies": {
         "@fy-/fws-js": "workspace:*",
