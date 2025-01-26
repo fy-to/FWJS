@@ -1,135 +1,138 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import {
   DefaultBreadcrumb,
+  DefaultPaging,
   useEventBus,
   useRest,
   useSeo,
   useTranslation,
-  DefaultPaging,
-} from "@fy-/fws-vue";
-import { useRoute } from "vue-router";
-import BBPost from "./BBPost.vue";
-import BBFooter from "./BBFooter.vue";
-import { useLocalStorage } from "@vueuse/core";
+} from '@fy-/fws-vue'
+import { useLocalStorage } from '@vueuse/core'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import BBFooter from './BBFooter.vue'
+import BBPost from './BBPost.vue'
 
 const props = withDefaults(
   defineProps<{
-    notFoundPage: any;
-    isSingle?: boolean;
-    avatarComponent: any;
-    imgDomain?: string;
-    rankComponent?: any;
+    notFoundPage: any
+    isSingle?: boolean
+    avatarComponent: any
+    imgDomain?: string
+    rankComponent?: any
   }>(),
   {
     isSingle: false,
-    imgDomain: "https://s.nocachenocry.com",
+    imgDomain: 'https://s.nocachenocry.com',
     rankComponent: () => null,
   },
-);
+)
 
-const rest = useRest();
-const route = useRoute();
-const eventBus = useEventBus();
-const posts = ref();
-const order = useLocalStorage("bb_order", "t");
-const is404 = ref(false);
-const paging = ref();
+const rest = useRest()
+const route = useRoute()
+const eventBus = useEventBus()
+const posts = ref()
+const order = useLocalStorage('bb_order', 't')
+const is404 = ref(false)
+const paging = ref()
 async function getPosts(page = 1) {
-  eventBus.emit("main-loading", true);
-  is404.value = false;
-  if (route.query.page) page = Number.parseInt(route.query.page as string);
+  eventBus.emit('main-loading', true)
+  is404.value = false
+  if (route.query.page) page = Number.parseInt(route.query.page as string)
 
   if (!props.isSingle && route.params.uuid) {
     const data = await rest(
       `ObelixBB/${route.params.uuid.toString()}/${order.value}`,
-      "GET",
+      'GET',
       {
         results_per_page: 15,
         page_no: page,
       },
     ).catch(() => {
-      is404.value = true;
-      eventBus.emit("main-loading", false);
-    });
-    if (data && data.result === "success") {
-      posts.value = data.data;
-      paging.value = data.paging;
-    } else {
-      is404.value = true;
+      is404.value = true
+      eventBus.emit('main-loading', false)
+    })
+    if (data && data.result === 'success') {
+      posts.value = data.data
+      paging.value = data.paging
     }
-  } else if (props.isSingle && route.params.uuid && route.params.slug) {
+    else {
+      is404.value = true
+    }
+  }
+  else if (props.isSingle && route.params.uuid && route.params.slug) {
     const data = await rest(
       `ObelixBB/${route.params.uuid.toString()}/Post/${route.params.slug}`,
-      "GET",
+      'GET',
     ).catch(() => {
-      is404.value = true;
-      eventBus.emit("main-loading", false);
-    });
-    if (data && data.result === "success") {
-      posts.value = data.data;
-    } else {
-      is404.value = true;
+      is404.value = true
+      eventBus.emit('main-loading', false)
+    })
+    if (data && data.result === 'success') {
+      posts.value = data.data
+    }
+    else {
+      is404.value = true
     }
   }
 
-  eventBus.emit("main-loading", false);
+  eventBus.emit('main-loading', false)
 }
 
-await getPosts();
-const mounted = ref(false);
+await getPosts()
+const mounted = ref(false)
 
 onMounted(() => {
   if (!mounted.value) {
-    mounted.value = true;
+    mounted.value = true
   }
-  eventBus.on("reloadBB", getPosts);
-  eventBus.on("bbpostsGoToPage", getPosts);
-});
+  eventBus.on('reloadBB', getPosts)
+  eventBus.on('bbpostsGoToPage', getPosts)
+})
 onUnmounted(() => {
-  eventBus.off("reloadBB", getPosts);
-  eventBus.off("bbpostsGoToPage", getPosts);
-});
+  eventBus.off('reloadBB', getPosts)
+  eventBus.off('bbpostsGoToPage', getPosts)
+})
 
 watch(
   () => [route.params.uuid, order.value],
   () => {
     if (mounted.value && route.params.uuid) {
-      getPosts();
+      getPosts()
     }
   },
-);
+)
 
 useSeo(
   ref({
     title: computed(() => {
       if (props.isSingle) {
-        return `${posts.value?.Post?.Title} - ${posts.value?.Board?.Name}`;
+        return `${posts.value?.Post?.Title} - ${posts.value?.Board?.Name}`
       }
-      return `${posts.value?.Board?.Name} - Forums`;
+      return `${posts.value?.Board?.Name} - Forums`
     }),
     description: computed(() => {
       if (!props.isSingle) {
-        return posts.value?.Board?.Description;
+        return posts.value?.Board?.Description
       }
-      return undefined;
+      return undefined
     }),
   }),
-);
-const translate = useTranslation();
+)
+const translate = useTranslation()
 const nav = computed(() => {
   if (props.isSingle) {
     return [
-      { name: translate("bb_home_bc"), to: "/forums" },
+      { name: translate('bb_home_bc'), to: '/forums' },
       { name: posts.value.Board.Name, to: `/forums/${posts.value.Board.UUID}` },
       { name: posts.value.Post.Title },
-    ];
+    ]
   }
   return [
-    { name: translate("bb_home_bc"), to: "/forums" },
+    { name: translate('bb_home_bc'), to: '/forums' },
     { name: posts.value.Board.Name },
-  ];
-});
+  ]
+})
 </script>
 
 <template>
@@ -218,10 +221,10 @@ const nav = computed(() => {
                   {{ $t("bb_sort_top_cta") }}
                 </button>
                 <button
+                  v-if="0"
                   class="btn neutral small flex items-center"
                   :class="{ '!bg-fv-accent-800': order === 'c' }"
                   @click="order = 'c'"
-                  v-if="0"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

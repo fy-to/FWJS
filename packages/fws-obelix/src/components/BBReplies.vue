@@ -1,74 +1,76 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
-import { useEventBus, useRest } from "@fy-/fws-vue";
-import BBReply from "./BBReply.vue";
-import { useBBStore } from "./bbStore";
+import { useEventBus, useRest } from '@fy-/fws-vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import BBReply from './BBReply.vue'
+import { useBBStore } from './bbStore'
 
-const eventBus = useEventBus();
-const wStore = useBBStore();
-const upvoted = computed(() => wStore.ForumsUpvotesComment);
-const downvoted = computed(() => wStore.ForumsDownvotesComment);
-const rest = useRest();
+const eventBus = useEventBus()
+const wStore = useBBStore()
+const upvoted = computed(() => wStore.ForumsUpvotesComment)
+const downvoted = computed(() => wStore.ForumsDownvotesComment)
+const rest = useRest()
 
 const props = withDefaults(
   defineProps<{
-    post: any;
-    childs?: any;
+    post: any
+    childs?: any
   }>(),
   {
     childs: null,
   },
-);
-const replies = ref();
-const repliesOpen = ref({});
+)
+const replies = ref()
+const repliesOpen = ref({})
 async function getReplies() {
-  eventBus.emit("main-loading", true);
-  repliesOpen.value = {};
-  replies.value = undefined;
+  eventBus.emit('main-loading', true)
+  repliesOpen.value = {}
+  replies.value = undefined
   const data = await rest(
     `ObelixBB/${props.post.BoardUUID}/Replies/${props.post.Slug}`,
-    "GET",
+    'GET',
   ).catch(() => {
-    replies.value = [];
-    eventBus.emit("main-loading", false);
-  });
-  if (data && data.result === "success") {
-    replies.value = data.data;
-  } else {
-    replies.value = [];
+    replies.value = []
+    eventBus.emit('main-loading', false)
+  })
+  if (data && data.result === 'success') {
+    replies.value = data.data
   }
-  eventBus.emit("main-loading", false);
+  else {
+    replies.value = []
+  }
+  eventBus.emit('main-loading', false)
 }
 
-async function upvote(id: string, type = "upvote", object = "post") {
-  eventBus.emit("main-loading", true);
-  const _r = await rest(`ObelixBB/Vote/${type}/${object}/${id}`, "POST", {});
-  if (_r && _r.result === "success") {
-    eventBus.emit("reloadBB", true);
-    eventBus.emit("refreshBBProfile", true);
+async function upvote(id: string, type = 'upvote', object = 'post') {
+  eventBus.emit('main-loading', true)
+  const _r = await rest(`ObelixBB/Vote/${type}/${object}/${id}`, 'POST', {})
+  if (_r && _r.result === 'success') {
+    eventBus.emit('reloadBB', true)
+    eventBus.emit('refreshBBProfile', true)
   }
-  eventBus.emit("main-loading", false);
+  eventBus.emit('main-loading', false)
 }
 
 onMounted(async () => {
   if (props.childs === null) {
-    await getReplies();
-  } else {
-    replies.value = props.childs;
+    await getReplies()
   }
-  eventBus.on("reloadBB", getReplies);
-});
+  else {
+    replies.value = props.childs
+  }
+  eventBus.on('reloadBB', getReplies)
+})
 
 onUnmounted(() => {
-  eventBus.off("reloadBB", getReplies);
-});
+  eventBus.off('reloadBB', getReplies)
+})
 </script>
 
 <template>
   <template v-if="replies && replies.length">
     <div
-      id="replies"
       v-for="reply in replies"
+      id="replies"
       :key="`${reply.ID}-${post.ID}-${reply.Depth}`"
       class="relative pl-6"
       itemprop="comment"
@@ -88,8 +90,7 @@ onUnmounted(() => {
         on
         <time itemprop="dateCreated" :datetime="reply.CreatedAt.iso">{{
           $formatDate(reply.CreatedAt.iso)
-        }}</time
-        >.
+        }}</time>.
       </div>
       <p itemprop="text" class="text-fv-neutral-300 text-sm">
         {{ reply.Message }}
@@ -104,8 +105,8 @@ onUnmounted(() => {
             @click="
               () => {
                 if (
-                  !upvoted.includes(reply.ID) &&
-                  !downvoted.includes(reply.ID)
+                  !upvoted.includes(reply.ID)
+                  && !downvoted.includes(reply.ID)
                 ) {
                   upvote(reply.ID, 'upvote', 'reply');
                 }
@@ -136,8 +137,8 @@ onUnmounted(() => {
             @click="
               () => {
                 if (
-                  !downvoted.includes(reply.ID) &&
-                  !upvoted.includes(reply.ID)
+                  !downvoted.includes(reply.ID)
+                  && !upvoted.includes(reply.ID)
                 ) {
                   upvote(reply.ID, 'downvote', 'reply');
                 }

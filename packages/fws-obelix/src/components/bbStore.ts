@@ -1,6 +1,6 @@
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia'
 
-export const useBBStore = defineStore("bbStore", {
+export const useBBStore = defineStore('bbStore', {
   state: () =>
     ({
       ForumsUpvotesPost: [],
@@ -8,23 +8,23 @@ export const useBBStore = defineStore("bbStore", {
       ForumsUpvotesComment: [],
       ForumsDownvotesComment: [],
     }) as {
-      ForumsUpvotesPost: number[];
-      ForumsDownvotesPost: number[];
-      ForumsUpvotesComment: number[];
-      ForumsDownvotesComment: number[];
+      ForumsUpvotesPost: number[]
+      ForumsDownvotesPost: number[]
+      ForumsUpvotesComment: number[]
+      ForumsDownvotesComment: number[]
     },
   actions: {
     setForumsUpvotesPost(forumsUpvotesPost: number[]) {
-      this.ForumsUpvotesPost = forumsUpvotesPost;
+      this.ForumsUpvotesPost = forumsUpvotesPost
     },
     setForumsDownvotesPost(forumsDownvotesPost: number[]) {
-      this.ForumsDownvotesPost = forumsDownvotesPost;
+      this.ForumsDownvotesPost = forumsDownvotesPost
     },
     setForumsUpvotesComment(forumsUpvotesComment: number[]) {
-      this.ForumsUpvotesComment = forumsUpvotesComment;
+      this.ForumsUpvotesComment = forumsUpvotesComment
     },
     setForumsDownvotesComment(forumsDownvotesComment: number[]) {
-      this.ForumsDownvotesComment = forumsDownvotesComment;
+      this.ForumsDownvotesComment = forumsDownvotesComment
     },
   },
-});
+})

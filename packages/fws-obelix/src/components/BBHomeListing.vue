@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { DefaultBreadcrumb, useRest } from "@fy-/fws-vue";
-import { computed, ref } from "vue";
-import BBFooter from "./BBFooter.vue";
+import { useRest } from '@fy-/fws-vue'
+import { computed, ref } from 'vue'
+import BBFooter from './BBFooter.vue'
 
-const rest = useRest();
-const boards = ref();
+const rest = useRest()
+const boards = ref()
 async function getBoards() {
-  const d = await rest("ObelixBB", "GET");
-  if (d && d.result === "success") {
-    boards.value = d.data;
+  const d = await rest('ObelixBB', 'GET')
+  if (d && d.result === 'success') {
+    boards.value = d.data
   }
 }
 const boardsGroupByGroupIndex = computed(() => {
-  if (!boards.value) return [];
-  const groups = {} as any;
+  if (!boards.value) return []
+  const groups = {} as any
   boards.value.forEach((bb: any) => {
     if (!groups[bb.GroupIndex]) {
-      groups[bb.GroupIndex] = [];
+      groups[bb.GroupIndex] = []
     }
-    groups[bb.GroupIndex].push(bb);
-  });
-  return Object.values(groups) as any;
-});
+    groups[bb.GroupIndex].push(bb)
+  })
+  return Object.values(groups) as any
+})
 
-await getBoards();
+await getBoards()
 </script>
 
 <template>
@@ -55,7 +55,7 @@ await getBoards();
         <meta
           itemprop="itemListOrder"
           content="http://schema.org/ItemListOrderDescending"
-        />
+        >
 
         <router-link
           v-for="(bb, idx2) in bg"
@@ -70,8 +70,8 @@ await getBoards();
           itemscope
           itemtype="http://schema.org/ListItem"
         >
-          <meta itemprop="position" :content="idx2.toString()" />
-          <meta itemprop="url" :content="`/forums/${bb.UUID}`" />
+          <meta itemprop="position" :content="idx2.toString()">
+          <meta itemprop="url" :content="`/forums/${bb.UUID}`">
           <div
             class="mx-2 flex w-auto items-center divide-x divide-fv-neutral-900/[.2] dark:divide-fv-neutral-300/[.2]"
           >
@@ -100,8 +100,8 @@ await getBoards();
                     :to="`/forums/${bb.UUID}/${bb.LastPost.Slug}`"
                     :title="bb.LastPost.Title"
                   >
-                    <b>{{ $cropText(bb.LastPost.Title, 25) }}</b> </RouterLink
-                  ><br />
+                    <b>{{ $cropText(bb.LastPost.Title, 25) }}</b>
+                  </RouterLink><br>
                   <small class="!text-black dark:!text-white">{{
                     $formatTimeago(bb.LastPost.CreatedAt.iso)
                   }}</small>

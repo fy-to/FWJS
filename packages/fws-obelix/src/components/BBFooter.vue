@@ -1,30 +1,30 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from "vue";
-import { useEventBus, useRest } from "@fy-/fws-vue";
-import { useBBStore } from "./bbStore";
+import { useEventBus, useRest } from '@fy-/fws-vue'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { useBBStore } from './bbStore'
 
-const rest = useRest();
-const bbStore = useBBStore();
-const stats = ref();
+const rest = useRest()
+const bbStore = useBBStore()
+const stats = ref()
 async function getStats() {
-  stats.value = undefined;
-  const d = await rest("ObelixBB/UserData", "GET");
-  if (d && d.result === "success") {
-    stats.value = d.data;
-    bbStore.setForumsDownvotesPost(d.data.PostDownvotes);
-    bbStore.setForumsUpvotesPost(d.data.PostUpvotes);
-    bbStore.setForumsDownvotesComment(d.data.ReplyDownvotes);
-    bbStore.setForumsUpvotesComment(d.data.ReplyUpvotes);
+  stats.value = undefined
+  const d = await rest('ObelixBB/UserData', 'GET')
+  if (d && d.result === 'success') {
+    stats.value = d.data
+    bbStore.setForumsDownvotesPost(d.data.PostDownvotes)
+    bbStore.setForumsUpvotesPost(d.data.PostUpvotes)
+    bbStore.setForumsDownvotesComment(d.data.ReplyDownvotes)
+    bbStore.setForumsUpvotesComment(d.data.ReplyUpvotes)
   }
 }
-const eventBus = useEventBus();
+const eventBus = useEventBus()
 onMounted(async () => {
-  await getStats();
-  eventBus.on("refreshBBProfile", getStats);
-});
+  await getStats()
+  eventBus.on('refreshBBProfile', getStats)
+})
 onUnmounted(() => {
-  eventBus.off("refreshBBProfile", getStats);
-});
+  eventBus.off('refreshBBProfile', getStats)
+})
 </script>
 
 <template>

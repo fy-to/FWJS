@@ -6,34 +6,33 @@ import {
   useRest,
   useTranslation,
   useUserStore,
-} from "@fy-/fws-vue";
-import useVuelidate from "@vuelidate/core";
-import { maxLength, minLength, required } from "@vuelidate/validators";
-import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { useLocalStorage } from "@vueuse/core";
-//import { MdEditor } from "md-editor-v3";
+} from '@fy-/fws-vue'
+import useVuelidate from '@vuelidate/core'
+import { maxLength, minLength, required } from '@vuelidate/validators'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+// import { MdEditor } from "md-editor-v3";
 
-const posts = ref();
-const is404 = ref(false);
-const route = useRoute();
+const posts = ref()
+const is404 = ref(false)
+const route = useRoute()
 
 const state = reactive({
   post: {
-    Title: "",
-    Message: "",
+    Title: '',
+    Message: '',
     IsNSFW: false,
     IsSpoiler: false,
-    Type: "post",
+    Type: 'post',
   },
   link: {
-    Title: "",
-    Message: "",
+    Title: '',
+    Message: '',
     IsNSFw: false,
     IsSpoiler: false,
-    Type: "link",
+    Type: 'link',
   },
-});
+})
 const rules = {
   post: {
     Title: { required, minLength: minLength(4), maxLength: maxLength(100) },
@@ -43,149 +42,151 @@ const rules = {
     Title: { required, minLength: minLength(3), maxLength: maxLength(100) },
     Message: { required, minLength: minLength(3) },
   },
-};
-const v$ = useVuelidate(rules, state);
-const currentEditID = ref();
-const eventBus = useEventBus();
-const store = useUserStore();
-const currentType = ref("post");
-const isAuth = computed(() => store.isAuth);
-const router = useRouter();
-const rest = useRest();
+}
+const v$ = useVuelidate(rules, state)
+const currentEditID = ref()
+const eventBus = useEventBus()
+const store = useUserStore()
+const currentType = ref('post')
+const isAuth = computed(() => store.isAuth)
+const router = useRouter()
+const rest = useRest()
 async function getPosts() {
-  eventBus.emit("main-loading", true);
-  const data = await rest(`ObelixBB/${route.params.uuid.toString()}`, "GET");
-  if (data && data.result === "success") {
-    posts.value = data.data;
-  } else {
-    is404.value = true;
+  eventBus.emit('main-loading', true)
+  const data = await rest(`ObelixBB/${route.params.uuid.toString()}`, 'GET')
+  if (data && data.result === 'success') {
+    posts.value = data.data
+  }
+  else {
+    is404.value = true
   }
 
-  eventBus.emit("main-loading", false);
+  eventBus.emit('main-loading', false)
 }
-await getPosts();
-const getEditPost = async () => {
-  eventBus.emit("main-loading", true);
+await getPosts()
+async function getEditPost() {
+  eventBus.emit('main-loading', true)
 
   const data = await rest(
     `ObelixBB/${route.params.uuid.toString()}/Post/${route.query.edit}`,
-    "GET",
+    'GET',
   ).catch(() => {
-    eventBus.emit("main-loading", false);
-    router.push(`/forums/${route.params.uuid}`);
-  });
-  if (data && data.result === "success") {
+    eventBus.emit('main-loading', false)
+    router.push(`/forums/${route.params.uuid}`)
+  })
+  if (data && data.result === 'success') {
     if (data.data.Post.PostType !== 1) {
-      eventBus.emit("main-loading", false);
-      router.push(`/forums/${route.params.uuid}`);
+      eventBus.emit('main-loading', false)
+      router.push(`/forums/${route.params.uuid}`)
     }
-    state.post.Title = data.data.Post.Title;
-    state.post.Message = data.data.Post.Message;
-    currentEditID.value = data.data.Post.ID;
-  } else {
-    eventBus.emit("main-loading", false);
-    router.push(`/forums/${route.params.uuid}`);
+    state.post.Title = data.data.Post.Title
+    state.post.Message = data.data.Post.Message
+    currentEditID.value = data.data.Post.ID
   }
-  eventBus.emit("main-loading", false);
-};
+  else {
+    eventBus.emit('main-loading', false)
+    router.push(`/forums/${route.params.uuid}`)
+  }
+  eventBus.emit('main-loading', false)
+}
 
 if (route.query.edit) {
-  getEditPost();
+  getEditPost()
 }
 function openPostBB() {
   if (!isAuth.value) {
-    router.push(`/login?return_to=/forums/${route.params.uuid}`);
-  } else {
-    eventBus.emit("postBBModal", true);
+    router.push(`/login?return_to=/forums/${route.params.uuid}`)
+  }
+  else {
+    eventBus.emit('postBBModal', true)
   }
 }
-const isDark = useLocalStorage("isDark", "1");
-const mode = computed(() => (isDark.value === "1" ? "dark" : "light"));
 async function post() {
   if (await v$.value[currentType.value].$validate()) {
-    if (currentType.value === "post") {
+    if (currentType.value === 'post') {
       if (!route.query.edit) {
-        const res = await rest(`ObelixBB/${route.params.uuid}`, "POST", {
+        const res = await rest(`ObelixBB/${route.params.uuid}`, 'POST', {
           Title: state.post.Title,
           Message: state.post.Message,
           IsNSFW: state.post.IsNSFW,
           IsSpoiler: state.post.IsSpoiler,
           PostTypeStr: state.post.Type,
-        });
-        if (res && res.result === "success") {
-          state.post.Title = "";
-          state.post.Message = "";
-          state.post.IsNSFW = false;
-          state.post.IsSpoiler = false;
-          v$.value.post.$reset();
-          eventBus.emit("postBBModal", false);
-          eventBus.emit("reloadBB");
-          router.push(`/forums/${route.params.uuid}/${res.data.Post.Slug}`);
+        })
+        if (res && res.result === 'success') {
+          state.post.Title = ''
+          state.post.Message = ''
+          state.post.IsNSFW = false
+          state.post.IsSpoiler = false
+          v$.value.post.$reset()
+          eventBus.emit('postBBModal', false)
+          eventBus.emit('reloadBB')
+          router.push(`/forums/${route.params.uuid}/${res.data.Post.Slug}`)
         }
-      } else {
+      }
+      else {
         const res = await rest(
           `ObelixBB/_Patch/${route.params.uuid}`,
-          "PATCH",
+          'PATCH',
           {
             Title: state.post.Title,
             Message: state.post.Message,
             ID: currentEditID.value,
           },
-        );
+        )
 
-        if (res && res.result === "success") {
-          state.post.Title = "";
-          state.post.Message = "";
-          state.post.IsNSFW = false;
-          state.post.IsSpoiler = false;
-          v$.value.post.$reset();
-          eventBus.emit("postBBModal", false);
-          eventBus.emit("reloadBB");
-          router.push(`/forums/${route.params.uuid}/${res.data.Slug}`);
+        if (res && res.result === 'success') {
+          state.post.Title = ''
+          state.post.Message = ''
+          state.post.IsNSFW = false
+          state.post.IsSpoiler = false
+          v$.value.post.$reset()
+          eventBus.emit('postBBModal', false)
+          eventBus.emit('reloadBB')
+          router.push(`/forums/${route.params.uuid}/${res.data.Slug}`)
         }
       }
     }
-    if (currentType.value === "link") {
-      const res = await rest(`ObelixBB/${route.params.uuid}`, "POST", {
+    if (currentType.value === 'link') {
+      const res = await rest(`ObelixBB/${route.params.uuid}`, 'POST', {
         Title: state.link.Title,
         Message: state.link.Message,
         IsNSFW: state.link.IsNSFw,
         SpoilIsSpoilerer: state.link.IsSpoiler,
         PostTypeStr: state.link.Type,
-      });
-      if (res && res.result === "success") {
-        state.link.Title = "";
-        state.link.Message = "";
-        state.link.IsNSFw = false;
-        state.link.IsSpoiler = false;
-        v$.value.link.$reset();
-        eventBus.emit("postBBModal", false);
-        eventBus.emit("reloadBB");
-        router.push(`/forums/${route.params.uuid}/${res.data.Post.Slug}`);
+      })
+      if (res && res.result === 'success') {
+        state.link.Title = ''
+        state.link.Message = ''
+        state.link.IsNSFw = false
+        state.link.IsSpoiler = false
+        v$.value.link.$reset()
+        eventBus.emit('postBBModal', false)
+        eventBus.emit('reloadBB')
+        router.push(`/forums/${route.params.uuid}/${res.data.Post.Slug}`)
       }
     }
   }
 }
 onMounted(() => {
-  eventBus.on("openPostBB", openPostBB);
-});
+  eventBus.on('openPostBB', openPostBB)
+})
 onUnmounted(() => {
-  eventBus.off("openPostBB", openPostBB);
-});
+  eventBus.off('openPostBB', openPostBB)
+})
 function checkVuelidate(err: any[]): string {
   if (err && err.length > 0) {
-    const e = `bb_vuelidate_validator_${err[0].$validator.toString()}`;
-    return translate(e);
+    const e = `bb_vuelidate_validator_${err[0].$validator.toString()}`
+    return translate(e)
   }
-  return "";
+  return ''
 }
-const translate = useTranslation();
+const translate = useTranslation()
 const nav = computed(() => {
   return [
-    { name: translate("bb_home_bc"), to: "/forums" },
+    { name: translate('bb_home_bc'), to: '/forums' },
     { name: posts.value.Board.Name },
-  ];
-});
+  ]
+})
 </script>
 
 <template>
@@ -196,7 +197,7 @@ const nav = computed(() => {
       </div>
     </div>
     <div class="bb-kik mt-4">
-      <div class="flex" v-if="!$route.query.edit">
+      <div v-if="!$route.query.edit" class="flex">
         <button
           class="w-1/2 p-2 flex items-center justify-center gap-1"
           :class="{
@@ -277,7 +278,7 @@ const nav = computed(() => {
           class="mb-2 bb-high"
         />
 
-        <!--<MdEditor
+        <!-- <MdEditor
           v-model="state.post.Message"
           :theme="mode"
           language="en-US"
@@ -294,7 +295,7 @@ const nav = computed(() => {
             'htmlPreview',
           ]"
           :no-upload-img="true"
-        />-->
+        /> -->
 
         <div
           v-if="checkVuelidate(v$.post.Message.$errors)"
@@ -314,8 +315,8 @@ const nav = computed(() => {
           class="mb-2 btr"
         />
         <div
-          class="flex items-end justify-start gap-3 mt-3"
           v-if="!$route.query.edit"
+          class="flex items-end justify-start gap-3 mt-3"
         >
           <div>
             <DefaultInput

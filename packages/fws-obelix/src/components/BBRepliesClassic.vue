@@ -1,129 +1,127 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, reactive } from "vue";
 import {
+  DefaultInput,
+  DefaultModal,
+  DefaultPaging,
   useEventBus,
   useRest,
-  DefaultPaging,
-  DefaultModal,
-  DefaultInput,
-} from "@fy-/fws-vue";
-import {
-  UserIcon,
-  ChatBubbleLeftRightIcon,
-  HeartIcon,
-} from "@heroicons/vue/24/solid";
-import { useBBStore } from "./bbStore";
-import { useRoute, useRouter } from "vue-router";
-import useVuelidate from "@vuelidate/core";
-import { maxLength, minLength, required } from "@vuelidate/validators";
+} from '@fy-/fws-vue'
 
-const eventBus = useEventBus();
-const wStore = useBBStore();
-const upvoted = computed(() => wStore.ForumsUpvotesComment);
-const downvoted = computed(() => wStore.ForumsDownvotesComment);
-const rest = useRest();
+import useVuelidate from '@vuelidate/core'
+import { maxLength, minLength, required } from '@vuelidate/validators'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useBBStore } from './bbStore'
+
+const eventBus = useEventBus()
+const wStore = useBBStore()
+const upvoted = computed(() => wStore.ForumsUpvotesComment)
+const downvoted = computed(() => wStore.ForumsDownvotesComment)
+const rest = useRest()
 
 const props = withDefaults(
   defineProps<{
-    post: any;
-    childs?: any;
-    avatarComponent: any;
-    rankComponent?: any;
+    post: any
+    childs?: any
+    avatarComponent: any
+    rankComponent?: any
   }>(),
   {
     childs: null,
     rankComponent: () => null,
   },
-);
-const replies = ref();
-const paging = ref();
-const route = useRoute();
-const repliesOpen = ref({});
-const inReplyTo = ref(null);
+)
+const replies = ref()
+const paging = ref()
+const route = useRoute()
+const repliesOpen = ref({})
+const inReplyTo = ref(null)
 const state = reactive({
   reply: {
-    Message: "",
+    Message: '',
   },
-});
+})
 const rules = {
   reply: {
     Message: { required, minLength: minLength(3), maxLength: maxLength(1000) },
   },
-};
-const v$ = useVuelidate(rules, state);
-const router = useRouter();
+}
+const v$ = useVuelidate(rules, state)
+const router = useRouter()
 async function postReply() {
   if (await v$.value.reply.$validate()) {
-    eventBus.emit("main-loading", true);
-    const data = await rest(`ObelixBB/Reply/${props.post.Slug}`, "POST", {
+    eventBus.emit('main-loading', true)
+    const data = await rest(`ObelixBB/Reply/${props.post.Slug}`, 'POST', {
       Message: state.reply.Message,
       InReplyTo: inReplyTo.value ? Number.parseInt(inReplyTo.value) : null,
       PostId: props.post.ID,
-    });
-    if (data && data.result === "success") {
-      eventBus.emit("reloadBB", true);
-      eventBus.emit("replyToModal", false);
-      state.reply.Message = "";
-      v$.value.reply.$reset();
+    })
+    if (data && data.result === 'success') {
+      eventBus.emit('reloadBB', true)
+      eventBus.emit('replyToModal', false)
+      state.reply.Message = ''
+      v$.value.reply.$reset()
       router.push({
         query: { page: paging.value?.page_max ? paging.value?.page_max : 1 },
-        hash: "bbreplies-" + data.data.ID,
-      });
+        hash: `bbreplies-${data.data.ID}`,
+      })
     }
-    eventBus.emit("main-loading", false);
+    eventBus.emit('main-loading', false)
   }
 }
 
 async function getReplies(page = 1) {
-  eventBus.emit("main-loading", true);
-  repliesOpen.value = {};
-  replies.value = undefined;
-  if (route.query.page) page = Number.parseInt(route.query.page as string);
+  eventBus.emit('main-loading', true)
+  repliesOpen.value = {}
+  replies.value = undefined
+  if (route.query.page) page = Number.parseInt(route.query.page as string)
 
   const data = await rest(
     `ObelixBB/${props.post.BoardUUID}/RepliesClassic/${props.post.Slug}`,
-    "GET",
+    'GET',
     {
       results_per_page: 10,
       page_no: page,
     },
   ).catch(() => {
-    replies.value = [];
-    eventBus.emit("main-loading", false);
-  });
-  if (data && data.result === "success") {
-    replies.value = data.data;
-    paging.value = data.paging;
-  } else {
-    replies.value = [];
+    replies.value = []
+    eventBus.emit('main-loading', false)
+  })
+  if (data && data.result === 'success') {
+    replies.value = data.data
+    paging.value = data.paging
   }
-  eventBus.emit("main-loading", false);
+  else {
+    replies.value = []
+  }
+  eventBus.emit('main-loading', false)
 }
 
-async function upvote(id: string, type = "upvote", object = "post") {
-  eventBus.emit("main-loading", true);
-  const _r = await rest(`ObelixBB/Vote/${type}/${object}/${id}`, "POST", {});
-  if (_r && _r.result === "success") {
-    eventBus.emit("reloadBB", true);
-    eventBus.emit("refreshBBProfile", true);
+async function upvote(id: string, type = 'upvote', object = 'post') {
+  eventBus.emit('main-loading', true)
+  const _r = await rest(`ObelixBB/Vote/${type}/${object}/${id}`, 'POST', {})
+  if (_r && _r.result === 'success') {
+    eventBus.emit('reloadBB', true)
+    eventBus.emit('refreshBBProfile', true)
   }
-  eventBus.emit("main-loading", false);
+  eventBus.emit('main-loading', false)
 }
 
 onMounted(async () => {
   if (props.childs === null) {
-    await getReplies();
-  } else {
-    replies.value = props.childs;
+    await getReplies()
   }
-  eventBus.on("reloadBB", getReplies);
-  eventBus.on("bbrepliesGoToPage", getReplies);
-});
+  else {
+    replies.value = props.childs
+  }
+  eventBus.on('reloadBB', getReplies)
+  eventBus.on('bbrepliesGoToPage', getReplies)
+})
 
 onUnmounted(() => {
-  eventBus.off("reloadBB", getReplies);
-  eventBus.off("bbrepliesGoToPage", getReplies);
-});
+  eventBus.off('reloadBB', getReplies)
+  eventBus.off('bbrepliesGoToPage', getReplies)
+})
 </script>
 
 <template>
@@ -137,8 +135,8 @@ onUnmounted(() => {
         }}
       </div>
       <button
-        class="btn primary defaults !mb-0"
         v-if="!props.post.IsLocked"
+        class="btn primary defaults !mb-0"
         @click="
           () => {
             inReplyTo = null;
@@ -166,7 +164,7 @@ onUnmounted(() => {
     <DefaultModal id="replyTo">
       <form @submit.prevent="postReply">
         <DefaultInput
-          :id="`reply_to_form`"
+          id="reply_to_form"
           v-model="state.reply.Message"
           :error-vuelidate="v$.reply.Message.$errors"
           placeholder="What are your thoughts?"
@@ -194,8 +192,8 @@ onUnmounted(() => {
     </DefaultModal>
     <template v-if="replies && replies.length">
       <div
-        :id="`bbreplies-${post.ID}`"
         v-for="reply in replies"
+        :id="`bbreplies-${post.ID}`"
         :key="`${reply.ID}-${post.ID}-${reply.Depth}`"
         itemprop="comment"
         itemscope
@@ -224,13 +222,11 @@ onUnmounted(() => {
               itemtype="https://schema.org/Person"
               class="text-xl flex-0 grow-0"
             >
-              <b itemprop="name"
-                >@{{
-                  reply.User?.UserProfile?.Username
-                    ? $cropText(reply.User.UserProfile.Username, 14)
-                    : "Anonymous"
-                }}</b
-              >
+              <b itemprop="name">@{{
+                reply.User?.UserProfile?.Username
+                  ? $cropText(reply.User.UserProfile.Username, 14)
+                  : "Anonymous"
+              }}</b>
             </div>
           </div>
           <div class="flex-1 flex flex-col justify-between py-2">
@@ -239,13 +235,12 @@ onUnmounted(() => {
               class="text-fv-neutral-300 px-2 prose dark:prose-invert"
             >
               <blockquote
-                class="!mb-3"
                 v-if="reply.ReplyInReplyTo && reply.ReplyInReplyTo.ID"
+                class="!mb-3"
               >
                 {{ reply.ReplyInReplyTo.Message }}
                 <footer>
-                  <small
-                    >by
+                  <small>by
                     {{
                       reply.ReplyInReplyTo.User?.UserProfile?.Username
                         ? reply.ReplyInReplyTo.User.UserProfile.Username
@@ -255,10 +250,9 @@ onUnmounted(() => {
                     <time
                       itemprop="dateCreated"
                       :datetime="reply.ReplyInReplyTo.CreatedAt.iso"
-                      >{{
-                        $formatDate(reply.ReplyInReplyTo.CreatedAt.iso)
-                      }}</time
-                    >
+                    >{{
+                      $formatDate(reply.ReplyInReplyTo.CreatedAt.iso)
+                    }}</time>
                   </small>
                 </footer>
               </blockquote>
@@ -273,8 +267,7 @@ onUnmounted(() => {
               >
                 <time itemprop="dateCreated" :datetime="reply.CreatedAt.iso">{{
                   $formatDatetime(reply.CreatedAt.iso)
-                }}</time
-                >.
+                }}</time>.
               </div>
               <div class="flex items-center gap-x-2 text-fv-neutral-400">
                 <button
@@ -287,8 +280,8 @@ onUnmounted(() => {
                   @click="
                     () => {
                       if (
-                        !upvoted.includes(reply.ID) &&
-                        !downvoted.includes(reply.ID)
+                        !upvoted.includes(reply.ID)
+                        && !downvoted.includes(reply.ID)
                       ) {
                         upvote(reply.ID, 'upvote', 'reply');
                       }
@@ -321,8 +314,8 @@ onUnmounted(() => {
                   @click="
                     () => {
                       if (
-                        !downvoted.includes(reply.ID) &&
-                        !upvoted.includes(reply.ID)
+                        !downvoted.includes(reply.ID)
+                        && !upvoted.includes(reply.ID)
                       ) {
                         upvote(reply.ID, 'downvote', 'reply');
                       }

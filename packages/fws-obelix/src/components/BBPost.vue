@@ -1,114 +1,115 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { useEventBus, useRest, useUserStore } from "@fy-/fws-vue";
-import { getRealm } from "@fy-/fws-js";
-import { RouterLink } from "vue-router";
-import markdownit from "markdown-it";
-import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
-
+import { getRealm } from '@fy-/fws-js'
+import { useEventBus, useRest, useUserStore } from '@fy-/fws-vue'
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import {
-  UserIcon,
   ChatBubbleLeftRightIcon,
-  EyeIcon,
   EllipsisVerticalIcon,
-  PaperClipIcon,
+  EyeIcon,
   HeartIcon,
-} from "@heroicons/vue/24/solid";
-import BBRepliesClassic from "./BBRepliesClassic.vue";
-import { useBBStore } from "./bbStore";
+  PaperClipIcon,
+  UserIcon,
+} from '@heroicons/vue/24/solid'
+import markdownit from 'markdown-it'
+import { computed, onMounted, ref } from 'vue'
 
-const md = markdownit();
+import { RouterLink } from 'vue-router'
+import BBRepliesClassic from './BBRepliesClassic.vue'
+import { useBBStore } from './bbStore'
+
+const md = markdownit()
 
 const props = withDefaults(
   defineProps<{
-    post: any;
-    posts: any;
-    isSingle?: boolean;
-    avatarComponent: any;
-    rankComponent?: any;
-    idx?: number;
-    total?: number;
-    imgDomain?: string;
+    post: any
+    posts: any
+    isSingle?: boolean
+    avatarComponent: any
+    rankComponent?: any
+    idx?: number
+    total?: number
+    imgDomain?: string
   }>(),
   {
     isSingle: false,
     rankComponent: () => null,
     idx: 0,
     total: 0,
-    imgDomain: "https://s.nocachenocry.com",
+    imgDomain: 'https://s.nocachenocry.com',
   },
-);
-const store = useUserStore();
-const userID = computed(() => store.user?.UUID);
-const isAuth = computed(() => store.isAuth);
+)
+const store = useUserStore()
+const userID = computed(() => store.user?.UUID)
+const isAuth = computed(() => store.isAuth)
 const isAdmin = computed(() => {
   if (isAuth.value && store.user && store.user.Roles) {
     for (const role of store.user.Roles) {
       if (
-        role.Role === "Administrator" &&
+        role.Role === 'Administrator'
         // @ts-expect-error: weird ts behavior
-        role.RealmUUID === getRealm().UUID
+        && role.RealmUUID === getRealm().UUID
       ) {
-        return true;
+        return true
       }
     }
   }
 
-  return false;
-});
-const bbStore = useBBStore();
+  return false
+})
+const bbStore = useBBStore()
 const upvoted = computed(() =>
   bbStore.ForumsUpvotesPost.includes(props.post.ID),
-);
+)
 const downvoted = computed(() =>
   bbStore.ForumsDownvotesPost.includes(props.post.ID),
-);
-const eventBus = useEventBus();
-const rest = useRest();
+)
+const eventBus = useEventBus()
+const rest = useRest()
 
-async function upvote(id: string, type = "upvote", object = "post") {
-  eventBus.emit("main-loading", true);
-  const _r = await rest(`ObelixBB/Vote/${type}/${object}/${id}`, "POST", {});
-  if (_r && _r.result === "success") {
-    eventBus.emit("reloadBB", true);
-    eventBus.emit("refreshBBProfile", true);
+async function upvote(id: string, type = 'upvote', object = 'post') {
+  eventBus.emit('main-loading', true)
+  const _r = await rest(`ObelixBB/Vote/${type}/${object}/${id}`, 'POST', {})
+  if (_r && _r.result === 'success') {
+    eventBus.emit('reloadBB', true)
+    eventBus.emit('refreshBBProfile', true)
   }
-  eventBus.emit("main-loading", false);
+  eventBus.emit('main-loading', false)
 }
 
-async function updatePostState(id: string, action = "Pin") {
-  eventBus.emit("main-loading", true);
-  const _r = await rest(`ObelixBB/${action}/${id}`, "PATCH", {});
-  if (_r && _r.result === "success") {
-    eventBus.emit("reloadBB", true);
+async function updatePostState(id: string, action = 'Pin') {
+  eventBus.emit('main-loading', true)
+  const _r = await rest(`ObelixBB/${action}/${id}`, 'PATCH', {})
+  if (_r && _r.result === 'success') {
+    eventBus.emit('reloadBB', true)
   }
-  eventBus.emit("main-loading", false);
+  eventBus.emit('main-loading', false)
 }
 
 async function deletePost(id: string) {
-  eventBus.emit("showConfirm", {
-    title: "Are you sure you want to delete this post?",
+  eventBus.emit('showConfirm', {
+    title: 'Are you sure you want to delete this post?',
     onConfirm: async () => {
-      eventBus.emit("main-loading", true);
-      const _r = await rest(`ObelixBB/Post/${id}`, "DELETE", {});
-      if (_r && _r.result === "success") {
+      eventBus.emit('main-loading', true)
+      const _r = await rest(`ObelixBB/Post/${id}`, 'DELETE', {})
+      if (_r && _r.result === 'success') {
         if (!props.isSingle) {
-          eventBus.emit("reloadBB", true);
-        } else {
-          eventBus.emit("main-loading", false);
-          window.location.href = `/forums/${props.post.BoardUUID}`;
+          eventBus.emit('reloadBB', true)
+        }
+        else {
+          eventBus.emit('main-loading', false)
+          window.location.href = `/forums/${props.post.BoardUUID}`
         }
       }
-      eventBus.emit("main-loading", false);
+      eventBus.emit('main-loading', false)
     },
-  });
+  })
 }
 
-const mounted = ref(false);
+const mounted = ref(false)
 
 onMounted(() => {
-  mounted.value = true;
-});
+  mounted.value = true
+})
 </script>
 
 <template>
@@ -137,23 +138,19 @@ onMounted(() => {
             <span
               v-if="post.IsPinned"
               class="bg-green-100 text-green-800 text-xs font-medium px-1.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300"
-              >{{ $t("bb_post_pinned") }}</span
-            >
+            >{{ $t("bb_post_pinned") }}</span>
             <span
               v-if="post.IsNSFW"
               class="bg-red-100 text-red-800 text-xs font-medium px-1.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300"
-              >{{ $t("bb_post_nsfw") }}</span
-            >
+            >{{ $t("bb_post_nsfw") }}</span>
             <span
               v-if="post.IsSpoiler"
               class="bg-blue-100 text-blue-800 text-xs font-medium px-1.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300"
-              >{{ $t("bb_post_spoiler") }}</span
-            >
+            >{{ $t("bb_post_spoiler") }}</span>
             <span
               v-if="post.IsLocked"
               class="bg-orange-100 text-orange-800 text-xs font-medium px-1.5 py-0.5 rounded dark:bg-orange-900 dark:text-orange-300"
-              >{{ $t("bb_post_locked") }}</span
-            >
+            >{{ $t("bb_post_locked") }}</span>
           </div>
           <Menu
             v-if="isAuth && (post.User.UUID === userID || isAdmin)"
@@ -176,7 +173,7 @@ onMounted(() => {
                 class="py-2 text-sm text-fv-neutral-800 dark:text-fv-neutral-200"
                 aria-labelledby="userMenu"
               >
-                <MenuItem as="li" v-slot="{ close }" v-if="isAdmin">
+                <MenuItem v-if="isAdmin" v-slot="{ close }" as="li">
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
                     @click.prevent="
@@ -189,7 +186,7 @@ onMounted(() => {
                     {{ post.IsPinned ? $t("bb_unpin_cta") : $t("bb_pin_cta") }}
                   </button>
                 </MenuItem>
-                <MenuItem as="li" v-slot="{ close }" v-if="isAdmin">
+                <MenuItem v-if="isAdmin" v-slot="{ close }" as="li">
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
                     @click.prevent="
@@ -205,9 +202,9 @@ onMounted(() => {
                   </button>
                 </MenuItem>
                 <MenuItem
-                  as="li"
-                  v-slot="{ close }"
                   v-if="post.User.UUID === userID || isAdmin"
+                  v-slot="{ close }"
+                  as="li"
                 >
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
@@ -222,9 +219,9 @@ onMounted(() => {
                   </button>
                 </MenuItem>
                 <MenuItem
-                  as="li"
-                  v-slot="{ close }"
                   v-if="post.User.UUID === userID || isAdmin"
+                  v-slot="{ close }"
+                  as="li"
                 >
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
@@ -243,9 +240,9 @@ onMounted(() => {
                   </button>
                 </MenuItem>
                 <MenuItem
-                  as="li"
-                  v-slot="{ close }"
                   v-if="post.User.UUID === userID || isAdmin"
+                  v-slot="{ close }"
+                  as="li"
                 >
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
@@ -262,9 +259,9 @@ onMounted(() => {
                   </button>
                 </MenuItem>
                 <MenuItem
-                  as="li"
-                  v-slot="{ close }"
                   v-if="post.User.UUID === userID || isAdmin"
+                  v-slot="{ close }"
+                  as="li"
                 >
                   <button
                     class="flex items-center gap-2 whitespace-nowrap w-full px-4 py-2 hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-600 dark:hover:text-white"
@@ -305,13 +302,11 @@ onMounted(() => {
             itemtype="https://schema.org/Person"
             class="text-2xl flex-0 grow-0"
           >
-            <b itemprop="name"
-              >@{{
-                post.User?.UserProfile?.Username
-                  ? post.User.UserProfile.Username
-                  : "Anonymous"
-              }}</b
-            >
+            <b itemprop="name">@{{
+              post.User?.UserProfile?.Username
+                ? post.User.UserProfile.Username
+                : "Anonymous"
+            }}</b>
           </div>
           <component :is="rankComponent" :user="post.User" />
           <div
@@ -360,7 +355,7 @@ onMounted(() => {
                   });
                 }
               "
-            />
+            >
             <div
               v-if="post.LinkType === 'web'"
               class="flex flex-col justify-center items-center h-full"
@@ -376,7 +371,7 @@ onMounted(() => {
                 {{ $cropText(post.LinkData, 60) }}
               </a>
             </div>
-            <div class="flex-1" v-if="post.LinkType === 'yt'">
+            <div v-if="post.LinkType === 'yt'" class="flex-1">
               <iframe
                 style="width: 100%; max-width: 600px; aspect-ratio: 16/9"
                 :src="`https://www.youtube.com/embed/${post.LinkData}`"
@@ -480,14 +475,13 @@ onMounted(() => {
                 <link
                   itemprop="interactionType"
                   href="https://schema.org/CommentAction"
-                />
+                >
 
-                <span itemprop="userInteractionCount"
-                  >{{
-                    $t("bb_comment", {
-                      count: post.ReplyCount ? post.ReplyCount : 0,
-                    })
-                  }}
+                <span itemprop="userInteractionCount">{{
+                  $t("bb_comment", {
+                    count: post.ReplyCount ? post.ReplyCount : 0,
+                  })
+                }}
                 </span>
               </div>
             </RouterLink>
@@ -512,7 +506,7 @@ onMounted(() => {
       </div>
       <!--
       <div v-if="isSingle" class="px-2 bb-data !rounded-none mt-3">
-         <BBReplies :post="post" /> 
+         <BBReplies :post="post" />
       </div>
       -->
     </template>
@@ -525,27 +519,27 @@ onMounted(() => {
         <meta
           itemprop="url"
           :content="`/forums/${$route.params.uuid}/${post.Slug}`"
-        />
-        <meta itemprop="headline" :content="post.Title" />
+        >
+        <meta itemprop="headline" :content="post.Title">
         <meta
           v-if="post.PostType === 3"
           itemprop="image"
           :content="post.LinkData"
-        />
+        >
         <meta
           v-else-if="post.LinkType === 'yt'"
           itemprop="video"
           :content="`https://www.youtube.com/embed/${post.LinkData}`"
-        />
-        <meta v-else itemprop="articleBody" :content="post.Message" />
-        <meta itemprop="datePublished" :content="post.CreatedAt.iso" />
+        >
+        <meta v-else itemprop="articleBody" :content="post.Message">
+        <meta itemprop="datePublished" :content="post.CreatedAt.iso">
         <div
           class="absolute opacity-0 w-0 h-0 overflow-hidden"
           itemprop="author"
           itemscope
           itemtype="https://schema.org/Person"
         >
-          <meta itemprop="name" :content="post.User.UserProfile.Username" />
+          <meta itemprop="name" :content="post.User.UserProfile.Username">
         </div>
 
         <div class="flex items-center justify-center pl-3 pr-1">
@@ -578,33 +572,27 @@ onMounted(() => {
                 <span
                   v-if="post.IsPinned"
                   class="bg-green-100 text-green-800 text-xs font-medium px-1.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300"
-                  >{{ $t("bb_post_pinned") }}</span
-                >
+                >{{ $t("bb_post_pinned") }}</span>
                 <span
                   v-if="post.IsNSFW"
                   class="bg-red-100 text-pink-800 text-xs font-medium px-1.5 py-0.5 rounded dark:bg-pink-900 dark:text-pink-300"
-                  >{{ $t("bb_post_nsfw") }}</span
-                >
+                >{{ $t("bb_post_nsfw") }}</span>
                 <span
                   v-if="post.IsSpoiler"
                   class="bg-blue-100 text-blue-800 text-xs font-medium px-1.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300"
-                  >{{ $t("bb_post_spoiler") }}</span
-                >
+                >{{ $t("bb_post_spoiler") }}</span>
                 <span
                   v-if="post.IsLocked"
                   class="bg-orange-100 text-orange-800 text-xs font-medium px-1.5 py-0.5 rounded dark:bg-orange-900 dark:text-orange-300"
-                  >{{ $t("bb_post_locked") }}</span
-                >
+                >{{ $t("bb_post_locked") }}</span>
                 <span
                   v-if="post.LinkType === 'yt'"
                   class="bg-red-100 text-red-800 text-xs font-medium px-1.5 py-0.5 rounded dark:bg-red-900 dark:text-red-300"
-                  >Youtube</span
-                >
+                >Youtube</span>
                 <span
                   v-if="post.LinkType === 'img'"
                   class="bg-red-100 text-cyan-800 text-xs font-medium px-1.5 py-0.5 rounded dark:bg-cyan-900 dark:text-cyan-300"
-                  >Image</span
-                >
+                >Image</span>
                 <a
                   v-if="post.LinkType === 'web'"
                   :href="post.LinkData"
@@ -633,8 +621,7 @@ onMounted(() => {
               on
               <time :datetime="post.CreatedAt.iso">{{
                 $formatDate(post.CreatedAt.iso)
-              }}</time
-              >.
+              }}</time>.
             </div>
           </div>
         </div>
@@ -708,12 +695,11 @@ onMounted(() => {
               class="flex text-sm items-center gap-2 text-fv-neutral-600 dark:text-fv-neutral-500"
             >
               <EyeIcon class="w-4 h-4" />
-              <span
-                >{{
-                  $t("bb_view", {
-                    count: post.PostViews ? post.PostViews : 0,
-                  })
-                }}
+              <span>{{
+                $t("bb_view", {
+                  count: post.PostViews ? post.PostViews : 0,
+                })
+              }}
               </span>
             </div>
           </RouterLink>
@@ -742,14 +728,13 @@ onMounted(() => {
               <link
                 itemprop="interactionType"
                 href="https://schema.org/CommentAction"
-              />
+              >
 
-              <span itemprop="userInteractionCount"
-                >{{
-                  $t("bb_comment", {
-                    count: post.ReplyCount ? post.ReplyCount : 0,
-                  })
-                }}
+              <span itemprop="userInteractionCount">{{
+                $t("bb_comment", {
+                  count: post.ReplyCount ? post.ReplyCount : 0,
+                })
+              }}
               </span>
             </div>
           </RouterLink>
@@ -759,23 +744,22 @@ onMounted(() => {
         >
           <div v-if="post.LastReply.UUID" class="text-sm">
             <span
-              itemprop="dateModified"
               v-if="
-                post.LastReply &&
-                post.LastReply.CreatedAt &&
-                post.LastReply.CreatedAt.unixms
+                post.LastReply
+                  && post.LastReply.CreatedAt
+                  && post.LastReply.CreatedAt.unixms
               "
+              itemprop="dateModified"
             >
               {{ $formatTimeago(post.LastReply.CreatedAt.unixms) }}
             </span>
-            <br />
+            <br>
             <span>
               @{{
                 post.LastReply.User?.UserProfile?.Username
                   ? post.LastReply.User.UserProfile.Username
                   : "Anonymous"
-              }}</span
-            >
+              }}</span>
           </div>
           <component
             :is="avatarComponent"
