@@ -59,7 +59,6 @@ import KlbUpdateEmail from "./components/klb/KlbUpdateEmail.vue";
 import KlbUpdatePassword from "./components/klb/KlbUpdatePassword.vue";
 import KlbContact from "./components/klb/KlbContact.vue";
 import "./style.css";
-export type * from "./types";
 
 function createKLB(): Plugin {
   const eventBus: Emitter<Events> = mitt<Events>();

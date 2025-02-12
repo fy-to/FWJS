@@ -23,10 +23,12 @@ export function useSpeechRecognition(
   };
 
   recognition.onend = () => {
-    isRecording.value = false;
     if (transcript) {
+      isRecording.value = false;
       onTextAvailableCallback(transcript);
       transcript = "";
+    } else {
+      recognition.start();
     }
   };
 
@@ -46,6 +48,10 @@ export function useSpeechRecognition(
     if (result.isFinal) {
       transcript += result[0].transcript;
     }
+  };
+
+  const changeLanguage = (newLanguage: string) => {
+    recognition.lang = newLanguage;
   };
 
   const startRecording = () => {
@@ -86,5 +92,6 @@ export function useSpeechRecognition(
     stopRecording,
     isRecording,
     resumeRecording,
+    changeLanguage,
   };
 }

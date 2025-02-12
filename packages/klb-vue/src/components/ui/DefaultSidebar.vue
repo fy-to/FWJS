@@ -77,6 +77,9 @@ const isOpen = useStorage(`isOpenSidebar-${props.id}`, true);
     @apply relative flex w-full items-center py-3 px-3 font-semibold text-sm border-l-[.4rem] border-l-transparent;
     @apply text-fv-neutral-600 hover:bg-fv-neutral-200/[.3] focus:bg-fv-neutral-200/[.3] hover:text-fv-primary-600;
     @apply dark:text-fv-neutral-300 dark:hover:bg-fv-neutral-700/[.3] dark:focus:bg-fv-neutral-700/[.3] dark:hover:text-fv-primary-400;
+
+    transition: all 300ms ease-in-out;
+
     &.fvside-active {
       @apply border-l-fv-primary-500 bg-fv-neutral-200  hover:text-fv-neutral-600 focus:text-fv-neutral-600;
       @apply dark:bg-fv-neutral-700 dark:hover:text-fv-neutral-300 dark:text-fv-neutral-300;
@@ -87,7 +90,6 @@ const isOpen = useStorage(`isOpenSidebar-${props.id}`, true);
     span {
       @apply whitespace-nowrap;
     }
-    transition: all 300ms ease-in-out;
   }
 
   &.fui-sidebar__md {
