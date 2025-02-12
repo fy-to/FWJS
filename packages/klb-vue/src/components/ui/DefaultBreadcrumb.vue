@@ -19,13 +19,13 @@ const props = withDefaults(
 
 const breadcrumbsSchemaFormat = props.nav.map((item, index) => {
   const fullUrl = `${
-    getUrl().Host
+    getUrl().host
   }${item.to}`.replace(/\/\//g, '/')
   return {
     'position': index + 1,
     'name': item.name,
     'item': item.to
-      ? `${getUrl().Scheme}://${fullUrl}`
+      ? `${getUrl().scheme}://${fullUrl}`
       : undefined,
     '@type': 'ListItem',
   }

@@ -67,9 +67,9 @@ export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
           links.push({
             rel: 'alternate',
             hreflang: locale,
-            href: `${getUrl().Scheme}://${
-              getUrl().Host
-            }/l/${locale}${getUrl().Path.replace(getPrefix(), '')}`,
+            href: `${getUrl().scheme}://${
+              getUrl().host
+            }/l/${locale}${getUrl().path.replace(getPrefix(), '')}`,
             key: `alternate-${locale}`,
           })
         }
@@ -91,7 +91,7 @@ export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
   })
 
   useSeoMeta({
-    ogUrl: () => `${getUrl().Scheme}://${getUrl().Host}${route.fullPath}`,
+    ogUrl: () => `${getUrl().scheme}://${getUrl().host}${route.fullPath}`,
     ogLocale: () => {
       if (currentLocale) {
         return currentLocale.replace('-', '_')
