@@ -1,149 +1,146 @@
 <script setup lang="ts">
-import useVuelidate from "@vuelidate/core";
-import { reactive } from "vue";
-import DefaultInput from "../ui/DefaultInput.vue";
-import { useTranslation } from "../../composables/translations";
-import { useEventBus } from "../../composables/event-bus";
-import { onMounted } from "vue";
-import DefaultDateSelection from "../ui/DefaultDateSelection.vue";
-import type { FilterDataItems } from "../../types/types";
-import { onUnmounted, ref } from "vue";
+import type { FilterDataItems } from '../../types/types'
+import useVuelidate from '@vuelidate/core'
+import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useEventBus } from '../../composables/event-bus'
+import { useTranslation } from '../../composables/translations'
+import DefaultDateSelection from '../ui/DefaultDateSelection.vue'
+import DefaultInput from '../ui/DefaultInput.vue'
 
-const emit = defineEmits(["update:modelValue"]);
-const hidden = ref<boolean>(false);
-const state = reactive<any>({ formData: {} });
-const rules: any = { formData: {} };
-const types = reactive<any>({});
-const translate = useTranslation();
-const fDynamicOptions = ref<any[]>([]);
+const emit = defineEmits(['update:modelValue'])
+const hidden = ref<boolean>(false)
+const state = reactive<any>({ formData: {} })
+const rules: any = { formData: {} }
+const types = reactive<any>({})
+const translate = useTranslation()
+const fDynamicOptions = ref<any[]>([])
 const props = withDefaults(
   defineProps<{
-    data?: Array<Array<FilterDataItems>>;
-    css: string;
-    modelValue?: Record<string, unknown>;
+    data?: Array<Array<FilterDataItems>>
+    css: string
+    modelValue?: Record<string, unknown>
   }>(),
   {
     showHeaders: true,
     data: () => [],
   },
-);
-const removeUndefinedStrings = (
-  input: any,
-  undefinedValues: any[] = ["undefined"],
-) => {
-  const output: any = {};
+)
+function removeUndefinedStrings(input: any, undefinedValues: any[] = ['undefined']) {
+  const output: any = {}
 
   Object.keys(input).forEach((key) => {
     if (!undefinedValues.includes(input[key]) && input[key] !== undefined) {
-      if (!input[key]["$between"]) {
-        output[key] = input[key];
-      } else {
-        input[key]["$between"][0] =
-          input[key]["$between"][0] == "" || input[key]["$between"][0] == null
+      if (!input[key].$between) {
+        output[key] = input[key]
+      }
+      else {
+        input[key].$between[0]
+          = input[key].$between[0] === '' || input[key].$between[0] === null
             ? undefined
-            : input[key]["$between"][0];
-        input[key]["$between"][1] =
-          input[key]["$between"][1] == "" || input[key]["$between"][1] == null
+            : input[key].$between[0]
+        input[key].$between[1]
+          = input[key].$between[1] === '' || input[key].$between[1] === null
             ? undefined
-            : input[key]["$between"][1];
+            : input[key].$between[1]
         if (
-          input[key]["$between"][0] !== undefined ||
-          input[key]["$between"][1] !== undefined
+          input[key].$between[0] !== undefined
+          || input[key].$between[1] !== undefined
         ) {
-          output[key] = input[key];
+          output[key] = input[key]
         }
       }
     }
-  });
+  })
 
-  return output;
-};
+  return output
+}
 
-const formatValues = (obj: any) => {
+function formatValues(obj: any) {
   props.data.forEach((group) => {
     group.forEach((f) => {
       if (f.formats && f.formats[f.type]) {
-        obj[f.uid] = f.formats[f.type](obj[f.uid]);
+        obj[f.uid] = f.formats[f.type](obj[f.uid])
       }
       if (f.formatRestValue) {
-        obj[f.uid] = f.formatRestValue(obj[f.uid]);
+        obj[f.uid] = f.formatRestValue(obj[f.uid])
       }
-    });
-  });
-  return removeUndefinedStrings(obj, ["undefined", ""]);
-};
+    })
+  })
+  return removeUndefinedStrings(obj, ['undefined', ''])
+}
 
-const updateForms = () => {
-  state.formData = {};
-  rules.formData = {};
+function updateForms() {
+  state.formData = {}
+  rules.formData = {}
   props.data.forEach((group) => {
     group.forEach((f) => {
-      state.formData[f.uid] =
-        typeof f.default == "object" && f.default
+      state.formData[f.uid]
+        = typeof f.default === 'object' && f.default
           ? JSON.parse(JSON.stringify(f.default))
-          : f.default;
+          : f.default
 
-      types[f.uid] = f.type;
+      types[f.uid] = f.type
 
       if (f.options && f.options.length) {
         f.options = f.options.map((status) => {
-          const [statusKey, statusValue] = status;
-          const translatedValue = translate(statusValue);
-          return [statusKey, translatedValue];
-        });
+          const [statusKey, statusValue] = status
+          const translatedValue = translate(statusValue)
+          return [statusKey, translatedValue]
+        })
       }
-      rules.formData[f.uid] = {};
-    });
-  });
-  emit("update:modelValue", formatValues({ ...state.formData }));
-};
-updateForms();
-const v$ = useVuelidate(rules, state);
+      rules.formData[f.uid] = {}
+    })
+  })
+  emit('update:modelValue', formatValues({ ...state.formData }))
+}
+updateForms()
+const v$ = useVuelidate(rules, state)
 
-const updateFormData = (data: any) => {
+function updateFormData(data: any) {
   data.forEach((d: any) => {
     if (d.uid) {
-      state.formData[d.uid] = d.value;
+      state.formData[d.uid] = d.value
     }
-  });
-  submitForm();
-};
-const submitForm = () => {
-  const formData = formatValues({ ...state.formData });
-  emit("update:modelValue", formData);
-  eventBus.emit("forceUpdateFilters", true);
-};
-const resetForm = () => {
-  updateForms();
-};
-const eventBus = useEventBus();
+  })
+  submitForm()
+}
+function submitForm() {
+  const formData = formatValues({ ...state.formData })
+  emit('update:modelValue', formData)
+  eventBus.emit('forceUpdateFilters', true)
+}
+function resetForm() {
+  updateForms()
+}
+const eventBus = useEventBus()
 onMounted(() => {
-  eventBus.on("resetFilters", resetForm);
-  eventBus.on("updateFilters", updateFormData);
-});
+  eventBus.on('resetFilters', resetForm)
+  eventBus.on('updateFilters', updateFormData)
+})
 onUnmounted(() => {
-  eventBus.off("resetFilters", resetForm);
-  eventBus.off("updateFilters", updateFormData);
-});
+  eventBus.off('resetFilters', resetForm)
+  eventBus.off('updateFilters', updateFormData)
+})
 </script>
+
 <template>
-  <form @submit.prevent="() => submitForm()" v-if="!hidden">
+  <form v-if="!hidden" @submit.prevent="() => submitForm()">
     <div :class="css">
       <div v-for="(g, i) in data" :key="`index_${i}`" class="relative">
         <template v-for="f in g" :key="f.uid">
           <template v-if="!f.isHidden">
             <DefaultInput
-              :type="f.type == 'autocomplete' ? 'text' : f.type"
-              :label="f.label"
-              :id="f.uid"
               v-if="
                 ['text', 'select', 'date', 'email', 'autocomplete'].includes(
                   f.type,
                 )
               "
-              :options="f.options ? f.options : [[]]"
+              :id="f.uid"
               v-model="state.formData[f.uid]"
-              :errorVuelidate="v$.formData[f.uid].$errors"
+              :type="f.type === 'autocomplete' ? 'text' : f.type"
+              :label="f.label"
+              :options="f.options ? f.options : [[]]"
+              :error-vuelidate="v$.formData[f.uid].$errors"
               class="mb-2"
               @focus="
                 () => {
@@ -164,7 +161,7 @@ onUnmounted(() => {
                   }
                 }
               "
-              @update:modelValue="
+              @update:model-value="
                 (v) => {
                   if (f.autocomplete && v.length >= 2) {
                     fDynamicOptions = [];
@@ -176,7 +173,7 @@ onUnmounted(() => {
               "
             >
               <div
-                v-if="f.type == 'autocomplete' && f.focused"
+                v-if="f.type === 'autocomplete' && f.focused"
                 class="absolute flex flex-col gap-2 p-2 bottom-0 translate-y-full inset-x-0 bg-fv-neutral-200 dark:bg-fv-neutral-800 border border-fv-neutral-700 z-10"
               >
                 <button
@@ -191,17 +188,17 @@ onUnmounted(() => {
                     }
                   "
                 >
-                  {{ o[1] }} <small v-if="o[0] != ''">({{ o[0] }})</small>
+                  {{ o[1] }} <small v-if="o[0] !== ''">({{ o[0] }})</small>
                 </button>
-              </div></DefaultInput
-            >
+              </div>
+            </DefaultInput>
 
             <DefaultDateSelection
-              :id="f.uid"
-              :label="f.label"
               v-if="f.type === 'range'"
-              mode="interval"
+              :id="f.uid"
               v-model="state.formData[f.uid]"
+              :label="f.label"
+              mode="interval"
               class="mb-2"
             />
           </template>
@@ -229,7 +226,7 @@ onUnmounted(() => {
       </button>
     </div>
   </form>
-  <div class="flex justify-between mt-2 gap-x-2" v-else>
+  <div v-else class="flex justify-between mt-2 gap-x-2">
     <button
       type="button"
       class="btn defaults primary !w-full flex-1 !text-center !items-center"

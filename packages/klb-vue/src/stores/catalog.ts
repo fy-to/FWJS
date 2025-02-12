@@ -1,21 +1,20 @@
-import { defineStore } from "pinia";
-import { KlbCatalogProduct } from "../types/klb";
+import type { KlbCatalogProduct } from '../types/klb'
+import { defineStore } from 'pinia'
 
-type CatalogState = {
-  products: Array<KlbCatalogProduct>;
-};
+interface CatalogState {
+  products: Array<KlbCatalogProduct>
+}
 
-export const useCatalogStore = defineStore({
-  id: "catalogStore",
+export const useCatalogStore = defineStore('catalogStore', {
   state: (): CatalogState => ({
     products: [],
   }),
   actions: {
     setCatalogProduct(product: KlbCatalogProduct) {
-      this.products.push(product);
+      this.products.push(product)
     },
     getCatalog() {
-      return this.products;
+      return this.products
     },
   },
-});
+})

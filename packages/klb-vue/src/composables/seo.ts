@@ -1,123 +1,202 @@
+import type { Ref } from 'vue'
 // @ts-nocheck
-import type { Ref } from "vue";
-import { useFyHead } from "@fy-/head";
-import { computed } from "vue";
-import { getUrl, getLocale, getPrefix } from "@karpeleslab/klbfw";
+import { getLocale, getPrefix, getUrl } from '@karpeleslab/klbfw'
+import { useHead, useSeoMeta } from '@unhead/vue'
+import { useRoute } from 'vue-router'
 
-export interface HeadScript {
-  src: string;
-  id?: string;
-}
 export interface LazyHead {
-  name?: string;
-  title?: string;
-  image?: string;
-  imageType?: string;
-  imageWidth?: string;
-  imageHeight?: string;
-  description?: string;
-  published?: string;
-  modified?: string;
-  keywords?: string;
-  type?: "blog" | "search" | "article" | "website";
-  searchAction?: string;
-  next?: string;
-  prev?: string;
-  canonical?: string;
-  locale?: string;
-  robots?: string;
-  url?: string;
-  isAdult?: boolean;
-  alternateLocales?: string[];
-  scripts?: HeadScript[] | undefined;
+  name?: string
+  title?: string
+  image?: string
+  imageType?: string
+  imageWidth?: string
+  imageHeight?: string
+  description?: string
+  published?: string
+  modified?: string
+  keywords?: string
+  type?: 'blog' | 'search' | 'article' | 'website'
+  searchAction?: string
+  next?: string
+  prev?: string
+  locale?: string
+  robots?: string
+  url?: string
+  canonical?: string
+  isAdult?: boolean
+  alternateLocales?: string[]
+  twitterCreator?: string
 }
 
-export const useSeo = (seo: Ref<LazyHead>, initial: boolean = false) => {
-  const currentUrl = `${getUrl().scheme}://${getUrl().host}${getUrl().path}`;
-  const currentLocale = seo.value.locale || getLocale();
+// eslint-disable-next-line unused-imports/no-unused-vars
+export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
+  const route = useRoute()
+  const currentLocale = getLocale()
+  // const url = getUrl()
 
-  useFyHead({
-    title: computed(() => seo.value.title),
-    scripts: computed(() => seo.value.scripts),
-    links: computed(() => {
-      const links = [];
-
-      links.push({
-        rel: "canonical",
-        href: currentUrl,
-        key: "canonical",
-      });
-
-      ["prev", "next"].forEach((rel) => {
-        if (seo.value[rel as keyof LazyHead]) {
-          links.push({
-            rel,
-            href: seo.value[rel as keyof LazyHead] as string,
-            key: rel,
-          });
-        }
-      });
-
-      seo.value.alternateLocales?.forEach((locale) => {
-        if (locale !== currentLocale) {
-          links.push({
-            rel: "alternate",
-            hreflang: locale,
-            href: `${getUrl().scheme}://${
-              getUrl().host
-            }/l/${locale}${getUrl().path.replace(getPrefix(), "")}`,
-            key: `alternate-${locale}`,
-          });
-        }
-      });
-
-      return links;
-    }),
-    metas: computed(() => {
-      const metas = [];
-
-      metas.push(
-        { property: "og:locale", content: currentLocale },
-        { property: "og:url", content: seo.value.url || currentUrl },
-        { property: "og:type", content: seo.value.type || "website" },
-        {
-          name: "robots",
-          content:
-            "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
-        },
-      );
-
-      if (seo.value.isAdult) {
-        metas.push(
-          { property: "rating", content: "adult" },
-          { property: "RATING", content: "RTA-5042-1996-1400-1577-RTA" },
-        );
+  useHead({
+    meta: () => {
+      const metas: any[] = []
+      if (seoData.value.isAdult) {
+        metas.push({
+          name: 'rating',
+          content: 'RTA-5042-1996-1400-1577-RTA',
+          key: 'rating',
+        })
       }
 
-      const metaPairs = [
-        ["name", "og:site_name"],
-        ["title", "og:title", "twitter:title"],
-        ["description", "og:description", "twitter:description", "description"],
-        ["published", "article:published_time"],
-        ["modified", "article:modified_time"],
-        ["imageWidth", "og:image:width"],
-        ["imageHeight", "og:image:height"],
-        ["imageType", "og:image:type", "twitter:image:type"],
-        ["image", "og:image", "twitter:image"],
-      ];
+      return metas
+    },
+    link: () => {
+      const links: any[] = []
 
-      metaPairs.forEach(([seoKey, ...properties]) => {
-        properties.forEach((property) => {
-          if (seo.value[seoKey as keyof LazyHead]) {
-            metas.push({
-              property,
-              content: seo.value[seoKey as keyof LazyHead] as string,
-            });
+      /*
+      const page
+        = route.query.page && Number.parseInt(route.query.page.toString()) > 1
+          ? `?page=${route.query.page}`
+          : ''
+
+      links.push({
+        rel: 'canonical',
+        href: `${url.Scheme}://${url.Host}${getUrl().Path}${page}`,
+      })
+      */
+
+      seoData.value.alternateLocales?.forEach((locale) => {
+        if (locale !== currentLocale) {
+          links.push({
+            rel: 'alternate',
+            hreflang: locale,
+            href: `${getUrl().Scheme}://${
+              getUrl().Host
+            }/l/${locale}${getUrl().Path.replace(getPrefix(), '')}`,
+            key: `alternate-${locale}`,
+          })
+        }
+      })
+
+      /*
+      if (seoData.value.image) {
+        links.push({
+          rel: 'preload',
+          href: seoData.value.image,
+          as: 'image',
+          fetchpriority: 'high',
+        })
+      }
+      */
+
+      return links
+    },
+  })
+
+  useSeoMeta({
+    ogUrl: () => `${getUrl().Scheme}://${getUrl().Host}${route.fullPath}`,
+    ogLocale: () => {
+      if (currentLocale) {
+        return currentLocale.replace('-', '_')
+      }
+    },
+    robots:
+      'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+    title: () => seoData.value.title || '',
+    ogTitle: () => seoData.value.title,
+    ogDescription: () => seoData.value.description,
+    twitterCard: 'summary_large_image',
+    ogSiteName: () => seoData.value.name,
+    twitterTitle: () => seoData.value.title,
+    twitterDescription: () => seoData.value.description,
+    ogImageAlt: () => {
+      if (seoData.value.image) {
+        return seoData.value.title
+      }
+      return undefined
+    },
+    // @ts-expect-error: Type 'string' is not assignable to type 'undefined'.
+    ogType: () => (seoData.value.type ? seoData.value.type : 'website'),
+    twitterCreator: () => seoData.value.twitterCreator,
+    twitterSite: () => seoData.value.twitterCreator,
+    twitterImageAlt: () => {
+      if (seoData.value.image) {
+        return seoData.value.title
+      }
+      return undefined
+    },
+    description: () => seoData.value.description,
+    keywords: () => seoData.value.keywords,
+    articlePublishedTime: () => seoData.value.published,
+    articleModifiedTime: () => seoData.value.modified,
+    ogImageSecureUrl: () => {
+      if (seoData.value.image) {
+        if (seoData.value.image.includes('?vars=')) {
+          if (seoData.value.imageType) {
+            return seoData.value.image.replace(
+              '?vars=',
+              `.${seoData.value.imageType.replace('image/', '')}?vars=`,
+            )
           }
-        });
-      });
-
-      return metas;
-    }),
-  });
-};
+          else {
+            return seoData.value.image.replace('?vars=', '.png?vars=')
+          }
+        }
+        return seoData.value.image
+      }
+    },
+    ogImageUrl: () => {
+      if (seoData.value.image) {
+        if (seoData.value.image.includes('?vars=')) {
+          if (seoData.value.imageType) {
+            return seoData.value.image.replace(
+              '?vars=',
+              `.${seoData.value.imageType.replace('image/', '')}?vars=`,
+            )
+          }
+          else {
+            return seoData.value.image.replace('?vars=', '.png?vars=')
+          }
+        }
+        return seoData.value.image
+      }
+    },
+    ogImageType: () => {
+      if (seoData.value.imageType) {
+        const type = seoData.value.imageType.includes('image/')
+          ? seoData.value.imageType
+          : `image/${seoData.value.imageType}`
+        if (type === 'image/jpeg' || type === 'image/gif' || type === 'image/png') {
+          return type
+        }
+        return 'image/png'
+      }
+      return undefined
+    },
+    twitterImageUrl: () => {
+      if (seoData.value.image) {
+        if (seoData.value.image.includes('?vars=')) {
+          if (seoData.value.imageType) {
+            return seoData.value.image.replace(
+              '?vars=',
+              `.${seoData.value.imageType.replace('image/', '')}?vars=`,
+            )
+          }
+          else {
+            return seoData.value.image.replace('?vars=', '.png?vars=')
+          }
+        }
+        return seoData.value.image
+      }
+    },
+    twitterImageType() {
+      if (seoData.value.imageType) {
+        const type = seoData.value.imageType.includes('image/')
+          ? seoData.value.imageType
+          : `image/${seoData.value.imageType}`
+        if (type === 'image/jpeg' || type === 'image/gif' || type === 'image/png') {
+          return type
+        }
+        return 'image/png'
+      }
+      return undefined
+    },
+  })
+}

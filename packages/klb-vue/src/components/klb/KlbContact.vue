@@ -1,35 +1,36 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue";
-import { useKlbStore } from "../../stores/user";
-import { email, required } from "@vuelidate/validators";
-import { useVuelidate } from "@vuelidate/core";
-import { useEventBus } from "../../composables/event-bus";
-import DefaultInput from "../ui/DefaultInput.vue";
-import { useRest } from "../../composables/rest";
-const rest = useRest();
+import { useVuelidate } from '@vuelidate/core'
+import { email, required } from '@vuelidate/validators'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useEventBus } from '../../composables/event-bus'
+import { useRest } from '../../composables/rest'
+import { useKlbStore } from '../../stores/user'
+import DefaultInput from '../ui/DefaultInput.vue'
 
-const store = useKlbStore();
-const isAuth = computed(() => store.isAuth);
-const eventBus = useEventBus();
-const isAuthWatcher = ref();
+const rest = useRest()
+
+const store = useKlbStore()
+const isAuth = computed(() => store.isAuth)
+const eventBus = useEventBus()
+const isAuthWatcher = ref()
 const props = withDefaults(
   defineProps<{
-    to?: string;
+    to?: string
   }>(),
   {
-    to: "@support",
+    to: '@support',
   },
-);
-const globalFormError = ref(null);
-const success = ref(false);
+)
+const globalFormError = ref(null)
+const success = ref(false)
 const state = reactive({
   contact: {
-    fullname: isAuth.value ? store.user?.Profile.Display_Name : "",
-    email: isAuth.value ? store.user?.Email : "",
-    message: "",
-    subject: "",
+    fullname: isAuth.value ? store.user?.Profile.Display_Name : '',
+    email: isAuth.value ? store.user?.Email : '',
+    message: '',
+    subject: '',
   },
-});
+})
 const rules = {
   contact: {
     fullname: { required },
@@ -37,14 +38,14 @@ const rules = {
     message: { required },
     subject: { required },
   },
-};
-const v$ = useVuelidate(rules, state);
-const sendMessage = async () => {
-  globalFormError.value = null;
-  success.value = false;
+}
+const v$ = useVuelidate(rules, state)
+async function sendMessage() {
+  globalFormError.value = null
+  success.value = false
   if (await v$.value.contact.$validate()) {
-    eventBus.emit("main-loading", true);
-    const sendResult = await rest("Support/Ticket", "POST", {
+    eventBus.emit('main-loading', true)
+    const sendResult = await rest('Support/Ticket', 'POST', {
       To: props.to,
       Email: state.contact.email,
       Subject: `${state.contact.subject}`,
@@ -52,83 +53,80 @@ const sendMessage = async () => {
       Name: state.contact.fullname,
     }).catch((error) => {
       // handle errors here
-      eventBus.emit("main-loading", false);
-      globalFormError.value = error.error;
-    });
-    if (sendResult && sendResult.result == "success") {
-      success.value = true;
+      eventBus.emit('main-loading', false)
+      globalFormError.value = error.error
+    })
+    if (sendResult && sendResult.result === 'success') {
+      success.value = true
     }
-    eventBus.emit("main-loading", false);
+    eventBus.emit('main-loading', false)
   }
-};
+}
 isAuthWatcher.value = watch(isAuth, () => {
-  state.contact.fullname = store.user?.Profile.Display_Name;
-  state.contact.email = store.user?.Email;
-});
-onMounted(() => {});
+  state.contact.fullname = store.user?.Profile.Display_Name
+  state.contact.email = store.user?.Email
+})
+onMounted(() => {})
 onUnmounted(() => {
-  //if (isAuthWatcher.value) isAuthWatcher.value();
-});
+  // if (isAuthWatcher.value) isAuthWatcher.value();
+})
 </script>
+
 <template>
   <div>
-    <form @submit.prevent="sendMessage" v-if="!success" class="relative">
+    <form v-if="!success" class="relative" @submit.prevent="sendMessage">
       <div>
         <DefaultInput
           id="emailLogin"
+          v-model="state.contact.email"
           :req="true"
           class="mb-4"
-          :showLabel="true"
+          :show-label="true"
           :placeholder="$t('klb_contact_form_place_holder_email')"
           autocomplete="email"
-          :errorVuelidate="v$.contact.email.$errors"
-          v-model="state.contact.email"
+          :error-vuelidate="v$.contact.email.$errors"
           :disabled="isAuth"
           type="email"
           :label="$t('klb_contact_form_label_email')"
-        >
-        </DefaultInput>
+        />
         <DefaultInput
           id="fullName"
+          v-model="state.contact.fullname"
           :req="true"
-          :showLabel="true"
+          :show-label="true"
           class="mb-4"
           :placeholder="$t('klb_contact_form_label_fullname')"
           autocomplete="name"
           :disabled="isAuth"
-          :errorVuelidate="v$.contact.fullname.$errors"
-          v-model="state.contact.fullname"
+          :error-vuelidate="v$.contact.fullname.$errors"
           type="text"
           :label="$t('klb_contact_form_place_holder_fullname')"
-        >
-        </DefaultInput>
+        />
         <DefaultInput
           id="subject"
+          v-model="state.contact.subject"
           :req="true"
           class="mb-4"
-          :showLabel="true"
+          :show-label="true"
           :placeholder="$t('klb_contact_form_place_holder_subject')"
-          :errorVuelidate="v$.contact.subject.$errors"
-          v-model="state.contact.subject"
+          :error-vuelidate="v$.contact.subject.$errors"
           type="text"
           :label="$t('klb_contact_form_label_subject')"
-        >
-        </DefaultInput>
+        />
         <DefaultInput
           id="message"
+          v-model="state.contact.message"
           :req="true"
           class="mb-4"
-          :showLabel="true"
+          :show-label="true"
           :placeholder="$t('klb_contact_form_place_holder_message')"
-          :errorVuelidate="v$.contact.message.$errors"
-          v-model="state.contact.message"
+          :error-vuelidate="v$.contact.message.$errors"
           type="textarea"
           :label="$t('klb_contact_form_label_message')"
-        >
-        </DefaultInput>
+        />
         <p
-          class="text-sm my-2 p-1 font-semibold text-red-800 dark:text-red-300"
           v-if="globalFormError"
+          class="text-sm my-2 p-1 font-semibold text-red-800 dark:text-red-300"
         >
           {{ globalFormError }}
         </p>
@@ -138,8 +136,8 @@ onUnmounted(() => {
       </div>
     </form>
     <p
-      class="text-sm my-2 p-1 font-semibold text-green-800 dark:text-green-300"
       v-else
+      class="text-sm my-2 p-1 font-semibold text-green-800 dark:text-green-300"
     >
       {{ $t("klb_contact_thanks") }}
     </p>
