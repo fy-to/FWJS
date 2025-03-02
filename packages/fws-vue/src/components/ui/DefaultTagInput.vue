@@ -59,6 +59,20 @@ const model = computed({
 })
 
 /**
+ * Compute aria-describedby IDs if help or error exist
+ */
+const describedByIds = computed(() => {
+  const ids: any[] = []
+  if (props.help) {
+    ids.push(`help_tags_${props.id}`)
+  }
+  if (props.error) {
+    ids.push(`error_tags_${props.id}`)
+  }
+  return ids.join(' ')
+})
+
+/**
  * Watch the model to see if maxTags is reached
  */
 watch(
@@ -216,21 +230,30 @@ function handlePaste(e: ClipboardEvent) {
     <!-- Optional label -->
     <label
       v-if="label"
+      :id="`label_tags_${id}`"
       :for="`tags_${id}`"
       class="block text-sm font-medium dark:text-white"
     >
       {{ label }}
-      <!-- optional help text -->
-      <span v-if="help" class="ml-1 text-xs text-fv-neutral-500 dark:text-fv-neutral-300">{{ help }}</span>
+      <!-- Optional help text -->
+      <span
+        v-if="help"
+        :id="`help_tags_${id}`"
+        class="ml-1 text-xs text-fv-neutral-500 dark:text-fv-neutral-300"
+      >
+        {{ help }}
+      </span>
     </label>
 
     <div
-      class="tags-input" :class="[
+      class="tags-input"
+      :class="[
         $props.error ? 'error' : '',
         isMaxReached ? 'pointer-events-none opacity-75' : '',
       ]"
       role="textbox"
-      :aria-label="label || 'Tags input'"
+      :aria-labelledby="`label_tags_${id}`"
+      :aria-describedby="describedByIds || undefined"
       :aria-invalid="$props.error ? 'true' : 'false'"
       @click="focusInput"
       @keydown.delete.prevent="removeLastTag"
@@ -240,6 +263,7 @@ function handlePaste(e: ClipboardEvent) {
       <span
         v-for="(tag, index) in model"
         :key="`${tag}-${index}`"
+        role="listitem"
         class="tag"
         :class="{
           red: maxLenghtPerTag > 0 && tag.length > maxLenghtPerTag,
@@ -250,11 +274,11 @@ function handlePaste(e: ClipboardEvent) {
         <button
           type="button"
           class="flex items-center"
-          aria-label="Remove tag"
+          :aria-label="`Remove tag ${tag}`"
           @click.prevent="removeTag(index)"
         >
           <svg
-            class="w-3 h-3"
+            class="w-4 h-4"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -275,8 +299,12 @@ function handlePaste(e: ClipboardEvent) {
         :id="`tags_${id}`"
         ref="textInput"
         contenteditable="true"
+        tabindex="0"
         class="input"
         :placeholder="isMaxReached
+          ? 'Max tags reached'
+          : 'Type or paste and press Enter...'"
+        :aria-placeholder="isMaxReached
           ? 'Max tags reached'
           : 'Type or paste and press Enter...'"
         @input="handleInput"
@@ -285,7 +313,12 @@ function handlePaste(e: ClipboardEvent) {
     </div>
 
     <!-- Inline error display if needed -->
-    <p v-if="$props.error" class="text-xs text-red-500 mt-1">
+    <p
+      v-if="$props.error"
+      :id="`error_tags_${id}`"
+      class="text-xs text-red-500 mt-1"
+      aria-live="assertive"
+    >
       {{ $props.error }}
     </p>
 
@@ -308,8 +341,8 @@ function handlePaste(e: ClipboardEvent) {
   @apply w-full flex flex-wrap gap-2 items-center shadow-sm bg-fv-neutral-50
     border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-sm
     focus-within:ring-fv-primary-500 focus-within:border-fv-primary-500
-    p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600
-    dark:placeholder-fv-neutral-400 dark:text-white
+    dark:bg-fv-neutral-700 dark:border-fv-neutral-600
+    dark:placeholder-fv-neutral-400 dark:text-white p-1.5
     dark:focus-within:ring-fv-primary-500 dark:focus-within:border-fv-primary-500;
   cursor: text;
 }
@@ -322,8 +355,8 @@ function handlePaste(e: ClipboardEvent) {
 /* Tag styling */
 .tag {
   @apply inline-flex gap-1 items-center
-    font-medium px-2.5 py-0.5 rounded text-black
-    dark:text-white cursor-default;
+    font-medium px-2.5 py-1 rounded text-black
+    dark:text-white cursor-default !important;
 }
 
 /* Color variants */
