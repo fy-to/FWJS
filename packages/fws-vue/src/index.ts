@@ -8,18 +8,33 @@ import CmsArticleSingle from './components/fws/CmsArticleSingle.vue'
 import DataTable from './components/fws/DataTable.vue'
 import FilterData from './components/fws/FilterData.vue'
 import UserData from './components/fws/UserData.vue'
+// Components/FWS
+import UserFlow from './components/fws/UserFlow.vue'
+import UserOAuth2 from './components/fws/UserOAuth2.vue'
+import UserProfile from './components/fws/UserProfile.vue'
+
+import UserProfileStrict from './components/fws/UserProfileStrict.vue'
 import { ClientOnly } from './components/ssr/ClientOnly'
 import DefaultBreadcrumb from './components/ui/DefaultBreadcrumb.vue'
 import DefaultConfirm from './components/ui/DefaultConfirm.vue'
-
 import DefaultDropdown from './components/ui/DefaultDropdown.vue'
+
 import DefaultDropdownLink from './components/ui/DefaultDropdownLink.vue'
 import DefaultGallery from './components/ui/DefaultGallery.vue'
+// Components/UI
+import DefaultInput from './components/ui/DefaultInput.vue'
+import DefaultLoader from './components/ui/DefaultLoader.vue'
+import DefaultModal from './components/ui/DefaultModal.vue'
+import DefaultNotif from './components/ui/DefaultNotif.vue'
+import DefaultPaging from './components/ui/DefaultPaging.vue'
+import DefaultSidebar from './components/ui/DefaultSidebar.vue'
+import DefaultTagInput from './components/ui/DefaultTagInput.vue'
 import CollapseTransition from './components/ui/transitions/CollapseTransition.vue'
 import ExpandTransition from './components/ui/transitions/ExpandTransition.vue'
-
 import FadeTransition from './components/ui/transitions/FadeTransition.vue'
 import ScaleTransition from './components/ui/transitions/ScaleTransition.vue'
+// Components/UI/Transitions
+import SlideTransition from './components/ui/transitions/SlideTransition.vue'
 import { useEventBus } from './composables/event-bus'
 import { useRest } from './composables/rest'
 import { useSeo } from './composables/seo'
@@ -44,21 +59,6 @@ import {
   useUserCheckAsyncSimple,
   useUserStore,
 } from './stores/user'
-// Components/UI/Transitions
-import SlideTransition from './components/ui/transitions/SlideTransition.vue'
-// Components/UI
-import DefaultInput from './components/ui/DefaultInput.vue'
-import DefaultLoader from './components/ui/DefaultLoader.vue'
-import DefaultModal from './components/ui/DefaultModal.vue'
-import DefaultNotif from './components/ui/DefaultNotif.vue'
-import DefaultPaging from './components/ui/DefaultPaging.vue'
-import DefaultSidebar from './components/ui/DefaultSidebar.vue'
-import DefaultTagInput from './components/ui/DefaultTagInput.vue'
-// Components/FWS
-import UserFlow from './components/fws/UserFlow.vue'
-import UserOAuth2 from './components/fws/UserOAuth2.vue'
-import UserProfile from './components/fws/UserProfile.vue'
-import UserProfileStrict from './components/fws/UserProfileStrict.vue'
 // Css
 import './style.css'
 

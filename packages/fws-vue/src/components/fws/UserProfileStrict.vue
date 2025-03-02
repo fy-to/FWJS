@@ -72,9 +72,9 @@ const rules = {
       required,
       ageValidator: props.force18
         ? helpers.withMessage(
-          translate('fws_under_18_error_message'),
-          ageValidator,
-        )
+            translate('fws_under_18_error_message'),
+            ageValidator,
+          )
         : undefined,
     },
     AcceptedTerms: {

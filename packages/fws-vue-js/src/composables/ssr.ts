@@ -1,6 +1,6 @@
 import type { Pinia } from 'pinia'
 import type { Router } from 'vue-router'
-import { getInitialState, getPath, getUrl, getUuid } from '@karpeleslab/klbfw'
+import { getInitialState, getPath, getURL, getUUID } from '@fy-/fws-js'
 import { renderSSRHead } from '@unhead/ssr'
 import { renderToString } from '@vue/server-renderer'
 import { useServerRouter } from '../stores/serverRouter'
@@ -21,49 +21,49 @@ export interface SSRResult {
   statusCode?: number
   redirect?: string
 }
+
 export function isServerRendered() {
   const state = getInitialState()
   if (state && state.isSSR) return true
   return false
 }
+
 export function initVueClient(router: Router, pinia: Pinia) {
   const state = getInitialState()
-  if (state && state.isSSR && state.pinia) {
+  if (state.isSSR && state && state.pinia) {
     pinia.state.value = state.pinia
   }
   useServerRouter(pinia)._setRouter(router)
 }
 
 export async function initVueServer(
-  createApp: Function,
-  callback: Function,
-  options?: {
-    url?: string
-  },
-): Promise<SSRResult> {
-  if (!options) {
-    options = {}
-  }
+  createApp: any,
+  callback: any,
+  options: { url?: string } = {},
+) {
   const url
-    = options.url || `${getPath()}${getUrl().query ? `?${getUrl().query}` : ''}`
+    = options.url || `${getPath()}${getURL().Query ? `?${getURL().Query}` : ''}`
   const { app, router, head, pinia } = await createApp(true)
-  await router.push(url)
-  await router.isReady()
   const serverRouter = useServerRouter(pinia)
   serverRouter._setRouter(router)
-  const result = {
-    uuid: getUuid(),
+  await serverRouter._router.push(url)
+  await serverRouter._router.isReady()
+
+  const result: SSRResult = {
+    uuid: getUUID(),
     initial: {
       isSSR: true,
       pinia: undefined,
     },
-  } as SSRResult
+  }
+
   if (url !== serverRouter.route.fullPath) {
     result.redirect = serverRouter.route.value.fullPath
     result.statusCode = 307
     callback(result)
     return result
   }
+
   try {
     const html = await renderToString(app)
     const payload = await renderSSRHead(head)

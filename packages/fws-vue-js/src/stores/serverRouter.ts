@@ -9,7 +9,6 @@ export interface ServerRouterState {
 }
 
 export const useServerRouter = defineStore('routerStore', {
-
   state: () =>
     ({
       _router: null,

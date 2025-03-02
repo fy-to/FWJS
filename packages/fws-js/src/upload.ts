@@ -90,7 +90,7 @@ export class Uploader {
             }
             fileUpload.progress = 100;
 
-            let response = null;
+            let response :any = null;
             try {
                 response = JSON.parse(xhr.responseText);
             } catch (e) {
@@ -103,7 +103,7 @@ export class Uploader {
             fileUpload.state = 'error';
             fileUpload.progress = 100;
 
-            let response = null;
+            let response : any= null;
             try {
                 response = JSON.parse(xhr.responseText);
             } catch (e) {

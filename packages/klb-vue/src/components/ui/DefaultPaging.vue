@@ -96,7 +96,7 @@ const paginationLinks = computed(() => {
   const url = getUrl()
   if (url) {
     // Parse the canonical URL to get the base URL and current query parameters
-    const canonicalUrl = new URL(url.Canonical)
+    const canonicalUrl = new URL(url.full)
 
     const baseUrl = `${url.scheme}://${url.host}${url.path}`
     const currentQuery: Record<string, string> = {}
