@@ -39,14 +39,23 @@ function showConfirm(data: ConfirmModalData) {
   title.value = data.title
   desc.value = data.desc
   onConfirm.value = data.onConfirm
-  isOpen.value = true
+
+  // Emit event first to ensure it's registered before opening the modal
   eventBus.emit('confirmModal', true)
-  nextTick(() => {
-    previouslyFocusedElement = document.activeElement as HTMLElement
-    if (modalRef.value) {
-      modalRef.value.focus()
-    }
-  })
+
+  // Force this to happen at the end of the event loop
+  // to ensure it happens after any other modal operations
+  setTimeout(() => {
+    isOpen.value = true
+    eventBus.emit('confirmModal', true)
+
+    nextTick(() => {
+      previouslyFocusedElement = document.activeElement as HTMLElement
+      if (modalRef.value) {
+        modalRef.value.focus()
+      }
+    })
+  }, 0)
 }
 
 onMounted(() => {
