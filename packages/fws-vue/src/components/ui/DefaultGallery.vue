@@ -2,19 +2,25 @@
 import type { Component } from 'vue'
 import type { APIPaging } from '../../composables/rest'
 import {
-  ArrowLeftCircleIcon,
-  ArrowRightCircleIcon,
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
-  XCircleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  InformationCircleIcon,
+  XMarkIcon,
 } from '@heroicons/vue/24/solid'
-import { computed, h, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, h, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useEventBus } from '../../composables/event-bus'
 import DefaultPaging from './DefaultPaging.vue'
 
 const isGalleryOpen = ref<boolean>(false)
 const eventBus = useEventBus()
 const sidePanel = ref<boolean>(true)
+const showControls = ref<boolean>(true)
+const isFullscreen = ref<boolean>(false)
+const infoPanel = ref<boolean>(true) // Show info panel by default
+const touchStartTime = ref<number>(0)
+const infoHeight = ref<number>(0)
 
 const props = withDefaults(
   defineProps<{
@@ -44,7 +50,7 @@ const props = withDefaults(
     imageComponent: 'img',
     mode: 'grid',
     gridHeight: 4,
-    closeIcon: () => h(XCircleIcon),
+    closeIcon: () => h(XMarkIcon),
     images: () => [],
     isVideo: () => false,
     getImageUrl: (image: any) => image.image_url,
@@ -65,6 +71,8 @@ const modelValue = computed({
 
 const direction = ref<'next' | 'prev'>('next')
 
+let controlsTimeout: number | null = null
+
 function setModal(value: boolean) {
   if (value === true) {
     if (props.onOpen) props.onOpen()
@@ -72,6 +80,12 @@ function setModal(value: boolean) {
     if (!import.meta.env.SSR) {
       document.addEventListener('keydown', handleKeyboardInput)
       document.addEventListener('keyup', handleKeyboardRelease)
+    }
+    // Auto-hide controls after 3 seconds on mobile
+    if (window.innerWidth < 1024) {
+      controlsTimeout = window.setTimeout(() => {
+        showControls.value = false
+      }, 3000)
     }
   }
   else {
@@ -81,8 +95,21 @@ function setModal(value: boolean) {
       document.removeEventListener('keydown', handleKeyboardInput)
       document.removeEventListener('keyup', handleKeyboardRelease)
     }
+    // Clear timeout if modal is closed
+    if (controlsTimeout) {
+      clearTimeout(controlsTimeout)
+      controlsTimeout = null
+    }
+    // Exit fullscreen if active
+    if (isFullscreen.value && document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {})
+      isFullscreen.value = false
+    }
   }
   isGalleryOpen.value = value
+  showControls.value = true
+  // Keep info panel open by default
+  infoPanel.value = true
 }
 
 function openGalleryImage(index: number | undefined) {
@@ -103,6 +130,7 @@ function goNextImage() {
   else {
     modelValue.value = 0
   }
+  resetControlsTimer()
 }
 
 function goPrevImage() {
@@ -114,6 +142,7 @@ function goPrevImage() {
     modelValue.value
       = props.images.length - 1 > 0 ? props.images.length - 1 : 0
   }
+  resetControlsTimer()
 }
 
 const modelValueSrc = computed(() => {
@@ -122,11 +151,79 @@ const modelValueSrc = computed(() => {
   return props.getImageUrl(props.images[modelValue.value])
 })
 
+const currentImage = computed(() => {
+  if (props.images.length === 0) return null
+  return props.images[modelValue.value]
+})
+
+const imageCount = computed(() => props.images.length)
+const currentIndex = computed(() => modelValue.value + 1)
+
 const start = reactive({ x: 0, y: 0 })
+
+function resetControlsTimer() {
+  // Show controls when user interacts
+  showControls.value = true
+
+  // Only set timer on mobile
+  if (window.innerWidth < 1024) {
+    if (controlsTimeout) {
+      clearTimeout(controlsTimeout)
+    }
+    controlsTimeout = window.setTimeout(() => {
+      showControls.value = false
+    }, 3000)
+  }
+}
+
+function toggleControls() {
+  showControls.value = !showControls.value
+  if (showControls.value && window.innerWidth < 1024) {
+    resetControlsTimer()
+  }
+}
+
+function toggleInfoPanel() {
+  infoPanel.value = !infoPanel.value
+  resetControlsTimer()
+
+  // Update the info height after panel toggle
+  if (infoPanel.value) {
+    nextTick(() => {
+      updateInfoHeight()
+    })
+  }
+  else {
+    // Reset when hiding
+    document.documentElement.style.setProperty('--info-height', '0px')
+  }
+}
+
+function toggleFullscreen() {
+  if (!isFullscreen.value) {
+    const element = document.querySelector('.gallery-container') as HTMLElement
+    if (element && element.requestFullscreen) {
+      element.requestFullscreen().then(() => {
+        isFullscreen.value = true
+      }).catch(() => {})
+    }
+  }
+  else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().then(() => {
+        isFullscreen.value = false
+      }).catch(() => {})
+    }
+  }
+  resetControlsTimer()
+}
 
 function touchStart(event: TouchEvent) {
   const touch = event.touches[0]
   const targetElement = touch.target as HTMLElement
+
+  // Store start time for tap detection
+  touchStartTime.value = Date.now()
 
   // Check if the touch started on an interactive element
   if (targetElement.closest('button, a, input, textarea, select')) {
@@ -136,9 +233,11 @@ function touchStart(event: TouchEvent) {
   start.x = touch.screenX
   start.y = touch.screenY
 }
+
 function touchEnd(event: TouchEvent) {
   const touch = event.changedTouches[0]
   const targetElement = touch.target as HTMLElement
+  const touchDuration = Date.now() - touchStartTime.value
 
   // Check if the touch ended on an interactive element
   if (targetElement.closest('button, a, input, textarea, select')) {
@@ -149,6 +248,12 @@ function touchEnd(event: TouchEvent) {
 
   const diffX = start.x - end.x
   const diffY = start.y - end.y
+
+  // Detect tap (quick touch with minimal movement)
+  if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10 && touchDuration < 300) {
+    toggleControls()
+    return
+  }
 
   // Add a threshold to prevent accidental swipes
   if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
@@ -191,6 +296,12 @@ function handleKeyboardInput(event: KeyboardEvent) {
       direction.value = 'prev'
       goPrevImage()
       break
+    case 'f':
+      toggleFullscreen()
+      break
+    case 'i':
+      toggleInfoPanel()
+      break
     default:
       break
   }
@@ -213,10 +324,45 @@ function handleBackdropClick(event: MouseEvent) {
   }
 }
 
+watch(currentImage, () => {
+  // Keep info panel open when image changes
+  infoPanel.value = true
+
+  // Update info height after image changes
+  nextTick(() => {
+    updateInfoHeight()
+  })
+})
+
+// Update CSS variable with info panel height
+function updateInfoHeight() {
+  nextTick(() => {
+    const infoElement = document.querySelector('.info-panel-slot') as HTMLElement
+    if (infoElement) {
+      const height = infoElement.offsetHeight
+      infoHeight.value = height
+      document.documentElement.style.setProperty('--info-height', `${height}px`)
+    }
+  })
+}
+
 onMounted(() => {
   eventBus.on(`${props.id}GalleryImage`, openGalleryImage)
   eventBus.on(`${props.id}Gallery`, openGalleryImage)
   eventBus.on(`${props.id}GalleryClose`, closeGallery)
+
+  // Initialize info height once mounted
+  updateInfoHeight()
+
+  // Set up a resize observer to track info panel height changes
+  const resizeObserver = new ResizeObserver(() => {
+    updateInfoHeight()
+  })
+
+  const infoElement = document.querySelector('.info-panel-slot')
+  if (infoElement) {
+    resizeObserver.observe(infoElement)
+  }
 })
 
 onUnmounted(() => {
@@ -227,6 +373,10 @@ onUnmounted(() => {
     document.removeEventListener('keydown', handleKeyboardInput)
     document.removeEventListener('keyup', handleKeyboardRelease)
     document.body.style.overflow = '' // Ensure body scrolling is restored
+  }
+  // Clear any remaining timeouts
+  if (controlsTimeout) {
+    clearTimeout(controlsTimeout)
   }
 })
 </script>
@@ -243,43 +393,50 @@ onUnmounted(() => {
     >
       <div
         v-if="isGalleryOpen"
-        class="fixed bg-fv-neutral-900 text-white inset-0 max-w-[100vw] overflow-y-auto overflow-x-hidden"
+        class="fixed bg-fv-neutral-900 text-white inset-0 max-w-[100vw] overflow-hidden gallery-container"
         style="z-index: 37"
         role="dialog"
         aria-modal="true"
         @click="handleBackdropClick"
       >
         <div
-          class="relative w-full max-w-full flex flex-col justify-center items-center"
+          class="relative w-full h-full max-w-full flex flex-col justify-center items-center"
           style="z-index: 38"
           @click.stop
         >
-          <div class="flex flex-grow gap-4 w-full max-w-full">
-            <div class="flex-grow h-[100vh] flex items-center relative">
-              <button
-                class="btn w-9 h-9 rounded-full absolute top-4 left-2"
-                style="z-index: 39"
-                aria-label="Close gallery"
-                @click="setModal(false)"
-              >
-                <component :is="closeIcon" class="w-8 h-8" />
-              </button>
-
+          <!-- Main Content Area -->
+          <div class="flex flex-grow gap-4 w-full h-full max-w-full">
+            <div class="flex-grow h-full flex items-center relative">
+              <!-- Image Display Area -->
               <div
-                class="flex h-[100vh] relative flex-grow items-center justify-center gap-2 z-[1]"
+                class="flex h-full relative flex-grow items-center justify-center gap-2 z-[1]"
+                @touchstart="touchStart"
+                @touchend="touchEnd"
               >
-                <div
-                  class="hidden lg:relative z-[2] lg:flex w-10 flex-shrink-0 items-center justify-center flex-0"
+                <!-- Image Navigation - Left -->
+                <transition
+                  enter-active-class="transition-opacity duration-300"
+                  enter-from-class="opacity-0"
+                  enter-to-class="opacity-100"
+                  leave-active-class="transition-opacity duration-300"
+                  leave-from-class="opacity-100"
+                  leave-to-class="opacity-0"
                 >
-                  <button
-                    v-if="images.length > 1"
-                    class="btn p-1 rounded-full"
-                    aria-label="Previous image"
-                    @click="goPrevImage()"
+                  <div
+                    v-if="showControls && images.length > 1"
+                    class="absolute left-0 z-[40] h-full flex items-center px-2 md:px-4"
                   >
-                    <ArrowLeftCircleIcon class="w-8 h-8" />
-                  </button>
-                </div>
+                    <button
+                      class="btn bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 backdrop-blur-sm p-2 rounded-full transition-transform transform hover:scale-110"
+                      aria-label="Previous image"
+                      @click="goPrevImage()"
+                    >
+                      <ChevronLeftIcon class="w-6 h-6 md:w-8 md:h-8" />
+                    </button>
+                  </div>
+                </transition>
+
+                <!-- Main Image Container -->
                 <div
                   class="flex-1 flex flex-col z-[2] items-center justify-center max-w-full lg:max-w-[calc(100vw - 256px)] relative"
                 >
@@ -288,14 +445,11 @@ onUnmounted(() => {
                     mode="out-in"
                   >
                     <div
-                      v-if="true"
                       :key="`image-display-${modelValue}`"
                       class="flex-1 w-full max-w-full flex flex-col items-center justify-center absolute inset-0 z-[2]"
                     >
                       <div
                         class="flex-1 w-full max-w-full flex items-center justify-center"
-                        @touchstart="touchStart"
-                        @touchend="touchEnd"
                       >
                         <template
                           v-if="videoComponent && isVideo(images[modelValue])"
@@ -304,14 +458,20 @@ onUnmounted(() => {
                             <component
                               :is="videoComponent"
                               :src="isVideo(images[modelValue])"
-                              class="shadow max-w-full h-auto object-contain max-h-[85vh]"
+                              class="shadow max-w-full h-auto object-contain"
+                              :style="{
+                                maxHeight: infoPanel ? 'calc(80vh - var(--info-height, 0px) - 4rem)' : 'calc(80vh - 4rem)',
+                              }"
                             />
                           </ClientOnly>
                         </template>
                         <template v-else>
                           <img
                             v-if="modelValueSrc && imageComponent === 'img'"
-                            class="shadow max-w-full h-auto object-contain max-h-[85vh]"
+                            class="shadow max-w-full h-auto object-contain"
+                            :style="{
+                              maxHeight: infoPanel ? 'calc(80vh - var(--info-height, 0px) - 4rem)' : 'calc(80vh - 4rem)',
+                            }"
                             :src="modelValueSrc"
                             :alt="`Gallery image ${modelValue + 1}`"
                           >
@@ -321,46 +481,52 @@ onUnmounted(() => {
                             :image="modelValueSrc.image"
                             :variant="modelValueSrc.variant"
                             :alt="modelValueSrc.alt"
-                            class="shadow max-w-full h-auto object-contain max-h-[85vh]"
+                            class="shadow max-w-full h-auto object-contain"
+                            :style="{
+                              maxHeight: infoPanel ? 'calc(80vh - var(--info-height, 0px) - 4rem)' : 'calc(80vh - 4rem)',
+                            }"
                           />
                         </template>
                       </div>
+
+                      <!-- Image Slot Content -->
                       <div
-                        class="flex-0 py-2 flex items-center justify-center max-w-full w-full relative !z-[3]"
+                        v-if="infoPanel"
+                        class="info-panel-slot flex-0 px-4 py-3 backdrop-blur-md bg-fv-neutral-900/70 rounded-t-lg flex items-center justify-center max-w-full w-full !z-[45] transition-all"
+                        @transitionend="updateInfoHeight"
                       >
                         <slot :value="images[modelValue]" />
                       </div>
                     </div>
                   </transition>
                 </div>
-                <div
-                  class="hidden lg:flex w-10 flex-shrink-0 items-center justify-center"
+
+                <!-- Image Navigation - Right -->
+                <transition
+                  enter-active-class="transition-opacity duration-300"
+                  enter-from-class="opacity-0"
+                  enter-to-class="opacity-100"
+                  leave-active-class="transition-opacity duration-300"
+                  leave-from-class="opacity-100"
+                  leave-to-class="opacity-0"
                 >
-                  <button
-                    class="btn w-9 h-9 rounded-full hidden lg:block absolute top-4"
-                    :class="{
-                      '-right-4': sidePanel,
-                      'right-2': !sidePanel,
-                    }"
-                    style="z-index: 39"
-                    :aria-label="sidePanel ? 'Hide thumbnails' : 'Show thumbnails'"
-                    @click="() => (sidePanel = !sidePanel)"
+                  <div
+                    v-if="showControls && images.length > 1"
+                    class="absolute right-0 z-[40] h-full flex items-center px-2 md:px-4"
                   >
-                    <ChevronDoubleRightIcon v-if="sidePanel" class="w-7 h-7" />
-                    <ChevronDoubleLeftIcon v-else class="w-7 h-7" />
-                  </button>
-                  <button
-                    v-if="images.length > 1"
-                    class="btn p-1 rounded-full"
-                    aria-label="Next image"
-                    @click="goNextImage()"
-                  >
-                    <ArrowRightCircleIcon class="w-8 h-8" />
-                  </button>
-                </div>
+                    <button
+                      class="btn bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 backdrop-blur-sm p-2 rounded-full transition-transform transform hover:scale-110"
+                      aria-label="Next image"
+                      @click="goNextImage()"
+                    >
+                      <ChevronRightIcon class="w-6 h-6 md:w-8 md:h-8" />
+                    </button>
+                  </div>
+                </transition>
               </div>
             </div>
 
+            <!-- Side Panel for Thumbnails -->
             <transition
               enter-active-class="transform transition ease-in-out duration-300"
               enter-from-class="translate-x-full"
@@ -371,27 +537,33 @@ onUnmounted(() => {
             >
               <div
                 v-if="sidePanel"
-                class="hidden lg:block flex-shrink-0 w-64 bg-fv-neutral-800 h-[100vh] max-h-[100vh] overflow-y-auto"
+                class="hidden lg:block flex-shrink-0 w-64 bg-fv-neutral-800/90 backdrop-blur-md h-full max-h-full overflow-y-auto pt-16"
               >
-                <!-- Side panel content -->
-                <div v-if="paging" class="flex items-center justify-center">
+                <!-- Paging Controls -->
+                <div v-if="paging" class="flex items-center justify-center pt-2">
                   <DefaultPaging :id="id" :items="paging" />
                 </div>
+
+                <!-- Thumbnail Grid -->
                 <div class="grid grid-cols-2 gap-2 p-2">
                   <div
                     v-for="i in images.length"
                     :key="`bg_${id}_${i}`"
-                    class="hover:!brightness-100"
-                    :style="{
-                      filter:
-                        i - 1 === modelValue ? 'brightness(1)' : 'brightness(0.5)',
-                    }"
+                    class="group relative"
                   >
+                    <div
+                      class="absolute inset-0 rounded-lg transition-colors duration-300 group-hover:bg-fv-neutral-700/40"
+                      :class="{ 'bg-fv-primary-500/40': i - 1 === modelValue }"
+                    />
                     <img
                       v-if="imageComponent === 'img'"
-                      :class="`h-auto max-w-full rounded-lg cursor-pointer shadow  ${getBorderColor(
+                      :class="`h-auto max-w-full rounded-lg cursor-pointer shadow transition-all duration-300 group-hover:brightness-110 ${getBorderColor(
                         images[i - 1],
                       )}`"
+                      :style="{
+                        filter:
+                          i - 1 === modelValue ? 'brightness(1)' : 'brightness(0.7)',
+                      }"
                       :src="getThumbnailUrl(images[i - 1])"
                       :alt="`Thumbnail ${i}`"
                       @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
@@ -402,9 +574,17 @@ onUnmounted(() => {
                       :image="getThumbnailUrl(images[i - 1]).image"
                       :variant="getThumbnailUrl(images[i - 1]).variant"
                       :alt="getThumbnailUrl(images[i - 1]).alt"
-                      :class="`h-auto max-w-full rounded-lg cursor-pointer shadow ${getBorderColor(
+                      :class="`h-auto max-w-full rounded-lg cursor-pointer shadow transition-all duration-300 group-hover:brightness-110 ${getBorderColor(
                         images[i - 1],
                       )}`"
+                      :style="{
+                        filter:
+                          i - 1 === modelValue ? 'brightness(1)' : 'brightness(0.7)',
+                      }"
+                      :likes="getThumbnailUrl(images[i - 1]).likes"
+                      :show-likes="getThumbnailUrl(images[i - 1]).showLikes"
+                      :is-author="getThumbnailUrl(images[i - 1]).isAuthor"
+                      :user-uuid="getThumbnailUrl(images[i - 1]).userUUID"
                       @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
                     />
                   </div>
@@ -412,18 +592,122 @@ onUnmounted(() => {
               </div>
             </transition>
           </div>
+
+          <!-- Top Controls -->
+          <transition
+            enter-active-class="transition-opacity duration-300"
+            enter-from-class="opacity-0"
+            enter-to-class="opacity-100"
+            leave-active-class="transition-opacity duration-300"
+            leave-from-class="opacity-100"
+            leave-to-class="opacity-0"
+          >
+            <div
+              v-if="showControls"
+              class="absolute top-0 left-0 right-0 px-4 py-3 flex justify-between items-center bg-gradient-to-b from-fv-neutral-900/90 to-transparent backdrop-blur-sm z-[50] transition-opacity h-16"
+            >
+              <!-- Title and Counter -->
+              <div class="flex items-center space-x-2">
+                <span v-if="title" class="font-medium text-lg">{{ title }}</span>
+                <span class="text-sm opacity-80">{{ currentIndex }} / {{ imageCount }}</span>
+              </div>
+
+              <!-- Control Buttons -->
+              <div class="flex items-center space-x-2">
+                <button
+                  class="btn p-1.5 rounded-full bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
+                  :class="{ 'bg-fv-primary-500/70': infoPanel }"
+                  :title="infoPanel ? 'Hide info' : 'Show info'"
+                  @click="toggleInfoPanel"
+                >
+                  <InformationCircleIcon class="w-5 h-5" />
+                </button>
+
+                <button
+                  class="btn p-1.5 rounded-full lg:hidden bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
+                  :title="sidePanel ? 'Hide thumbnails' : 'Show thumbnails'"
+                  @click="() => (sidePanel = !sidePanel)"
+                >
+                  <ChevronDoubleRightIcon v-if="sidePanel" class="w-5 h-5" />
+                  <ChevronDoubleLeftIcon v-else class="w-5 h-5" />
+                </button>
+
+                <button
+                  class="btn p-1.5 rounded-full hidden lg:block bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
+                  :title="sidePanel ? 'Hide thumbnails' : 'Show thumbnails'"
+                  @click="() => (sidePanel = !sidePanel)"
+                >
+                  <ChevronDoubleRightIcon v-if="sidePanel" class="w-5 h-5" />
+                  <ChevronDoubleLeftIcon v-else class="w-5 h-5" />
+                </button>
+
+                <button
+                  class="btn p-1.5 rounded-full bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
+                  aria-label="Close gallery"
+                  @click="setModal(false)"
+                >
+                  <component :is="closeIcon" class="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </transition>
+
+          <!-- Mobile Thumbnail Preview -->
+          <transition
+            enter-active-class="transition-transform duration-300 ease-out"
+            enter-from-class="translate-y-full"
+            enter-to-class="translate-y-0"
+            leave-active-class="transition-transform duration-300 ease-in"
+            leave-from-class="translate-y-0"
+            leave-to-class="translate-y-full"
+          >
+            <div
+              v-if="showControls && images.length > 1 && !sidePanel"
+              class="absolute bottom-0 left-0 right-0 p-2 lg:hidden bg-gradient-to-t from-fv-neutral-900/90 to-transparent backdrop-blur-sm z-[50]"
+            >
+              <div class="overflow-x-auto flex space-x-2 pb-1 px-1">
+                <div
+                  v-for="(image, idx) in images"
+                  :key="`mobile_thumb_${id}_${idx}`"
+                  class="flex-shrink-0 w-16 h-16 rounded-lg relative cursor-pointer"
+                  :class="{ 'ring-2 ring-fv-primary-500 ring-offset-1 ring-offset-fv-neutral-900': idx === modelValue }"
+                  @click="$eventBus.emit(`${id}GalleryImage`, idx)"
+                >
+                  <img
+                    v-if="imageComponent === 'img'"
+                    class="w-full h-full object-cover rounded-lg transition duration-200"
+                    :style="{
+                      filter: idx === modelValue ? 'brightness(1)' : 'brightness(0.7)',
+                    }"
+                    :src="getThumbnailUrl(image)"
+                    :alt="`Thumbnail ${idx + 1}`"
+                  >
+                  <component
+                    :is="imageComponent"
+                    v-else
+                    :image="getThumbnailUrl(image).image"
+                    :variant="getThumbnailUrl(image).variant"
+                    :alt="getThumbnailUrl(image).alt"
+                    class="w-full h-full object-cover rounded-lg transition duration-200"
+                    :style="{
+                      filter: idx === modelValue ? 'brightness(1)' : 'brightness(0.7)',
+                    }"
+                  />
+                </div>
+              </div>
+            </div>
+          </transition>
         </div>
       </div>
     </transition>
 
-    <div v-if="mode === 'grid' || mode === 'mason' || mode === 'custom'" class="min-h-[600px]">
+    <!-- Thumbnail Grid/Mason/Custom Layouts -->
+    <div v-if="mode === 'grid' || mode === 'mason' || mode === 'custom'" class="gallery-grid">
       <div
         :class="{
-          ' grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4 items-start':
-            mode === 'mason',
-          '  grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-4 items-center':
-            mode === 'grid',
-          ' custom-grid': mode === 'custom',
+          'masonry-grid': mode === 'mason',
+          'standard-grid': mode === 'grid',
+          'custom-grid': mode === 'custom',
         }"
       >
         <slot name="thumbnail" />
@@ -431,17 +715,17 @@ onUnmounted(() => {
           <template v-if="mode === 'mason'">
             <div
               v-if="i + (1 % gridHeight) === 0"
-              class="grid gap-4 items-start relative"
+              class="masonry-column relative"
             >
               <div v-if="ranking" class="img-gallery-ranking">
                 {{ i }}
               </div>
 
               <template v-for="j in gridHeight" :key="`gi_${id}_${i + j}`">
-                <div>
+                <div class="masonry-item">
                   <img
                     v-if="i + j - 2 < images.length && imageComponent === 'img'"
-                    class="h-auto max-w-full rounded-lg cursor-pointer"
+                    class="h-auto max-w-full w-full rounded-lg cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 hover:brightness-110 hover:scale-[1.02]"
                     :src="getThumbnailUrl(images[i + j - 2])"
                     :alt="`Gallery image ${i + j - 1}`"
                     @click="$eventBus.emit(`${id}GalleryImage`, i + j - 2)"
@@ -452,7 +736,7 @@ onUnmounted(() => {
                     :image="getThumbnailUrl(images[i + j - 2]).image"
                     :variant="getThumbnailUrl(images[i + j - 2]).variant"
                     :alt="getThumbnailUrl(images[i + j - 2]).alt"
-                    :class="`h-auto max-w-full rounded-lg cursor-pointer ${getBorderColor(
+                    :class="`h-auto max-w-full w-full rounded-lg cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 hover:brightness-110 hover:scale-[1.02] ${getBorderColor(
                       images[i + j - 2],
                     )}`"
                     :likes="getThumbnailUrl(images[i + j - 2]).likes"
@@ -465,42 +749,47 @@ onUnmounted(() => {
               </template>
             </div>
           </template>
-          <div v-else class="relative">
+          <div v-else class="grid-item relative group">
             <div v-if="ranking" class="img-gallery-ranking">
               {{ i }}
             </div>
-            <img
-              v-if="imageComponent === 'img'"
-              class="h-auto max-w-full rounded-lg cursor-pointer"
-              :src="getThumbnailUrl(images[i - 1])"
-              :alt="`Gallery image ${i}`"
-              @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
-            >
-            <component
-              :is="imageComponent"
-              v-else-if="imageComponent"
-              :image="getThumbnailUrl(images[i - 1]).image"
-              :variant="getThumbnailUrl(images[i - 1]).variant"
-              :alt="getThumbnailUrl(images[i - 1]).alt"
-              :class="`h-auto max-w-full rounded-lg cursor-pointer ${getBorderColor(
-                images[i - 1],
-              )}`"
-              :likes="getThumbnailUrl(images[i - 1]).likes"
-              :show-likes="getThumbnailUrl(images[i - 1]).showLikes"
-              :is-author="getThumbnailUrl(images[i - 1]).isAuthor"
-              :user-uuid="getThumbnailUrl(images[i - 1]).userUUID"
-              @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
-            />
+            <div class="overflow-hidden rounded-lg">
+              <img
+                v-if="imageComponent === 'img'"
+                class="h-auto max-w-full w-full rounded-lg cursor-pointer shadow-md transition-all duration-300 group-hover:brightness-110 group-hover:scale-[1.03]"
+                :src="getThumbnailUrl(images[i - 1])"
+                :alt="`Gallery image ${i}`"
+                @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+              >
+              <component
+                :is="imageComponent"
+                v-else-if="imageComponent"
+                :image="getThumbnailUrl(images[i - 1]).image"
+                :variant="getThumbnailUrl(images[i - 1]).variant"
+                :alt="getThumbnailUrl(images[i - 1]).alt"
+                :class="`h-auto max-w-full w-full rounded-lg cursor-pointer shadow-md transition-all duration-300 group-hover:brightness-110 group-hover:scale-[1.03] ${getBorderColor(
+                  images[i - 1],
+                )}`"
+                :likes="getThumbnailUrl(images[i - 1]).likes"
+                :show-likes="getThumbnailUrl(images[i - 1]).showLikes"
+                :is-author="getThumbnailUrl(images[i - 1]).isAuthor"
+                :user-uuid="getThumbnailUrl(images[i - 1]).userUUID"
+                @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+              />
+            </div>
           </div>
         </template>
       </div>
     </div>
+
+    <!-- Button Mode -->
     <button
       v-if="mode === 'button'"
-      :class="`btn ${buttonType ? buttonType : 'primary'} defaults`"
+      :class="`btn ${buttonType ? buttonType : 'primary'} defaults relative overflow-hidden group`"
       @click="openGalleryImage(0)"
     >
-      {{ buttonText ? buttonText : $t("open_gallery_cta") }}
+      <span class="relative z-10">{{ buttonText ? buttonText : $t("open_gallery_cta") }}</span>
+      <span class="absolute inset-0 bg-white/10 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
     </button>
   </div>
 </template>
@@ -572,18 +861,101 @@ onUnmounted(() => {
   filter: blur(10px);
 }
 
-/* Ensure the images are positioned correctly to prevent overlap */
-.relative-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
+/* Modern grids */
+.gallery-grid {
+  min-height: 200px;
 }
 
-.relative-container > div {
+.standard-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .standard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .standard-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .standard-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .standard-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (min-width: 1536px) {
+  .standard-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.masonry-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .masonry-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .masonry-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .masonry-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.masonry-column {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.masonry-item {
+  break-inside: avoid;
+  margin-bottom: 0.75rem;
+}
+
+.grid-item {
+  break-inside: avoid;
+  margin-bottom: 0.75rem;
+}
+
+.img-gallery-ranking {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0.5rem;
+  left: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  z-index: 10;
 }
 </style>
