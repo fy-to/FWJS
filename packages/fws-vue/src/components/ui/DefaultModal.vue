@@ -164,11 +164,6 @@ function setModal(value: boolean) {
     // Set this modal's z-index
     zIndex.value = newZIndex
 
-    // Only manage body overflow for the first opened modal
-    if (modalRegistry.modals.size === 1) {
-      document.body.style.overflow = 'hidden' // Prevent scrolling when modal is open
-    }
-
     document.addEventListener('keydown', handleKeyDown)
   }
   if (value === false) {
@@ -183,11 +178,6 @@ function setModal(value: boolean) {
       }
     }
 
-    // Only restore body overflow if this is the last open modal
-    if (modalRegistry.modals.size === 0) {
-      document.body.style.overflow = '' // Restore scrolling
-    }
-
     document.removeEventListener('keydown', handleKeyDown)
     if (previouslyFocusedElement) {
       previouslyFocusedElement.focus()
@@ -195,8 +185,6 @@ function setModal(value: boolean) {
   }
   isOpen.value = value
 }
-
-// These functions have been moved to the global registry object
 
 // After modal is opened, set focus and collect focusable elements
 watch(isOpen, async (newVal) => {
@@ -237,11 +225,6 @@ onUnmounted(() => {
       if (uniqueId) {
         modalRegistry.modals.delete(uniqueId)
       }
-    }
-
-    // Only restore body overflow if this is the last open modal
-    if (modalRegistry.modals.size === 0) {
-      document.body.style.overflow = '' // Restore scrolling
     }
   }
 })
