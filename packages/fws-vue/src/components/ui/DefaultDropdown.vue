@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
-
+import { onMounted, onUnmounted, ref } from 'vue'
 import ScaleTransition from './transitions/ScaleTransition.vue'
 
 const props = defineProps<{
@@ -17,6 +16,17 @@ const props = defineProps<{
   closeDropdown: () => void
 }>()
 
+const dropdownRef = ref<HTMLElement | null>(null)
+
+// Custom implementation of click-outside functionality
+function handleClickOutsideElement(event: MouseEvent) {
+  if (props.preventClickOutside) return
+
+  if (props.show && dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+    props.handleClickOutside()
+  }
+}
+
 function handleCloseOnEscape(event: KeyboardEvent) {
   if (['Escape', 'Esc'].includes(event.key)) {
     props.closeDropdown()
@@ -25,10 +35,12 @@ function handleCloseOnEscape(event: KeyboardEvent) {
 
 onMounted(() => {
   document.addEventListener('keydown', handleCloseOnEscape)
+  document.addEventListener('click', handleClickOutsideElement)
 })
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleCloseOnEscape)
+  document.removeEventListener('click', handleClickOutsideElement)
 })
 </script>
 
@@ -42,7 +54,7 @@ onUnmounted(() => {
     <ScaleTransition>
       <div
         v-show="props.show"
-        v-click-outside="props.handleClickOutside"
+        ref="dropdownRef"
         :class="props.position"
         :style="props.coordinates"
         class="absolute z-[100] w-[200px] mt-2 rounded-sm bg-white dark:bg-fv-neutral-900 shadow-lg border border-fv-neutral-100 dark:border-fv-neutral-600 focus:outline-none"

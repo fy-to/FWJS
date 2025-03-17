@@ -55,7 +55,6 @@
     "@antfu/eslint-config": "^4.3.0",
     "@fy-/fws-js": "workspace:*",
     "@fy-/fws-types": "workspace:*",
-    "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.1.5",
     "@rushstack/eslint-patch": "^1.10.4",
     "@types/node": "^22.13.4",

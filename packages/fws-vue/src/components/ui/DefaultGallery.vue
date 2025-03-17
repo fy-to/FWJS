@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 import type { APIPaging } from '../../composables/rest'
-import { Dialog, DialogPanel, TransitionRoot } from '@headlessui/vue'
 import {
   ArrowLeftCircleIcon,
   ArrowRightCircleIcon,
@@ -69,9 +68,19 @@ const direction = ref<'next' | 'prev'>('next')
 function setModal(value: boolean) {
   if (value === true) {
     if (props.onOpen) props.onOpen()
+    document.body.style.overflow = 'hidden' // Prevent scrolling when gallery is open
+    if (!import.meta.env.SSR) {
+      document.addEventListener('keydown', handleKeyboardInput)
+      document.addEventListener('keyup', handleKeyboardRelease)
+    }
   }
   else {
     if (props.onClose) props.onClose()
+    document.body.style.overflow = '' // Restore scrolling
+    if (!import.meta.env.SSR) {
+      document.removeEventListener('keydown', handleKeyboardInput)
+      document.removeEventListener('keyup', handleKeyboardRelease)
+    }
   }
   isGalleryOpen.value = value
 }
@@ -164,8 +173,14 @@ function getBorderColor(i: any) {
 const isKeyPressed = ref<boolean>(false)
 
 function handleKeyboardInput(event: KeyboardEvent) {
+  if (!isGalleryOpen.value) return
   if (isKeyPressed.value) return
+
   switch (event.key) {
+    case 'Escape':
+      event.preventDefault()
+      setModal(false)
+      break
     case 'ArrowRight':
       isKeyPressed.value = true
       direction.value = 'next'
@@ -191,54 +206,60 @@ function closeGallery() {
   setModal(false)
 }
 
+// Click outside gallery content to close
+function handleBackdropClick(event: MouseEvent) {
+  if (event.target === event.currentTarget) {
+    setModal(false)
+  }
+}
+
 onMounted(() => {
   eventBus.on(`${props.id}GalleryImage`, openGalleryImage)
   eventBus.on(`${props.id}Gallery`, openGalleryImage)
   eventBus.on(`${props.id}GalleryClose`, closeGallery)
-  if (window !== undefined && !import.meta.env.SSR) {
-    window.addEventListener('keydown', handleKeyboardInput)
-    window.addEventListener('keyup', handleKeyboardRelease)
-  }
 })
 
 onUnmounted(() => {
   eventBus.off(`${props.id}Gallery`, openGalleryImage)
   eventBus.off(`${props.id}GalleryImage`, openGalleryImage)
   eventBus.off(`${props.id}GalleryClose`, closeGallery)
-  if (window !== undefined && !import.meta.env.SSR) {
-    window.removeEventListener('keydown', handleKeyboardInput)
-    window.removeEventListener('keyup', handleKeyboardRelease)
+  if (!import.meta.env.SSR) {
+    document.removeEventListener('keydown', handleKeyboardInput)
+    document.removeEventListener('keyup', handleKeyboardRelease)
+    document.body.style.overflow = '' // Ensure body scrolling is restored
   }
 })
 </script>
 
 <template>
   <div>
-    <TransitionRoot
-      :show="isGalleryOpen"
-      as="template"
-      enter="duration-300 ease-out"
-      enter-from="opacity-0"
-      enter-to="opacity-100"
-      leave="duration-200 ease-in"
-      leave-from="opacity-100"
-      leave-to="opacity-0"
+    <transition
+      enter-active-class="duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
-      <Dialog
-        :open="isGalleryOpen"
+      <div
+        v-if="isGalleryOpen"
         class="fixed bg-fv-neutral-900 text-white inset-0 max-w-[100vw] overflow-y-auto overflow-x-hidden"
         style="z-index: 37"
-        @close="setModal"
+        role="dialog"
+        aria-modal="true"
+        @click="handleBackdropClick"
       >
-        <DialogPanel
+        <div
           class="relative w-full max-w-full flex flex-col justify-center items-center"
           style="z-index: 38"
+          @click.stop
         >
           <div class="flex flex-grow gap-4 w-full max-w-full">
             <div class="flex-grow h-[100vh] flex items-center relative">
               <button
                 class="btn w-9 h-9 rounded-full absolute top-4 left-2"
                 style="z-index: 39"
+                aria-label="Close gallery"
                 @click="setModal(false)"
               >
                 <component :is="closeIcon" class="w-8 h-8" />
@@ -253,6 +274,7 @@ onUnmounted(() => {
                   <button
                     v-if="images.length > 1"
                     class="btn p-1 rounded-full"
+                    aria-label="Previous image"
                     @click="goPrevImage()"
                   >
                     <ArrowLeftCircleIcon class="w-8 h-8" />
@@ -291,6 +313,7 @@ onUnmounted(() => {
                             v-if="modelValueSrc && imageComponent === 'img'"
                             class="shadow max-w-full h-auto object-contain max-h-[85vh]"
                             :src="modelValueSrc"
+                            :alt="`Gallery image ${modelValue + 1}`"
                           >
                           <component
                             :is="imageComponent"
@@ -320,6 +343,7 @@ onUnmounted(() => {
                       'right-2': !sidePanel,
                     }"
                     style="z-index: 39"
+                    :aria-label="sidePanel ? 'Hide thumbnails' : 'Show thumbnails'"
                     @click="() => (sidePanel = !sidePanel)"
                   >
                     <ChevronDoubleRightIcon v-if="sidePanel" class="w-7 h-7" />
@@ -328,6 +352,7 @@ onUnmounted(() => {
                   <button
                     v-if="images.length > 1"
                     class="btn p-1 rounded-full"
+                    aria-label="Next image"
                     @click="goNextImage()"
                   >
                     <ArrowRightCircleIcon class="w-8 h-8" />
@@ -336,57 +361,60 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <TransitionRoot
-              :show="sidePanel"
-              as="div"
-              enter="transform transition ease-in-out duration-300"
-              enter-from="translate-x-full"
-              enter-to="translate-x-0"
-              leave="transform transition ease-in-out duration-300"
-              leave-from="translate-x-0"
-              leave-to="translate-x-full"
-              class="hidden lg:block flex-shrink-0 w-64 bg-fv-neutral-800 h-[100vh] max-h-[100vh] overflow-y-auto"
+            <transition
+              enter-active-class="transform transition ease-in-out duration-300"
+              enter-from-class="translate-x-full"
+              enter-to-class="translate-x-0"
+              leave-active-class="transform transition ease-in-out duration-300"
+              leave-from-class="translate-x-0"
+              leave-to-class="translate-x-full"
             >
-              <!-- Side panel content -->
-              <div v-if="paging" class="flex items-center justify-center">
-                <DefaultPaging :id="id" :items="paging" />
-              </div>
-              <div class="grid grid-cols-2 gap-2 p-2">
-                <div
-                  v-for="i in images.length"
-                  :key="`bg_${id}_${i}`"
-                  class="hover:!brightness-100"
-                  :style="{
-                    filter:
-                      i - 1 === modelValue ? 'brightness(1)' : 'brightness(0.5)',
-                  }"
-                >
-                  <img
-                    v-if="imageComponent === 'img'"
-                    :class="`h-auto max-w-full rounded-lg cursor-pointer shadow  ${getBorderColor(
-                      images[i - 1],
-                    )}`"
-                    :src="getThumbnailUrl(images[i - 1])"
-                    @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+              <div
+                v-if="sidePanel"
+                class="hidden lg:block flex-shrink-0 w-64 bg-fv-neutral-800 h-[100vh] max-h-[100vh] overflow-y-auto"
+              >
+                <!-- Side panel content -->
+                <div v-if="paging" class="flex items-center justify-center">
+                  <DefaultPaging :id="id" :items="paging" />
+                </div>
+                <div class="grid grid-cols-2 gap-2 p-2">
+                  <div
+                    v-for="i in images.length"
+                    :key="`bg_${id}_${i}`"
+                    class="hover:!brightness-100"
+                    :style="{
+                      filter:
+                        i - 1 === modelValue ? 'brightness(1)' : 'brightness(0.5)',
+                    }"
                   >
-                  <component
-                    :is="imageComponent"
-                    v-else
-                    :image="getThumbnailUrl(images[i - 1]).image"
-                    :variant="getThumbnailUrl(images[i - 1]).variant"
-                    :alt="getThumbnailUrl(images[i - 1]).alt"
-                    :class="`h-auto max-w-full rounded-lg cursor-pointer shadow ${getBorderColor(
-                      images[i - 1],
-                    )}`"
-                    @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
-                  />
+                    <img
+                      v-if="imageComponent === 'img'"
+                      :class="`h-auto max-w-full rounded-lg cursor-pointer shadow  ${getBorderColor(
+                        images[i - 1],
+                      )}`"
+                      :src="getThumbnailUrl(images[i - 1])"
+                      :alt="`Thumbnail ${i}`"
+                      @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+                    >
+                    <component
+                      :is="imageComponent"
+                      v-else
+                      :image="getThumbnailUrl(images[i - 1]).image"
+                      :variant="getThumbnailUrl(images[i - 1]).variant"
+                      :alt="getThumbnailUrl(images[i - 1]).alt"
+                      :class="`h-auto max-w-full rounded-lg cursor-pointer shadow ${getBorderColor(
+                        images[i - 1],
+                      )}`"
+                      @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+                    />
+                  </div>
                 </div>
               </div>
-            </TransitionRoot>
+            </transition>
           </div>
-        </DialogPanel>
-      </Dialog>
-    </TransitionRoot>
+        </div>
+      </div>
+    </transition>
 
     <div v-if="mode === 'grid' || mode === 'mason' || mode === 'custom'" class="min-h-[600px]">
       <div
@@ -415,6 +443,7 @@ onUnmounted(() => {
                     v-if="i + j - 2 < images.length && imageComponent === 'img'"
                     class="h-auto max-w-full rounded-lg cursor-pointer"
                     :src="getThumbnailUrl(images[i + j - 2])"
+                    :alt="`Gallery image ${i + j - 1}`"
                     @click="$eventBus.emit(`${id}GalleryImage`, i + j - 2)"
                   >
                   <component
@@ -444,6 +473,7 @@ onUnmounted(() => {
               v-if="imageComponent === 'img'"
               class="h-auto max-w-full rounded-lg cursor-pointer"
               :src="getThumbnailUrl(images[i - 1])"
+              :alt="`Gallery image ${i}`"
               @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
             >
             <component
