@@ -108,8 +108,7 @@ function setModal(value: boolean) {
   }
   isGalleryOpen.value = value
   showControls.value = true
-  // Keep info panel open by default
-  infoPanel.value = true
+  // Don't reset info panel state when opening/closing
 }
 
 function openGalleryImage(index: number | undefined) {
@@ -325,13 +324,12 @@ function handleBackdropClick(event: MouseEvent) {
 }
 
 watch(currentImage, () => {
-  // Keep info panel open when image changes
-  infoPanel.value = true
-
-  // Update info height after image changes
-  nextTick(() => {
-    updateInfoHeight()
-  })
+  // Only update the info height, don't change user's preference
+  if (infoPanel.value) {
+    nextTick(() => {
+      updateInfoHeight()
+    })
+  }
 })
 
 // Update CSS variable with info panel height
@@ -351,12 +349,16 @@ onMounted(() => {
   eventBus.on(`${props.id}Gallery`, openGalleryImage)
   eventBus.on(`${props.id}GalleryClose`, closeGallery)
 
-  // Initialize info height once mounted
-  updateInfoHeight()
+  // Initialize info height once mounted (only if info panel is shown)
+  if (infoPanel.value) {
+    updateInfoHeight()
+  }
 
   // Set up a resize observer to track info panel height changes
   const resizeObserver = new ResizeObserver(() => {
-    updateInfoHeight()
+    if (infoPanel.value) {
+      updateInfoHeight()
+    }
   })
 
   const infoElement = document.querySelector('.info-panel-slot')
