@@ -45,6 +45,7 @@ const props = withDefaults(
  */
 const textInput = ref<HTMLElement>()
 const isMaxReached = ref(false)
+const inputContainer = ref<HTMLElement>()
 
 const emit = defineEmits(['update:modelValue'])
 
@@ -62,7 +63,7 @@ const model = computed({
  * Compute aria-describedby IDs if help or error exist
  */
 const describedByIds = computed(() => {
-  const ids: any[] = []
+  const ids: string[] = []
   if (props.help) {
     ids.push(`help_tags_${props.id}`)
   }
@@ -95,7 +96,7 @@ onMounted(() => {
 })
 
 /**
- * Event Bus example (if you'd like notifications)
+ * Event Bus for notifications
  */
 const eventBus = useEventBus()
 
@@ -104,14 +105,23 @@ const eventBus = useEventBus()
  */
 async function copyText() {
   const text = model.value.join(', ')
-  await navigator.clipboard.writeText(text)
 
-  // Example event bus notification
-  eventBus.emit('SendNotif', {
-    title: 'Tags copied!',
-    type: 'success',
-    time: 2500,
-  })
+  try {
+    await navigator.clipboard.writeText(text)
+
+    eventBus.emit('SendNotif', {
+      title: 'Tags copied!',
+      type: 'success',
+      time: 2500,
+    })
+  }
+  catch {
+    eventBus.emit('SendNotif', {
+      title: 'Failed to copy tags',
+      type: 'error',
+      time: 2500,
+    })
+  }
 }
 
 /**
@@ -153,7 +163,7 @@ function addTag() {
     filteredTags.splice(slotsAvailable)
   }
 
-  model.value.push(...filteredTags)
+  model.value = [...model.value, ...filteredTags]
   textInput.value.textContent = ''
 }
 
@@ -161,7 +171,9 @@ function addTag() {
  * Remove a tag by index
  */
 function removeTag(index: number) {
-  model.value.splice(index, 1)
+  const newTags = [...model.value]
+  newTags.splice(index, 1)
+  model.value = newTags
   focusInput()
 }
 
@@ -172,7 +184,11 @@ function removeLastTag() {
   if (!textInput.value) return
   if (textInput.value.textContent === '') {
     // If input is empty, remove the last tag
-    model.value.pop()
+    if (model.value.length > 0) {
+      const newTags = [...model.value]
+      newTags.pop()
+      model.value = newTags
+    }
   }
   else {
     // Otherwise, remove the last character in the input
@@ -223,33 +239,30 @@ function handlePaste(e: ClipboardEvent) {
   e.preventDefault()
   addTag()
 }
+
+/**
+ * Handle keyboard navigation between tags
+ */
+function handleKeyNavigation(e: KeyboardEvent, index: number) {
+  if (e.key === 'ArrowLeft' && index > 0) {
+    const prevTag = inputContainer.value?.querySelector(`[data-index="${index - 1}"] button`) as HTMLElement
+    if (prevTag) prevTag.focus()
+  }
+  else if (e.key === 'ArrowRight' && index < model.value.length - 1) {
+    const nextTag = inputContainer.value?.querySelector(`[data-index="${index + 1}"] button`) as HTMLElement
+    if (nextTag) nextTag.focus()
+  }
+}
 </script>
 
 <template>
-  <div class="space-y-1 w-full">
-    <!-- Optional label -->
-    <label
-      v-if="label"
-      :id="`label_tags_${id}`"
-      :for="`tags_${id}`"
-      class="block text-sm font-medium dark:text-white"
-    >
-      {{ label }}
-      <!-- Optional help text -->
-      <span
-        v-if="help"
-        :id="`help_tags_${id}`"
-        class="ml-1 text-xs text-fv-neutral-500 dark:text-fv-neutral-300"
-      >
-        {{ help }}
-      </span>
-    </label>
-
+  <div class="space-y-2 w-full">
     <div
+      ref="inputContainer"
       class="tags-input"
       :class="[
         $props.error ? 'error' : '',
-        isMaxReached ? 'pointer-events-none opacity-75' : '',
+        isMaxReached ? 'max-reached' : '',
       ]"
       role="textbox"
       :aria-labelledby="`label_tags_${id}`"
@@ -264,31 +277,34 @@ function handlePaste(e: ClipboardEvent) {
         v-for="(tag, index) in model"
         :key="`${tag}-${index}`"
         role="listitem"
+        :data-index="index"
         class="tag"
         :class="{
-          red: maxLenghtPerTag > 0 && tag.length > maxLenghtPerTag,
-          [color]: maxLenghtPerTag === 0 || tag.length <= maxLenghtPerTag,
+          'tag-error': maxLenghtPerTag > 0 && tag.length > maxLenghtPerTag,
+          [`tag-${color}`]: maxLenghtPerTag === 0 || tag.length <= maxLenghtPerTag,
         }"
       >
-        {{ tag }}
+        <span class="tag-text">{{ tag }}</span>
         <button
           type="button"
-          class="flex items-center"
+          class="tag-remove"
           :aria-label="`Remove tag ${tag}`"
           @click.prevent="removeTag(index)"
+          @keydown="(e) => handleKeyNavigation(e, index)"
         >
           <svg
-            class="w-4 h-4"
+            class="w-3.5 h-3.5"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
-            stroke-width="2"
+            stroke-width="2.5"
             stroke="currentColor"
+            aria-hidden="true"
           >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
-              d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              d="M6 18L18 6M6 6l12 12"
             />
           </svg>
         </button>
@@ -301,7 +317,7 @@ function handlePaste(e: ClipboardEvent) {
         contenteditable="true"
         tabindex="0"
         class="input"
-        :placeholder="isMaxReached
+        :data-placeholder="isMaxReached
           ? 'Max tags reached'
           : 'Type or paste and press Enter...'"
         :aria-placeholder="isMaxReached
@@ -311,7 +327,19 @@ function handlePaste(e: ClipboardEvent) {
         @paste.prevent="handlePaste"
       />
     </div>
-
+    <div v-if="label" class="flex items-center flex-wrap gap-1">
+      <span
+        v-if="help"
+        :id="`help_tags_${id}`"
+        class="text-xs text-fv-neutral-500 dark:text-fv-neutral-300"
+      >
+        {{ help }}
+      </span>
+      <!-- Tag counter when maxTags is set -->
+    </div>
+    <div v-if="maxTags > 0" class="tag-counter">
+      <span>{{ model.length }}/{{ maxTags }}</span>
+    </div>
     <!-- Inline error display if needed -->
     <p
       v-if="$props.error"
@@ -323,12 +351,28 @@ function handlePaste(e: ClipboardEvent) {
     </p>
 
     <!-- Copy button / or any additional actions -->
-    <div v-if="copyButton" class="flex justify-end mt-1">
+    <div v-if="copyButton" class="copy-button-container">
       <button
-        class="btn neutral small"
+        class="copy-button"
         type="button"
+        :disabled="model.length === 0"
         @click.prevent="copyText"
       >
+        <svg
+          class="w-4 h-4 mr-1"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="2"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"
+          />
+        </svg>
         Copy tags
       </button>
     </div>
@@ -338,49 +382,122 @@ function handlePaste(e: ClipboardEvent) {
 <style scoped>
 /* Container for all tags plus input */
 .tags-input {
-  @apply w-full flex flex-wrap gap-2 items-center shadow-sm bg-fv-neutral-50
-    border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-sm
-    focus-within:ring-fv-primary-500 focus-within:border-fv-primary-500
-    dark:bg-fv-neutral-700 dark:border-fv-neutral-600
-    dark:placeholder-fv-neutral-400 dark:text-white p-1.5
-    dark:focus-within:ring-fv-primary-500 dark:focus-within:border-fv-primary-500;
+  @apply w-full flex flex-wrap gap-2 items-center bg-white
+    border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-md
+    focus-within:ring-2 focus-within:ring-fv-primary-500 focus-within:border-fv-primary-500
+    dark:bg-fv-neutral-800 dark:border-fv-neutral-600
+    dark:placeholder-fv-neutral-400 dark:text-white p-2
+    dark:focus-within:ring-fv-primary-500 dark:focus-within:border-fv-primary-500
+    transition-all duration-200 ease-in-out shadow-sm;
   cursor: text;
+  min-height: 2.5rem;
+}
+
+/* Max tags reached state */
+.tags-input.max-reached {
+  @apply opacity-80 pointer-events-none bg-fv-neutral-100 dark:bg-fv-neutral-900;
 }
 
 /* Error border */
 .tags-input.error {
-  @apply border-red-500 dark:border-red-400 border !important;
+  @apply border-red-500 dark:border-red-400 ring-1 ring-red-500 dark:ring-red-400 !important;
 }
 
-/* Tag styling */
+/* Tag base styling */
 .tag {
-  @apply inline-flex gap-1 items-center
-    font-medium px-2.5 py-1 rounded text-black
-    dark:text-white cursor-default !important;
+  @apply inline-flex items-center justify-between
+    text-sm font-medium rounded-full px-3 py-1
+    dark:text-white transition-all duration-200 ease-in-out;
 }
 
-/* Color variants */
-.tag.blue {
-  @apply bg-blue-400 dark:bg-blue-800;
+.tag-text {
+  @apply mr-1.5;
 }
-.tag.red {
-  @apply bg-red-400 dark:bg-red-800;
+
+/* Tag remove button */
+.tag-remove {
+  @apply rounded-full p-0.5 flex items-center justify-center
+    hover:bg-black/10 dark:hover:bg-white/20
+    focus:outline-none focus:ring-2 focus:ring-offset-1
+    transition-colors duration-200;
+  height: 18px;
+  width: 18px;
 }
-.tag.green {
-  @apply bg-green-400 dark:bg-green-800;
+
+/* Color variants with modern styling */
+.tag-blue {
+  @apply bg-blue-200 text-blue-800
+    dark:bg-blue-700 dark:text-blue-50
+    ring-1 ring-blue-400 dark:ring-blue-600;
 }
-.tag.purple {
-  @apply bg-purple-400 dark:bg-purple-800;
+
+.tag-red, .tag-error {
+  @apply bg-red-200 text-red-800
+    dark:bg-red-700 dark:text-red-50
+    ring-1 ring-red-400 dark:ring-red-600;
 }
-.tag.orange {
-  @apply bg-orange-400 dark:bg-orange-800;
+
+.tag-green {
+  @apply bg-green-200 text-green-800
+    dark:bg-green-700 dark:text-green-50
+    ring-1 ring-green-400 dark:ring-green-600;
 }
-.tag.neutral {
-  @apply bg-fv-neutral-400 dark:bg-fv-neutral-900;
+
+.tag-purple {
+  @apply bg-purple-200 text-purple-800
+    dark:bg-purple-700 dark:text-purple-50
+    ring-1 ring-purple-400 dark:ring-purple-600;
+}
+
+.tag-orange {
+  @apply bg-orange-200 text-orange-800
+    dark:bg-orange-700 dark:text-orange-50
+    ring-1 ring-orange-400 dark:ring-orange-600;
+}
+
+.tag-neutral {
+  @apply bg-fv-neutral-200 text-fv-neutral-800
+    dark:bg-fv-neutral-600 dark:text-fv-neutral-50
+    ring-1 ring-fv-neutral-400 dark:ring-fv-neutral-500;
 }
 
 /* The editable input area for new tags */
 .input {
-  @apply flex-grow min-w-[100px] outline-none border-none break-words;
+  @apply flex-grow min-w-[100px] outline-none border-none break-words p-1;
+  min-height: 1.5rem;
+}
+
+/* Placeholder styling */
+.input:empty:before {
+  content: attr(data-placeholder);
+  @apply text-fv-neutral-400 dark:text-fv-neutral-500;
+}
+
+/* Copy button styling */
+.copy-button-container {
+  @apply flex justify-end mt-2;
+}
+
+.copy-button {
+  @apply inline-flex items-center justify-center
+    bg-fv-neutral-100 hover:bg-fv-neutral-200
+    text-fv-neutral-700 dark:text-fv-neutral-200
+    dark:bg-fv-neutral-700 dark:hover:bg-fv-neutral-600
+    px-3 py-1.5 rounded-md text-sm font-medium
+    transition-colors duration-200 ease-in-out
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-fv-primary-500
+    disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Tag counter styling */
+.tag-counter {
+  @apply text-xs text-right text-fv-neutral-500 dark:text-fv-neutral-400 mt-1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .tags-input {
+    @apply p-1.5;
+  }
 }
 </style>

@@ -91,6 +91,13 @@ function handleBlur() {
   emit('blur', props.id)
 }
 
+// Copy input value to clipboard
+function copyToClipboard() {
+  if (props.modelValue) {
+    navigator.clipboard.writeText(props.modelValue.toString())
+  }
+}
+
 const model = computed<modelValueType>({
   get: () => props.modelValue,
   set: (value) => {
@@ -155,10 +162,14 @@ defineExpose({ focus, blur, getInputRef })
           "
           class="relative"
         >
+          <!-- Static label for all types -->
           <label
             v-if="showLabel && label"
             :for="id"
             class="block mb-2 text-sm font-medium text-fv-neutral-900 dark:text-white"
+            :class="{
+              'text-red-600 dark:text-red-400': checkErrors,
+            }"
           >
             {{ label }}
             <template v-if="type === 'range'">
@@ -166,51 +177,66 @@ defineExpose({ focus, blur, getInputRef })
             </template>
           </label>
 
-          <input
-            :id="id"
-            ref="inputRef"
-            v-model="model"
-            :type="type === 'datepicker' ? 'date' : type === 'phone' ? 'tel' : type"
-            :name="id"
-            :class="{
-              'error': checkErrors,
-              'bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-lg focus:ring-fv-primary-500 focus:border-fv-primary-500 block w-full p-2.5  dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400  dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500': type !== 'range',
-              'w-full h-2 bg-fv-neutral-200 rounded-lg appearance-none cursor-pointer dark:bg-fv-neutral-700': type === 'range',
-            }"
-            :autocomplete="autocomplete"
-            :min="type === 'range' ? minRange : undefined"
-            :max="type === 'range' ? maxRange : undefined"
-            :placeholder="placeholder"
-            :disabled="disabled"
-            :aria-describedby="help ? `${id}-help` : undefined"
-            :required="req"
-            :aria-invalid="checkErrors ? 'true' : 'false'"
-            @focus="handleFocus"
-            @blur="handleBlur"
-          >
+          <!-- Input element -->
+          <div class="relative">
+            <input
+              :id="id"
+              ref="inputRef"
+              v-model="model"
+              :type="type === 'datepicker' ? 'date' : type === 'phone' ? 'tel' : type"
+              :name="id"
+              :class="{
+                'error': checkErrors,
+                'bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm rounded-lg block w-full dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-300 dark:text-white transition-all duration-200': type !== 'range',
+                'p-2.5': type !== 'range',
+                'focus:border-fv-primary-500 dark:focus:border-fv-primary-500': !checkErrors,
+                'focus:ring-2 focus:ring-fv-primary-300 dark:focus:ring-fv-primary-800 focus:ring-opacity-50': type !== 'range',
+                'w-full h-3 bg-fv-neutral-200 rounded-lg appearance-none cursor-pointer dark:bg-fv-neutral-700': type === 'range',
+                'pr-10': copyButton,
+              }"
+              :autocomplete="autocomplete"
+              :min="type === 'range' ? minRange : undefined"
+              :max="type === 'range' ? maxRange : undefined"
+              :placeholder="placeholder"
+              :disabled="disabled"
+              :aria-describedby="help ? `${id}-help` : undefined"
+              :required="req"
+              :aria-invalid="checkErrors ? 'true' : 'false'"
+              @focus="handleFocus"
+              @blur="handleBlur"
+            >
+
+            <!-- Copy button -->
+            <button
+              v-if="copyButton && model"
+              type="button"
+              aria-label="Copy to clipboard"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-fv-neutral-500 hover:text-fv-primary-600 dark:text-fv-neutral-400 dark:hover:text-fv-primary-400"
+              @click="copyToClipboard"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+              </svg>
+            </button>
+          </div>
 
           <!-- Range Input Extra Labels -->
           <template v-if="type === 'range'">
-            <span
-              class="text-sm text-gray-500 dark:text-gray-400 absolute start-0 -bottom-6"
-            >
-              Min ({{ minRange }})
-            </span>
-            <span
-              class="text-sm text-gray-500 dark:text-gray-400 absolute start-1/3 -translate-x-1/2 rtl:translate-x-1/2 -bottom-6"
-            >
-              {{ ((maxRange - minRange) / 3 + minRange).toFixed(0) }}
-            </span>
-            <span
-              class="text-sm text-gray-500 dark:text-gray-400 absolute start-2/3 -translate-x-1/2 rtl:translate-x-1/2 -bottom-6"
-            >
-              {{ (((maxRange - minRange) / 3) * 2 + minRange).toFixed(0) }}
-            </span>
-            <span
-              class="text-sm text-gray-500 dark:text-gray-400 absolute end-0 -bottom-6"
-            >
-              Max ({{ maxRange }})
-            </span>
+            <div class="relative pt-6 mt-2">
+              <div class="flex justify-between gap-1 text-xs text-fv-neutral-500 dark:text-fv-neutral-400 px-1">
+                <span>{{ minRange }}</span>
+                <span>{{ ((maxRange - minRange) / 3 + minRange).toFixed(0) }}</span>
+                <span>{{ (((maxRange - minRange) / 3) * 2 + minRange).toFixed(0) }}</span>
+                <span>{{ maxRange }}</span>
+              </div>
+              <div class="w-full h-1 bg-fv-neutral-200 dark:bg-fv-neutral-700 rounded-full mt-1">
+                <div
+                  class="h-full bg-fv-primary-500 dark:bg-fv-primary-600 rounded-full"
+                  :style="{ width: `${((model as number || minRange) - minRange) / (maxRange - minRange) * 100}%` }"
+                />
+              </div>
+            </div>
           </template>
         </div>
 
@@ -261,16 +287,17 @@ defineExpose({ focus, blur, getInputRef })
               :required="req"
               :aria-invalid="checkErrors ? 'true' : 'false'"
               class="block p-2.5 w-full text-sm text-fv-neutral-900 bg-fv-neutral-50 rounded-lg
-                     border border-fv-neutral-300 focus:ring-fv-primary-500 focus:border-fv-primary-500
-                     dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-400
-                     dark:text-white dark:focus:ring-fv-primary-500 dark:focus:border-fv-primary-500"
+                     border border-fv-neutral-300 focus:ring-2 focus:ring-fv-primary-300 focus:border-fv-primary-500
+                     dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-300
+                     dark:text-white dark:focus:ring-fv-primary-800 dark:focus:border-fv-primary-500
+                     transition-colors duration-200 shadow-sm"
               @focus="handleFocus"
               @blur="handleBlur"
             />
           </div>
           <div
             v-if="dpOptions.counterMax && model"
-            class="text-sm text-fv-neutral-500 dark:text-fv-neutral-400"
+            class="text-sm text-fv-neutral-500 dark:text-fv-neutral-400 mt-1 text-right"
             :class="{
               'text-red-500 dark:text-red-300':
                 model?.toString().length > dpOptions.counterMax,
@@ -304,16 +331,16 @@ defineExpose({ focus, blur, getInputRef })
             :required="req"
             :aria-invalid="checkErrors ? 'true' : 'false'"
             class="block p-2.5 w-full text-sm text-fv-neutral-900 bg-fv-neutral-50
-                   rounded-lg border border-fv-neutral-300 focus:ring-fv-primary-500
-                   focus:border-fv-primary-500 dark:bg-fv-neutral-700 dark:border-fv-neutral-600
-                   dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500
-                   dark:focus:border-fv-primary-500"
+                   rounded-lg border border-fv-neutral-300 focus:ring-2 focus:ring-fv-primary-300 focus:border-fv-primary-500
+                   dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-300
+                   dark:text-white dark:focus:ring-fv-primary-800 dark:focus:border-fv-primary-500
+                   transition-colors duration-200 shadow-sm min-h-[100px]"
             @focus="handleFocus"
             @blur="handleBlur"
           />
           <div
             v-if="dpOptions.counterMax && model"
-            class="text-sm text-fv-neutral-500 dark:text-fv-neutral-400"
+            class="text-sm text-fv-neutral-500 dark:text-fv-neutral-400 mt-1 text-right"
             :class="{
               'text-red-500 dark:text-red-300':
                 model?.toString().length > dpOptions.counterMax,
@@ -332,34 +359,42 @@ defineExpose({ focus, blur, getInputRef })
           >
             {{ label }}
           </label>
-          <select
-            :id="id"
-            ref="inputRef"
-            v-model="model"
-            :name="id"
-            :disabled="disabled"
-            :aria-describedby="help ? `${id}-help` : undefined"
-            :required="req"
-            :class="{
-              error: checkErrors,
-            }"
-            :aria-invalid="checkErrors ? 'true' : 'false'"
-            class="bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm
-                   rounded-lg focus:ring-fv-primary-500 focus:border-fv-primary-500
-                   block w-full p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600
-                   dark:placeholder-fv-neutral-400 dark:text-white dark:focus:ring-fv-primary-500
-                   dark:focus:border-fv-primary-500"
-            @focus="handleFocus"
-            @blur="handleBlur"
-          >
-            <option
-              v-for="opt in options"
-              :key="opt[0]?.toString()"
-              :value="opt[0]"
+          <div class="relative">
+            <select
+              :id="id"
+              ref="inputRef"
+              v-model="model"
+              :name="id"
+              :disabled="disabled"
+              :aria-describedby="help ? `${id}-help` : undefined"
+              :required="req"
+              :class="{
+                error: checkErrors,
+              }"
+              :aria-invalid="checkErrors ? 'true' : 'false'"
+              class="appearance-none bg-fv-neutral-50 border border-fv-neutral-300 text-fv-neutral-900 text-sm
+                     rounded-lg focus:ring-2 focus:ring-fv-primary-300 focus:border-fv-primary-500
+                     block w-full p-2.5 dark:bg-fv-neutral-700 dark:border-fv-neutral-600
+                     dark:placeholder-fv-neutral-300 dark:text-white dark:focus:ring-fv-primary-800
+                     dark:focus:border-fv-primary-500 shadow-sm transition-colors duration-200 pr-10"
+              @focus="handleFocus"
+              @blur="handleBlur"
             >
-              {{ opt[1] }}
-            </option>
-          </select>
+              <option
+                v-for="opt in options"
+                :key="opt[0]?.toString()"
+                :value="opt[0]"
+              >
+                {{ opt[1] }}
+              </option>
+            </select>
+            <!-- Dropdown arrow icon -->
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-fv-neutral-700 dark:text-fv-neutral-300">
+              <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
     </template>
@@ -367,9 +402,10 @@ defineExpose({ focus, blur, getInputRef })
     <!-- TOGGLE (switch) -->
     <template v-else-if="type === 'toggle'">
       <label
-        class="inline-flex items-center mb-5 cursor-pointer"
+        class="inline-flex items-center mb-5 cursor-pointer group"
         :class="{
-          error: checkErrors,
+          'error': checkErrors,
+          'opacity-70 cursor-not-allowed': disabled,
         }"
       >
         <input
@@ -394,7 +430,7 @@ defineExpose({ focus, blur, getInputRef })
                  after:content-[''] after:absolute after:top-[2px] after:start-[2px]
                  after:bg-white after:border-fv-neutral-300 after:border after:rounded-full
                  after:w-5 after:h-5 after:transition-all dark:border-fv-neutral-600
-                 peer-checked:bg-fv-primary-600"
+                 peer-checked:bg-fv-primary-600 shadow-sm group-hover:shadow-md transition-all duration-200"
         />
         <span
           class="ms-3 text-sm font-medium text-fv-neutral-900 dark:text-fv-neutral-300"
@@ -414,14 +450,16 @@ defineExpose({ focus, blur, getInputRef })
 
     <!-- CHECKBOX / RADIO -->
     <template v-else-if="type === 'checkbox' || type === 'radio'">
-      <div class="flex mb-4">
+      <div class="flex mb-4" :class="{ 'opacity-70 cursor-not-allowed': disabled }">
         <div class="flex items-center h-5">
           <input
             :id="id"
             ref="inputRef"
             v-model="modelCheckbox"
             :class="{
-              error: checkErrors,
+              'error': checkErrors,
+              'cursor-not-allowed': disabled,
+              'cursor-pointer': !disabled,
             }"
             :aria-describedby="help ? `${id}-help` : undefined"
             :type="type"
@@ -432,7 +470,8 @@ defineExpose({ focus, blur, getInputRef })
             class="w-4 h-4 text-fv-primary-600 bg-fv-neutral-100 border-fv-neutral-300
                    rounded focus:ring-fv-primary-500 dark:focus:ring-fv-primary-600
                    dark:ring-offset-fv-neutral-800 dark:focus:ring-offset-fv-neutral-800
-                   focus:ring-2 dark:bg-fv-neutral-700 dark:border-fv-neutral-600"
+                   focus:ring-2 dark:bg-fv-neutral-700 dark:border-fv-neutral-600
+                   transition-colors duration-200 shadow-sm"
             @focus="handleFocus"
             @blur="handleBlur"
           >
@@ -440,7 +479,8 @@ defineExpose({ focus, blur, getInputRef })
         <div class="ms-2 text-sm">
           <label
             :for="id"
-            class="font-medium text-fv-neutral-900 dark:text-fv-neutral-300"
+            class="font-medium text-fv-neutral-900 dark:text-fv-neutral-300 cursor-pointer"
+            :class="{ 'cursor-not-allowed': disabled }"
           >
             {{ label }}
           </label>
@@ -458,10 +498,13 @@ defineExpose({ focus, blur, getInputRef })
     <!-- Error message -->
     <p
       v-if="checkErrors"
-      class="mt-0.5 text-sm text-red-600 dark:text-red-300"
+      class="mt-0.5 text-sm text-red-600 dark:text-red-300 flex items-center"
       role="alert"
       aria-live="assertive"
     >
+      <svg class="w-4 h-4 mr-1.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+      </svg>
       {{ checkErrors }}
     </p>
 
@@ -481,7 +524,60 @@ input,
 textarea,
 select {
   &.error {
-    @apply border-red-500 dark:border-red-400;
+    @apply border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-200 dark:focus:ring-red-800;
   }
+}
+
+/* Range input styling */
+input[type="range"] {
+  @apply appearance-none bg-transparent;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply appearance-none w-4 h-4 rounded-full bg-fv-primary-500 dark:bg-fv-primary-600 cursor-pointer border-0 shadow-md;
+  margin-top: -0.5rem;
+}
+
+input[type="range"]::-moz-range-thumb {
+  @apply w-4 h-4 rounded-full bg-fv-primary-500 dark:bg-fv-primary-600 cursor-pointer border-0 shadow-md;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  @apply ring-2 ring-fv-primary-300 dark:ring-fv-primary-800;
+}
+
+input[type="range"]:focus::-moz-range-thumb {
+  @apply ring-2 ring-fv-primary-300 dark:ring-fv-primary-800;
+}
+
+/* Textarea auto-grow */
+.grow-wrap {
+  @apply grid;
+}
+.grow-wrap::after {
+  content: attr(data-replicated-value) " ";
+  white-space: pre-wrap;
+  visibility: hidden;
+}
+.grow-wrap > textarea {
+  resize: none;
+  overflow: hidden;
+}
+.grow-wrap > textarea,
+.grow-wrap::after {
+  grid-area: 1 / 1 / 2 / 2;
+}
+
+/* Add smooth transitions */
+input, select, textarea, input[type="range"]::-webkit-slider-thumb, input[type="range"]::-moz-range-thumb {
+  @apply transition-all duration-200;
+}
+
+/* Placeholder styling */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  @apply text-fv-neutral-400 dark:text-fv-neutral-300;
+  opacity: 0.8;
 }
 </style>

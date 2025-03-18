@@ -153,100 +153,144 @@ onMounted(() => {
 <template>
   <div
     v-if="items && items.page_max > 1 && items.page_no"
-    class="flex items-center justify-center"
+    class="flex flex-col items-center justify-center"
   >
-    <div class="paging-container">
-      <nav aria-label="Pagination">
-        <ul class="flex items-center -space-x-px h-8 text-sm">
-          <li v-if="items.page_no >= 2">
+    <div class="paging-container w-full">
+      <nav aria-label="Pagination" class="mb-2 flex justify-center">
+        <ul class="pagination-list">
+          <!-- Previous Button -->
+          <li v-if="items.page_no >= 2" class="pagination-item md:block">
             <button
               type="button"
-              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+              class="pagination-button pagination-nav-button"
+              :aria-label="$t('previous_paging')"
+              title="Previous page"
               @click="prev()"
             >
+              <ChevronLeftIcon class="w-5 h-5" aria-hidden="true" />
               <span class="sr-only">{{ $t("previous_paging") }}</span>
-              <ChevronLeftIcon class="w-4 h-4" />
             </button>
           </li>
-          <li v-if="items.page_no - 2 > 1">
+          <li v-else class="pagination-item invisible md:hidden">
+            <div class="pagination-placeholder">
+              <ChevronLeftIcon class="w-5 h-5 invisible" aria-hidden="true" />
+            </div>
+          </li>
+
+          <!-- First Page -->
+          <li v-if="items.page_no - 2 > 1" class="pagination-item hidden md:block">
             <router-link
-              class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+              class="pagination-link"
               :to="page(1)"
+              aria-label="Go to page 1"
             >
               1
             </router-link>
           </li>
-          <li v-if="items.page_no - 2 > 2">
-            <div
-              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400"
-            >
-              ...
+
+          <!-- Ellipsis after first page -->
+          <li v-if="items.page_no - 2 > 2" class="pagination-item hidden md:block" aria-hidden="true">
+            <div class="pagination-ellipsis">
+              <span>•••</span>
             </div>
           </li>
+
+          <!-- Pages before current page -->
           <template v-for="i in 2">
             <li
               v-if="items.page_no - (3 - i) >= 1"
               :key="`page-${items.page_no - (3 - i)}`"
+              class="pagination-item hidden sm:block"
             >
               <router-link
-                class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+                class="pagination-link"
                 :to="page(items.page_no - (3 - i))"
+                :aria-label="`Go to page ${items.page_no - (3 - i)}`"
               >
                 {{ items.page_no - (3 - i) }}
               </router-link>
             </li>
           </template>
-          <li>
+
+          <!-- Current Page -->
+          <li class="pagination-item">
             <div
               aria-current="page"
-              class="z-10 flex items-center justify-center px-3 h-8 leading-tight text-primary-600 border border-primary-300 bg-primary-50 dark:border-fv-neutral-700 dark:bg-fv-neutral-700 dark:text-white"
+              class="pagination-current"
+              :aria-label="`Current page, Page ${items.page_no}`"
             >
               {{ items.page_no }}
             </div>
           </li>
+
+          <!-- Pages after current page -->
           <template v-for="i in 2">
             <li
               v-if="items.page_no + i <= items.page_max"
               :key="`page-x-${items.page_no + i}`"
+              class="pagination-item hidden sm:block"
             >
               <router-link
-                class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+                class="pagination-link"
                 :to="page(items.page_no + i)"
+                :aria-label="`Go to page ${items.page_no + i}`"
               >
                 {{ items.page_no + i }}
               </router-link>
             </li>
           </template>
-          <li v-if="items.page_no + 2 < items.page_max - 1">
-            <div
-              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400"
-            >
-              ...
+
+          <!-- Ellipsis before last page -->
+          <li v-if="items.page_no + 2 < items.page_max - 1" class="pagination-item hidden md:block" aria-hidden="true">
+            <div class="pagination-ellipsis">
+              <span>•••</span>
             </div>
           </li>
-          <li v-if="items.page_no + 2 < items.page_max">
+
+          <!-- Last Page -->
+          <li v-if="items.page_no + 2 < items.page_max" class="pagination-item hidden md:block">
             <router-link
-              class="flex items-center justify-center px-3 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+              class="pagination-link"
               :to="page(items.page_max)"
+              :aria-label="`Go to page ${items.page_max}`"
             >
               {{ items.page_max }}
             </router-link>
           </li>
-          <li v-if="items.page_no < items.page_max">
+
+          <!-- Next Button -->
+          <li v-if="items.page_no < items.page_max" class="pagination-item md:block">
             <button
               type="button"
-              class="flex items-center justify-center px-1.5 h-8 leading-tight text-fv-neutral-500 bg-white border border-fv-neutral-300 hover:bg-fv-neutral-100 hover:text-fv-neutral-700 dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-400 dark:hover:bg-fv-neutral-700 dark:hover:text-white"
+              class="pagination-button pagination-nav-button"
+              :aria-label="$t('next_paging')"
+              title="Next page"
               @click="next()"
             >
+              <ChevronRightIcon class="w-5 h-5" aria-hidden="true" />
               <span class="sr-only">{{ $t("next_paging") }}</span>
-              <ChevronRightIcon class="w-4 h-4" />
             </button>
+          </li>
+          <li v-else class="pagination-item invisible md:hidden">
+            <div class="pagination-placeholder">
+              <ChevronRightIcon class="w-5 h-5 invisible" aria-hidden="true" />
+            </div>
           </li>
         </ul>
       </nav>
+
+      <!-- Mobile page indication (x of y) -->
+      <div class="sm:hidden text-center mb-2">
+        <span class="text-sm font-medium text-fv-neutral-700 dark:text-fv-neutral-200">
+          Page {{ items.page_no }} of {{ items.page_max }}
+        </span>
+      </div>
+
+      <!-- Results summary -->
       <p
         v-if="showLegend"
-        class="text-xs text-fv-neutral-700 dark:text-fv-neutral-400 pt-0.5"
+        class="text-xs text-center text-fv-neutral-700 dark:text-fv-neutral-400"
+        aria-live="polite"
       >
         {{
           $t("global_paging", {
@@ -259,3 +303,65 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.pagination-list {
+  @apply inline-flex items-center justify-center gap-1 shadow-sm rounded-lg;
+}
+
+.pagination-item {
+  @apply flex items-center justify-center;
+}
+
+.pagination-link,
+.pagination-button,
+.pagination-current,
+.pagination-ellipsis,
+.pagination-placeholder {
+  @apply flex items-center justify-center;
+  min-width: 2.25rem;
+  height: 2.25rem;
+}
+
+.pagination-link {
+  @apply px-3 py-2 rounded-md text-sm font-medium bg-white border border-fv-neutral-200
+    text-fv-neutral-700 hover:bg-fv-neutral-50 hover:text-fv-primary-600
+    focus:z-10 focus:outline-none focus:ring-2 focus:ring-fv-primary-500 focus:ring-offset-1
+    transition-colors duration-200
+    dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-200
+    dark:hover:bg-fv-neutral-700 dark:hover:text-white
+    dark:focus:ring-fv-primary-500;
+}
+
+.pagination-current {
+  @apply px-3 py-2 rounded-md text-sm font-bold
+    bg-fv-primary-100 text-fv-primary-700 border border-fv-primary-300
+    dark:bg-fv-primary-900 dark:text-fv-primary-100 dark:border-fv-primary-700;
+}
+
+.pagination-nav-button {
+  @apply p-2 rounded-md text-fv-neutral-600 bg-white border border-fv-neutral-200
+    hover:bg-fv-neutral-50 hover:text-fv-primary-600
+    focus:z-10 focus:outline-none focus:ring-2 focus:ring-fv-primary-500 focus:ring-offset-1
+    transition-colors duration-200
+    dark:bg-fv-neutral-800 dark:border-fv-neutral-700 dark:text-fv-neutral-300
+    dark:hover:bg-fv-neutral-700 dark:hover:text-white;
+}
+
+.pagination-ellipsis {
+  @apply px-2 py-1 text-fv-neutral-500 dark:text-fv-neutral-400;
+}
+
+@media (max-width: 640px) {
+  .pagination-list {
+    @apply gap-2;
+  }
+
+  .pagination-link,
+  .pagination-button,
+  .pagination-current {
+    min-width: 2rem;
+    height: 2rem;
+  }
+}
+</style>
