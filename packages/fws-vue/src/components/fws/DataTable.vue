@@ -2,10 +2,11 @@
 import {
   ArrowDownIcon,
   ArrowDownTrayIcon,
+  ArrowsUpDownIcon,
   ArrowUpIcon,
 } from '@heroicons/vue/24/solid'
 import { useStorage } from '@vueuse/core'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEventBus } from '../../composables/event-bus'
 import { useRest } from '../../composables/rest'
@@ -30,6 +31,7 @@ const currentPage = ref<number>(1)
 const route = useRoute()
 const data = ref<any[]>([])
 const paging = ref<any>(undefined)
+const isLoading = ref<boolean>(false)
 const perPageOptions = [
   ['10', '10'],
   ['25', '25'],
@@ -68,7 +70,25 @@ const currentSort = useStorage<SortingField>(
   `${props.id}CurrentSort`,
   props.defaultSort,
 )
+
+// Computed properties for better reactivity
+const hasData = computed(() => data.value && data.value.length > 0)
+const hasExportableColumns = computed(() => props.exportableColumns.length > 0)
+const hasPaging = computed(() => paging.value && paging.value.page_max > 1 && paging.value.page_no)
+
+// Request controller for cancellation
+let currentRequest: AbortController | null = null
+
 async function getData(page: number = 1) {
+  // Cancel any ongoing request
+  if (currentRequest) {
+    currentRequest.abort()
+  }
+
+  // Create new abort controller for this request
+  currentRequest = new AbortController()
+
+  isLoading.value = true
   eventBus.emit('main-loading', true)
   if (route.query.page) page = Number.parseInt(route.query.page.toString())
   const sort: any = {}
@@ -79,19 +99,35 @@ async function getData(page: number = 1) {
     results_per_page: perPage.value,
     page_no: page,
   }
-  const r = await restFunction(props.apiPath, 'GET', requestParams, {
-    getBody: true,
-  })
-  currentPage.value = page
-  data.value = []
-  paging.value = undefined
-  if (r && r.result === 'success') {
-    data.value = r.data
-    paging.value = r.paging
-    eventBus.emit(`${props.id}NewData`, data.value)
+  try {
+    const r = await restFunction(props.apiPath, 'GET', requestParams, {
+      getBody: true,
+      signal: currentRequest.signal,
+    })
+    currentPage.value = page
+    data.value = []
+    paging.value = undefined
+    if (r && r.result === 'success') {
+      data.value = r.data
+      paging.value = r.paging
+      eventBus.emit(`${props.id}NewData`, data.value)
+    }
   }
-  eventBus.emit('main-loading', false)
+  catch (error) {
+    // Only log error if it's not an abort error
+    if (!(error instanceof DOMException && error.name === 'AbortError')) {
+      console.error('Error fetching data:', error)
+    }
+  }
+  finally {
+    if (currentRequest) {
+      currentRequest = null
+    }
+    isLoading.value = false
+    eventBus.emit('main-loading', false)
+  }
 }
+
 function sortData(key: string) {
   if (!props.sortables[key]) return
   const newSort: SortingField = {
@@ -112,7 +148,10 @@ function sortData(key: string) {
   }
   currentSort.value = { ...newSort }
 }
+
 function exportToCsv() {
+  if (!hasData.value || !hasExportableColumns.value) return
+
   const header = props.exportableColumns
     .map(column => props.headers[column] ?? column)
     .join(',')
@@ -149,6 +188,7 @@ function exportToCsv() {
   link.click()
   document.body.removeChild(link)
 }
+
 watch(perPage, () => {
   getData()
 })
@@ -181,47 +221,63 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
-    <div
-      class="flex gap-2 justify-between items-center border-b border-fv-primary-600 mb-2 pb-2"
-    >
-      <DefaultPaging v-if="paging" :id="`${props.id}Pages`" :items="paging" />
-      <button
-        v-if="exportableColumns.length && data.length"
-        class="btn primary small"
-        @click="exportToCsv"
-      >
-        <ArrowDownTrayIcon class="w-4 h-4 mr-2" />{{ $t("global_table_export") }}
-      </button>
-      <DefaultInput
-        :id="`${id}PerPage`"
-        v-model="perPage"
-        :options="perPageOptions"
-        :show-label="false"
-        type="select"
-        class="w-20"
-      />
+  <div class="data-table-container bg-white dark:bg-fv-neutral-900 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
+    <!-- Table header with controls -->
+    <div class="table-controls p-4 border-b border-fv-neutral-200 dark:border-fv-neutral-800">
+      <div v-if="hasExportableColumns && hasData" class="flex flex-wrap items-center justify-end gap-3">
+        <!-- Export button -->
+        <div class="flex items-center">
+          <button
+            class="export-btn flex items-center justify-center gap-2 px-3 py-2 bg-fv-neutral-100 hover:bg-fv-neutral-200 text-fv-neutral-800 rounded-lg text-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-fv-neutral-400 dark:bg-fv-neutral-800 dark:hover:bg-fv-neutral-700 dark:text-fv-neutral-200"
+            @click="exportToCsv"
+          >
+            <ArrowDownTrayIcon class="w-4 h-4" aria-hidden="true" />
+            <span class="hidden sm:inline">{{ $t("global_table_export") }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Pagination - top -->
+      <div v-if="hasPaging" class="mt-3 flex flex-wrap justify-between items-center gap-3">
+        <DefaultPaging :id="`${props.id}Pages`" :items="paging" />
+        <div class="flex items-center">
+          <DefaultInput
+            id="perPageSelectTop"
+            v-model="perPage"
+            :options="perPageOptions"
+            :show-label="false"
+            type="select"
+            class="w-20"
+          />
+        </div>
+      </div>
     </div>
 
+    <!-- Loading state -->
+    <div v-if="isLoading" class="flex justify-center items-center py-12">
+      <div class="loading-spinner w-8 h-8 border-4 border-fv-neutral-200 dark:border-fv-neutral-700 border-t-fv-primary-600 dark:border-t-fv-primary-500 rounded-full animate-spin" />
+    </div>
+
+    <!-- Table view -->
     <div
-      v-if="data.length"
-      class="relative overflow-x-auto border-fv-primary-600 sm:rounded-lg"
+      v-else-if="hasData"
+      class="overflow-x-auto"
     >
       <table
-        class="w-full text-sm text-left text-fv-neutral-500 dark:text-fv-neutral-400"
+        class="w-full text-sm text-left"
       >
         <thead
           v-if="showHeaders"
-          class="text-xs text-fv-neutral-700 uppercase bg-fv-neutral-50 dark:bg-fv-neutral-800 dark:text-fv-neutral-400"
+          class="text-xs uppercase bg-fv-neutral-50 dark:bg-fv-neutral-800 text-fv-neutral-700 dark:text-fv-neutral-300"
         >
           <tr>
             <th
               v-for="(header, key) in headers"
               :key="key"
               scope="col"
-              class="px-6 py-3 whitespace-nowrap"
+              class="px-6 py-4 whitespace-nowrap font-semibold"
               :class="{
-                'cursor-pointer': sortables[key],
+                'cursor-pointer hover:bg-fv-neutral-100 dark:hover:bg-fv-neutral-700 transition-colors duration-200': sortables[key],
               }"
               @click="
                 () => {
@@ -231,14 +287,22 @@ onUnmounted(() => {
                 }
               "
             >
-              {{ header }}
-              <template v-if="sortables[key] && currentSort.field === key">
-                <ArrowUpIcon
-                  v-if="currentSort.direction === 'desc'"
-                  class="inline w-3 h-3 align-top mt-0.5"
-                />
-                <ArrowDownIcon v-else class="inline w-3 h-3 align-top mt-0.5" />
-              </template>
+              <div class="flex items-center gap-1">
+                {{ header }}
+                <span v-if="sortables[key]" class="inline-flex">
+                  <ArrowsUpDownIcon v-if="currentSort.field !== key" class="w-4 h-4 text-fv-neutral-400 dark:text-fv-neutral-500" aria-hidden="true" />
+                  <ArrowUpIcon
+                    v-else-if="currentSort.direction === 'asc'"
+                    class="w-4 h-4 text-fv-primary-600 dark:text-fv-primary-400"
+                    aria-hidden="true"
+                  />
+                  <ArrowDownIcon
+                    v-else
+                    class="w-4 h-4 text-fv-primary-600 dark:text-fv-primary-400"
+                    aria-hidden="true"
+                  />
+                </span>
+              </div>
             </th>
           </tr>
         </thead>
@@ -246,15 +310,19 @@ onUnmounted(() => {
           <tr
             v-for="(row, index) in data"
             :key="index"
-            class="bg-white border-b dark:bg-fv-neutral-900 dark:border-fv-neutral-800 hover:bg-fv-neutral-50 dark:hover:bg-fv-neutral-950"
+            class="bg-white border-b dark:bg-fv-neutral-900 dark:border-fv-neutral-800 hover:bg-fv-neutral-50 dark:hover:bg-fv-neutral-900 transition-colors duration-200"
           >
-            <td v-for="(header, key) in headers" :key="key" class="px-6 py-4">
+            <td
+              v-for="(header, key) in headers"
+              :key="key"
+              class="px-6 py-4 align-middle"
+            >
               <slot :name="key" :value="row">
                 <template v-if="row[key]">
                   {{ row[key] }}
                 </template>
                 <template v-else>
-                  {{ $t("global_table_empty_cell") }}
+                  <span class="text-fv-neutral-400 dark:text-fv-neutral-600">{{ $t("global_table_empty_cell") }}</span>
                 </template>
               </slot>
             </td>
@@ -262,5 +330,124 @@ onUnmounted(() => {
         </tbody>
       </table>
     </div>
+
+    <!-- Empty state -->
+    <div v-else class="py-12 px-4 text-center">
+      <div class="empty-state flex flex-col items-center justify-center">
+        <svg class="w-16 h-16 text-fv-neutral-300 dark:text-fv-neutral-700 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+        </svg>
+        <p class="text-lg font-medium text-fv-neutral-700 dark:text-fv-neutral-300">
+          {{ $t("no_data_found") }}
+        </p>
+        <p class="text-sm text-fv-neutral-500 dark:text-fv-neutral-400 max-w-md mt-1">
+          {{ $t("try_another_search") }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Pagination - bottom -->
+    <div v-if="hasPaging" class="px-4 py-3 border-t border-fv-neutral-200 dark:border-fv-neutral-800">
+      <div class="flex flex-wrap justify-between items-center gap-3">
+        <DefaultPaging :id="`${props.id}Pages`" :items="paging" />
+        <div class="flex items-center">
+          <DefaultInput
+            id="perPageSelectBottom"
+            v-model="perPage"
+            :options="perPageOptions"
+            :show-label="false"
+            type="select"
+            class="w-20"
+          />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.data-table-container {
+  @apply transition-all duration-300;
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .table-controls {
+    @apply p-3;
+  }
+
+  td, th {
+    @apply px-3 py-3;
+  }
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Fade in animation for rows */
+tbody tr {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+
+/* Improved hover states for better interactivity */
+th, td {
+  @apply transition-colors duration-200;
+}
+
+/* Zebra striping for better readability */
+@media (prefers-reduced-motion: no-preference) {
+  tbody tr:nth-child(odd) {
+    @apply bg-fv-neutral-50 dark:bg-fv-neutral-900;
+  }
+
+  tbody tr:nth-child(odd):hover {
+    @apply bg-fv-neutral-100 dark:bg-fv-neutral-800;
+  }
+}
+
+/* Accessible focus styles */
+button:focus-visible,
+a:focus-visible {
+  @apply outline-none ring-2 ring-fv-primary-500 ring-offset-2 dark:ring-offset-fv-neutral-900;
+}
+
+/* Export button hover effect */
+.export-btn {
+  @apply relative overflow-hidden;
+}
+
+.export-btn::after {
+  content: '';
+  @apply absolute inset-0 opacity-0 transition-opacity duration-200;
+}
+
+.export-btn:hover::after {
+  @apply opacity-10 bg-black dark:bg-white;
+}
+
+/* Additional dark mode color for better contrast */
+.dark .data-table-container {
+  @apply bg-fv-neutral-900;
+}
+
+.dark tbody tr:nth-child(odd) {
+  @apply bg-fv-neutral-900;
+}
+
+.dark tbody tr:hover {
+  @apply bg-fv-neutral-800;
+}
+</style>
