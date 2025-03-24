@@ -52,11 +52,6 @@ function onCall(data: NotifProps) {
   // If there's an existing notification, remove it first
   hideNotif()
 
-  // Ensure a minimum of 1s if time is too short or undefined
-  if (!data.time || data.time < 1000) {
-    data.time = 5000
-  }
-
   // Automatically compute an icon if none is provided
   if (!data.imgIcon) {
     if (data.type === 'info') data.imgIcon = InformationCircleIcon
@@ -243,7 +238,7 @@ onUnmounted(() => {
     <div
       v-if="currentNotif !== null"
       id="base-notif"
-      class="fixed bottom-4 right-4 sm:right-8 z-[2000] max-w-sm w-full sm:w-96 rounded-lg border shadow-lg overflow-hidden backdrop-blur-sm transition-all duration-300 transform"
+      class="fixed !text-xs md:!text-sm bottom-3 right-3 sm:right-8 z-[2000] max-w-xs w-[calc(100%-1.5rem)] sm:w-72 rounded-lg border shadow-lg overflow-hidden backdrop-blur-sm transition-all duration-300 transform"
       role="alert"
       :aria-describedby="ariaDescribedBy"
       :class="[bgColor, borderColor, textColor]"
@@ -259,27 +254,27 @@ onUnmounted(() => {
         />
       </div>
 
-      <div class="p-4">
+      <div class="p-2 sm:p-3">
         <!-- Header with icon and title -->
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 sm:gap-3">
             <div class="flex-shrink-0" :class="[iconColor]">
               <img
                 v-if="currentNotif.imgSrc"
-                class="w-6 h-6 rounded-full"
+                class="w-5 h-5 sm:w-6 sm:h-6 rounded-full"
                 :src="currentNotif.imgSrc"
                 :alt="currentNotif.title"
               >
               <component
                 :is="currentNotif.imgIcon"
                 v-else
-                class="w-6 h-6"
+                class="w-5 h-5 sm:w-6 sm:h-6"
                 aria-hidden="true"
               />
             </div>
             <h3
               :id="ariaDescribedBy"
-              class="text-base font-semibold truncate"
+              class="text-sm sm:text-base font-semibold truncate"
               v-text="currentNotif.title"
             />
           </div>
@@ -287,19 +282,19 @@ onUnmounted(() => {
           <!-- Close button -->
           <button
             type="button"
-            class="inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900"
+            class="inline-flex rounded-md p-1 sm:p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900"
             :class="iconColor"
             aria-label="Close notification"
             @click="hideNotif"
           >
-            <XMarkIcon class="h-5 w-5" aria-hidden="true" />
+            <XMarkIcon class="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
           </button>
         </div>
 
         <!-- Notification content -->
         <div
           v-if="currentNotif.content"
-          class="mt-2 text-sm"
+          class="mt-1.5 sm:mt-2 text-xs sm:text-sm"
           :class="textColor"
           v-html="currentNotif.content"
         />
@@ -307,12 +302,12 @@ onUnmounted(() => {
         <!-- CTA buttons -->
         <div
           v-if="currentNotif.ctaText || currentNotif.ctaLink || currentNotif.ctaAction"
-          class="mt-3 flex justify-end gap-2"
+          class="mt-2 sm:mt-3 flex justify-end gap-2"
         >
           <a
             v-if="currentNotif.ctaLink"
             :href="currentNotif.ctaLink"
-            class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
+            class="inline-flex items-center px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
             :class="{
               'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500': currentNotif.type === 'info' || !currentNotif.type,
               'bg-amber-600 hover:bg-amber-700 text-white focus:ring-amber-500': currentNotif.type === 'warning',
@@ -325,7 +320,7 @@ onUnmounted(() => {
           <button
             v-else-if="currentNotif.ctaAction"
             type="button"
-            class="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
+            class="inline-flex items-center px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2"
             :class="{
               'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500': currentNotif.type === 'info' || !currentNotif.type,
               'bg-amber-600 hover:bg-amber-700 text-white focus:ring-amber-500': currentNotif.type === 'warning',

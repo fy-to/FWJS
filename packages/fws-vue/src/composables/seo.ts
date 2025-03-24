@@ -1,7 +1,6 @@
 import type { Ref } from 'vue'
 import { getLocale, getPrefix, getURL } from '@fy-/fws-js'
 import { useHead, useSeoMeta } from '@unhead/vue'
-import { useRoute } from 'vue-router'
 
 export interface LazyHead {
   name?: string
@@ -29,7 +28,6 @@ export interface LazyHead {
 
 // eslint-disable-next-line unused-imports/no-unused-vars
 export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
-  const route = useRoute()
   const currentLocale = getLocale()
   // const url = getURL()
 
@@ -90,7 +88,7 @@ export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
   })
 
   useSeoMeta({
-    ogUrl: () => `${getURL().Scheme}://${getURL().Host}${route.fullPath}`,
+    ogUrl: () => `${getURL().Canonical}`,
     ogLocale: () => {
       if (currentLocale) {
         return currentLocale.replace('-', '_')

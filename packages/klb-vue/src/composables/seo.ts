@@ -30,7 +30,6 @@ export interface LazyHead {
 
 // eslint-disable-next-line unused-imports/no-unused-vars
 export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
-  const route = useRoute()
   const currentLocale = getLocale()
   // const url = getUrl()
 
@@ -91,7 +90,7 @@ export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
   })
 
   useSeoMeta({
-    ogUrl: () => `${getUrl().scheme}://${getUrl().host}${route.fullPath}`,
+    ogUrl: () => `${getUrl().Canonical}`,
     ogLocale: () => {
       if (currentLocale) {
         return currentLocale.replace('-', '_')

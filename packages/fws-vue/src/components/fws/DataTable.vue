@@ -76,20 +76,29 @@ const hasData = computed(() => data.value && data.value.length > 0)
 const hasExportableColumns = computed(() => props.exportableColumns.length > 0)
 const hasPaging = computed(() => paging.value && paging.value.page_max > 1 && paging.value.page_no)
 
-// Request controller for cancellation
-let currentRequest: AbortController | null = null
+// Request cancellation management
+const currentRequest = ref<AbortController | null>(null)
+// Keep track of the latest request to prevent race conditions
+const requestCounter = ref<number>(0)
 
 async function getData(page: number = 1) {
+  // Increment request counter to track the latest request
+  const thisRequestNumber = requestCounter.value + 1
+  requestCounter.value = thisRequestNumber
+
   // Cancel any ongoing request
-  if (currentRequest) {
-    currentRequest.abort()
+  if (currentRequest.value) {
+    currentRequest.value.abort()
+    currentRequest.value = null
   }
 
   // Create new abort controller for this request
-  currentRequest = new AbortController()
+  currentRequest.value = new AbortController()
+  const signal = currentRequest.value.signal
 
   isLoading.value = true
   eventBus.emit('main-loading', true)
+
   if (route.query.page) page = Number.parseInt(route.query.page.toString())
   const sort: any = {}
   sort[currentSort.value.field] = currentSort.value.direction
@@ -99,32 +108,47 @@ async function getData(page: number = 1) {
     results_per_page: perPage.value,
     page_no: page,
   }
+
   try {
+    // Store controller in local variable for closure safety
+    const localAbortController = currentRequest.value
+
     const r = await restFunction(props.apiPath, 'GET', requestParams, {
       getBody: true,
-      signal: currentRequest.signal,
+      signal,
     })
-    currentPage.value = page
-    data.value = []
-    paging.value = undefined
-    if (r && r.result === 'success') {
-      data.value = r.data
-      paging.value = r.paging
-      eventBus.emit(`${props.id}NewData`, data.value)
+
+    // Only process this response if it's from the most recent request
+    // This prevents race conditions where a slow request returns after a newer one
+    if (thisRequestNumber === requestCounter.value && localAbortController === currentRequest.value) {
+      currentPage.value = page
+      data.value = []
+      paging.value = undefined
+
+      if (r && r.result === 'success') {
+        data.value = r.data
+        paging.value = r.paging
+        eventBus.emit(`${props.id}NewData`, data.value)
+      }
     }
   }
   catch (error) {
-    // Only log error if it's not an abort error
-    if (!(error instanceof DOMException && error.name === 'AbortError')) {
+    // Only log error if it's not an abort error and it's from the current request
+    if (!(error instanceof DOMException && error.name === 'AbortError')
+      && thisRequestNumber === requestCounter.value) {
       console.error('Error fetching data:', error)
     }
   }
   finally {
-    if (currentRequest) {
-      currentRequest = null
+    // Only reset loading state if this is the most recent request
+    if (thisRequestNumber === requestCounter.value) {
+      // Clear the controller reference only if it's still the same one
+      if (currentRequest.value && currentRequest.value.signal === signal) {
+        currentRequest.value = null
+      }
+      isLoading.value = false
+      eventBus.emit('main-loading', false)
     }
-    isLoading.value = false
-    eventBus.emit('main-loading', false)
   }
 }
 

@@ -90,7 +90,7 @@ export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
   })
 
   useSeoMeta({
-    ogUrl: () => `${getURL().Scheme}://${getURL().Host}${route.fullPath}`,
+    ogUrl: () => `${getURL().Canonical}`,
     ogLocale: () => {
       if (currentLocale) {
         return currentLocale.replace('-', '_')

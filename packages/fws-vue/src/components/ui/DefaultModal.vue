@@ -67,7 +67,7 @@ const props = withDefaults(
   {
     closeIcon: () => h(XCircleIcon),
     mSize: 'w-full',
-    ofy: 'overflow-y-auto',
+    ofy: 'overflow-y-auto cool-scroll-modal',
   },
 )
 
@@ -250,7 +250,7 @@ function handleBackdropClick(event: MouseEvent) {
     >
       <div
         v-if="isOpen"
-        class="fixed inset-0 overflow-y-auto"
+        class="fixed inset-0"
         :style="{ zIndex }"
         role="dialog"
         :aria-labelledby="title ? `${props.id}-title` : undefined"
@@ -267,7 +267,7 @@ function handleBackdropClick(event: MouseEvent) {
           <!-- Modal panel -->
           <div
             ref="modalRef"
-            :class="`relative ${mSize} max-w-6xl max-h-full ${ofy} bg-white rounded-lg shadow dark:bg-fv-neutral-900`"
+            :class="`relative ${mSize} max-w-6xl max-h-[85vh] px-4 sm:px-0 box-border bg-white rounded-lg shadow dark:bg-fv-neutral-900 flex flex-col`"
             :style="{ zIndex }"
             tabindex="-1"
             @click.stop
@@ -293,7 +293,7 @@ function handleBackdropClick(event: MouseEvent) {
               </button>
             </div>
             <!-- Content area -->
-            <div class="p-3 space-y-3">
+            <div :class="`p-3 space-y-3 flex-grow ${ofy}`">
               <slot />
             </div>
           </div>

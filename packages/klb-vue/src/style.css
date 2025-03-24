@@ -5,6 +5,11 @@
   @apply text-fv-neutral-500 dark:text-fv-neutral-400;
 }
 
+.cool-scroll-modal {
+  @apply dark:scrollbar-thumb-fv-neutral-500 dark:scrollbar-track-fv-neutral-800 scrollbar-thin scrollbar-thumb-fv-primary-400 scrollbar-track-fv-neutral-200;
+  -webkit-overflow-scrolling: touch;
+}
+
 .fws-link {
   @apply text-fv-primary-700 dark:text-fv-primary-300 inline-flex items-center underline hover:no-underline;
 }
