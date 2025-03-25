@@ -2,7 +2,8 @@
 import type { BreadcrumbLink } from '../../types'
 import { getURL, stringHash } from '@fy-/fws-js'
 import { ChevronRightIcon, HomeIcon } from '@heroicons/vue/24/solid'
-import { defineBreadcrumb, useSchemaOrg } from '@unhead/schema-org'
+import { defineBreadcrumb } from '@unhead/schema-org'
+import { useSchemaOrg } from '@unhead/schema-org/vue'
 
 const props = withDefaults(
   defineProps<{

@@ -28,7 +28,7 @@
   "types": "src/index.ts",
   "scripts": {
     "clean": "rimraf dist",
-    "type-check": "tsc --noEmit",
+    "type-check": "vue-tsc --noEmit --composite false",
     "copy": "pnpm run clean && cp -r src/ dist/ && node copyPackage.js",
     "build": "pnpm run lint:check && pnpm run type-check && pnpm run copy",
     "lint:check": "eslint src/",

@@ -4,7 +4,7 @@ import { computed, ref, toRef } from 'vue'
 import { useTranslation } from '../../composables/translations'
 import DefaultTagInput from './DefaultTagInput.vue'
 
-type modelValueType = string | number | string[] | number[] | undefined
+type modelValueType = string | number | string[] | number[] | Record<string, any> | undefined
 type checkboxValueType = any[] | Set<any> | undefined | boolean
 
 const props = withDefaults(
