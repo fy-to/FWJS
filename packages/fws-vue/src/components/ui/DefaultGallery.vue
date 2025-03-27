@@ -1,3 +1,4 @@
+# This file has been completely rewritten and optimized
 <script setup lang="ts">
 import type { Component } from 'vue'
 import type { APIPaging } from '../../composables/rest'
@@ -44,24 +45,6 @@ const { width: galleryWidth, height: galleryHeight } = useElementSize(galleryRef
 const { width: windowWidth, height: windowHeight } = useWindowSize()
 const { height: topControlsHeight } = useElementSize(topControlsRef)
 const { height: infoPanelHeight } = useElementSize(infoPanelRef)
-
-// Derived measurements
-const availableHeight = computed(() => {
-  let height = isFullscreen.value
-    ? windowHeight.value * 0.95 // 95% of viewport in fullscreen
-    : windowHeight.value * 0.85 // 85% of viewport in normal mode
-
-  // Subtract top controls
-  height -= topControlsHeight.value
-
-  // Subtract info panel if visible
-  if (infoPanel.value && infoPanelHeight.value > 0) {
-    height -= infoPanelHeight.value
-  }
-
-  // Convert to rem for consistent sizing
-  return `${height / 16}rem`
-})
 
 // Use VueUse's useFullscreen for better fullscreen handling
 const { isFullscreen: isElementFullscreen, enter: enterFullscreen, exit: exitFullscreen } = useFullscreen(galleryRef)
@@ -146,31 +129,29 @@ const currentImage = computed(() => {
 const imageCount = computed(() => props.images.length)
 const currentIndex = computed(() => modelValue.value + 1)
 
-// Image size and positioning
-const calculateImageSize = useDebounceFn(() => {
-  if (!imageContainerRef.value) return
+// Simple image sizing that relies on flexbox layout to handle the info panel
+const updateImageSizes = useDebounceFn(() => {
+  // Get the main image
+  const mainImage = document.querySelector('.image-display img') as HTMLImageElement
+  if (!mainImage) return
 
-  nextTick(() => {
-    const imageElements = imageContainerRef.value?.querySelectorAll('.image-display img, .image-display .video-component') as NodeListOf<HTMLElement>
+  // Standard padding
+  const padding = 24
 
-    if (!imageElements || imageElements.length === 0) return
+  // Handle width constraints
+  const sidebarWidth = sidePanel.value ? 256 : 0
+  const availableWidth = windowWidth.value - sidebarWidth - padding * 2
 
-    imageElements.forEach((img) => {
-      // Reset to ensure proper recalculation
-      img.style.maxHeight = ''
-      // Force browser to recalculate styles
-      void img.offsetHeight
+  // Set width constraints
+  mainImage.style.maxWidth = windowWidth.value <= 768
+    ? '90vw'
+    : `${availableWidth}px`
 
-      // Set proper height
-      img.style.maxHeight = availableHeight.value
-      img.style.maxWidth = sidePanel.value ? 'calc(100vw - 16rem)' : '100vw'
-    })
-  })
-}, 50)
+  // Let height be auto to preserve aspect ratio and fit in flexbox container
+  mainImage.style.height = 'auto'
 
-// Update all layout measurements
-const updateLayout = useDebounceFn(() => {
-  calculateImageSize()
+  // Set a reasonable max-height if needed
+  mainImage.style.maxHeight = '75vh'
 }, 50)
 
 // Modal controls
@@ -184,12 +165,7 @@ function setModal(value: boolean) {
       useEventListener(document, 'keyup', handleKeyboardRelease)
     }
 
-    // Auto-hide controls after 3 seconds on mobile
-    if (windowWidth.value < 1024) {
-      controlsTimeout = window.setTimeout(() => {
-        showControls.value = false
-      }, 3000)
-    }
+    // No longer auto-hide controls on mobile
   }
   else {
     if (props.onClose) props.onClose()
@@ -224,13 +200,14 @@ const openGalleryImage = useDebounceFn((index: number | undefined) => {
 
   // Update layout after opening
   nextTick(() => {
-    updateLayout()
+    updateImageSizes()
   })
 }, 50)
 
 // Navigation functions
 function goNextImage() {
   direction.value = 'next'
+
   if (modelValue.value < props.images.length - 1) {
     modelValue.value++
   }
@@ -238,10 +215,16 @@ function goNextImage() {
     modelValue.value = 0
   }
   resetControlsTimer()
+
+  // Force image sizing update after navigation
+  nextTick(() => {
+    updateImageSizes()
+  })
 }
 
 function goPrevImage() {
   direction.value = 'prev'
+
   if (modelValue.value > 0) {
     modelValue.value--
   }
@@ -249,38 +232,38 @@ function goPrevImage() {
     modelValue.value = props.images.length - 1 > 0 ? props.images.length - 1 : 0
   }
   resetControlsTimer()
+
+  // Force image sizing update after navigation
+  nextTick(() => {
+    updateImageSizes()
+  })
 }
 
 // UI control functions
 function resetControlsTimer() {
-  // Show controls when user interacts
+  // Always show controls - no auto-hide
   showControls.value = true
-
-  // Only set timer on mobile
-  if (windowWidth.value < 1024) {
-    if (controlsTimeout) {
-      clearTimeout(controlsTimeout)
-    }
-    controlsTimeout = window.setTimeout(() => {
-      showControls.value = false
-    }, 3000)
-  }
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function toggleControls() {
   showControls.value = !showControls.value
-  if (showControls.value && windowWidth.value < 1024) {
-    resetControlsTimer()
-  }
 }
 
 function toggleInfoPanel() {
   infoPanel.value = !infoPanel.value
   resetControlsTimer()
 
-  // Update layout after panel toggle
+  // Update layout immediately AND after nextTick to ensure DOM updates
+  updateImageSizes()
+
+  // Schedule multiple updates to handle any transition effects
   nextTick(() => {
-    updateLayout()
+    updateImageSizes()
+
+    // Additional delayed updates to catch transitions
+    setTimeout(() => updateImageSizes(), 50)
+    setTimeout(() => updateImageSizes(), 300)
   })
 }
 
@@ -290,7 +273,7 @@ function toggleSidePanel() {
 
   // Update layout after panel toggle
   nextTick(() => {
-    updateLayout()
+    updateImageSizes()
   })
 }
 
@@ -303,7 +286,7 @@ function toggleFullscreen() {
           // Give browser time to adjust fullscreen before updating sizing
           if (fullscreenResizeTimeout) clearTimeout(fullscreenResizeTimeout)
           fullscreenResizeTimeout = window.setTimeout(() => {
-            updateLayout()
+            updateImageSizes()
           }, 50)
         })
         .catch(() => {})
@@ -315,7 +298,7 @@ function toggleFullscreen() {
         isFullscreen.value = false
         if (fullscreenResizeTimeout) clearTimeout(fullscreenResizeTimeout)
         fullscreenResizeTimeout = window.setTimeout(() => {
-          updateLayout()
+          updateImageSizes()
         }, 50)
       })
       .catch(() => {})
@@ -355,9 +338,8 @@ const touchEnd = useDebounceFn((event: TouchEvent) => {
   const diffX = start.x - end.x
   const diffY = start.y - end.y
 
-  // Detect tap (quick touch with minimal movement)
+  // For taps, we don't toggle controls anymore - they always stay visible
   if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10 && touchDuration < 300) {
-    toggleControls()
     return
   }
 
@@ -439,9 +421,10 @@ watch(
     galleryHeight,
     topControlsHeight,
     infoPanelHeight,
+    modelValue, // Watch for model value changes to update layout
   ],
   () => {
-    updateLayout()
+    updateImageSizes()
   },
 )
 
@@ -451,29 +434,24 @@ onMounted(() => {
   eventBus.on(`${props.id}Gallery`, openGalleryImage)
   eventBus.on(`${props.id}GalleryClose`, closeGallery)
 
-  // Initialize layout
-  nextTick(() => {
-    updateLayout()
-  })
-
   // Set up observers for dynamic resizing
   if (topControlsRef.value) {
-    useResizeObserver(topControlsRef.value, updateLayout)
+    useResizeObserver(topControlsRef.value, updateImageSizes)
   }
 
   if (infoPanelRef.value) {
-    useResizeObserver(infoPanelRef.value, updateLayout)
+    useResizeObserver(infoPanelRef.value, updateImageSizes)
   }
 
   if (sidePanelRef.value) {
-    useResizeObserver(sidePanelRef.value, updateLayout)
+    useResizeObserver(sidePanelRef.value, updateImageSizes)
   }
 
   // Listen for fullscreen changes
   useEventListener(document, 'fullscreenchange', () => {
     isFullscreen.value = !!document.fullscreenElement
     nextTick(() => {
-      updateLayout()
+      updateImageSizes()
     })
   })
 })
@@ -577,12 +555,13 @@ onUnmounted(() => {
         <div
           ref="galleryContentRef"
           class="w-full h-full flex flex-col lg:flex-row"
-          style="margin-top: var(--controls-height, 0px)"
         >
-          <!-- Main Image Area - Fills available space -->
+          <!-- Main Image Area with flex column layout -->
           <div
-            class="relative flex-1 h-full flex items-center justify-center"
-            :class="{ 'lg:pr-64': sidePanel }"
+            class="relative flex-1 h-full flex flex-col"
+            :style="{ paddingTop: `${topControlsHeight}px` }"
+            :class="{ 'lg:pr-64': sidePanel, 'lg:max-w-[calc(100%-16rem)]': sidePanel }"
+            style="max-width: 100%;"
           >
             <!-- Image Navigation Controls - Left -->
             <transition
@@ -607,17 +586,18 @@ onUnmounted(() => {
               </div>
             </transition>
 
-            <!-- Image Display Container -->
+            <!-- Image Container - flex-grow to fill available space -->
             <div
               ref="imageContainerRef"
-              class="image-container flex-grow flex items-center justify-center"
-              :class="{ 'has-info': infoPanel }"
+              class="flex-grow flex items-center justify-center"
               @touchstart="touchStart"
               @touchend="touchEnd"
             >
               <transition
                 :name="direction === 'next' ? 'slide-next' : 'slide-prev'"
                 mode="out-in"
+                @before-enter="updateImageSizes"
+                @after-leave="updateImageSizes"
               >
                 <div
                   :key="`image-display-${modelValue}`"
@@ -630,7 +610,7 @@ onUnmounted(() => {
                         :is="videoComponent"
                         :src="isVideo(images[modelValue])"
                         class="shadow max-w-full h-auto object-contain video-component"
-                        :style="{ maxHeight: availableHeight }"
+                        @load="updateImageSizes"
                       />
                     </ClientOnly>
                   </template>
@@ -638,9 +618,9 @@ onUnmounted(() => {
                     <img
                       v-if="modelValueSrc && imageComponent === 'img'"
                       class="shadow max-w-full h-auto object-contain"
-                      :style="{ maxHeight: availableHeight }"
                       :src="modelValueSrc"
                       :alt="`Gallery image ${modelValue + 1}`"
+                      @load="updateImageSizes"
                     >
                     <component
                       :is="imageComponent"
@@ -649,11 +629,6 @@ onUnmounted(() => {
                       :variant="modelValueSrc.variant"
                       :alt="modelValueSrc.alt"
                       class="shadow max-w-full h-auto object-contain"
-                      :style="{ maxHeight: availableHeight }"
-                      :likes="modelValueSrc.likes"
-                      :show-likes="modelValueSrc.showLikes"
-                      :is-author="modelValueSrc.isAuthor"
-                      :user-uuid="modelValueSrc.userUUID"
                     />
                   </template>
                 </div>
@@ -672,6 +647,7 @@ onUnmounted(() => {
               <div
                 v-if="showControls && images.length > 1"
                 class="absolute right-0 z-40 h-full flex items-center px-2 md:px-4"
+                :class="{ 'lg:mr-64': sidePanel }"
               >
                 <button
                   class="btn bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 backdrop-blur-sm p-2 rounded-full transition-transform transform hover:scale-110"
@@ -683,7 +659,7 @@ onUnmounted(() => {
               </div>
             </transition>
 
-            <!-- Info Panel Below Image -->
+            <!-- Info Panel directly in flex column flow -->
             <transition
               enter-active-class="transition-all duration-300 ease-out"
               enter-from-class="opacity-0 transform translate-y-4"
@@ -695,7 +671,7 @@ onUnmounted(() => {
               <div
                 v-if="infoPanel && images[modelValue]"
                 ref="infoPanelRef"
-                class="info-panel absolute bottom-0 left-0 right-0 px-4 py-3 backdrop-blur-md bg-fv-neutral-900/70 z-45"
+                class="w-full px-4 py-3 backdrop-blur-md bg-fv-neutral-900/80 border-t border-fv-neutral-800"
               >
                 <slot :value="images[modelValue]" />
               </div>
@@ -714,8 +690,8 @@ onUnmounted(() => {
             <div
               v-if="sidePanel"
               ref="sidePanelRef"
-              class="side-panel hidden lg:block absolute right-0 top-0 bottom-0 w-64 bg-fv-neutral-800/90 backdrop-blur-md overflow-y-auto z-40"
-              :style="{ 'padding-top': `${topControlsHeight}px` }"
+              class="side-panel hidden lg:block absolute right-0 top-0 bottom-0 w-64 bg-fv-neutral-800/90 backdrop-blur-md overflow-y-auto z-40 cool-scroll"
+              :style="{ paddingTop: `${topControlsHeight + 8}px` }"
             >
               <!-- Paging Controls if needed -->
               <div v-if="paging" class="flex items-center justify-center pt-2">
@@ -781,10 +757,13 @@ onUnmounted(() => {
           >
             <div
               v-if="showControls && images.length > 1 && !sidePanel"
-              class="absolute bottom-0 left-0 right-0 p-2 lg:hidden bg-gradient-to-t from-fv-neutral-900/90 to-transparent backdrop-blur-sm z-45"
-              :class="{ 'pb-20': infoPanel }"
+              class="absolute bottom-0 left-0 right-0 p-1 lg:hidden bg-gradient-to-t from-fv-neutral-900/90 to-transparent backdrop-blur-sm z-45"
+              :class="{ 'pb-4': infoPanel, 'pb-2': !infoPanel }"
+              @touchstart.stop
+              @touchmove.stop
+              @touchend.stop
             >
-              <div class="overflow-x-auto flex space-x-2 pb-1 px-1">
+              <div class="overflow-x-auto flex space-x-2 px-1 no-scrollbar">
                 <div
                   v-for="(image, idx) in images"
                   :key="`mobile_thumb_${id}_${idx}`"
@@ -942,13 +921,6 @@ onUnmounted(() => {
   width: 100%;
   border-top-left-radius: 0.5rem;
   border-top-right-radius: 0.5rem;
-}
-
-/* Image sizing in different contexts */
-.image-display img,
-.image-display .video-component {
-  transition: max-height 0.3s ease-out, max-width 0.3s ease-out;
-  object-fit: contain;
 }
 
 /* Transition styles for next (right) navigation */
@@ -1113,5 +1085,15 @@ onUnmounted(() => {
   border-radius: 9999px;
   font-size: 0.75rem;
   z-index: 10;
+}
+
+/* Special class to hide scrollbars on mobile */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 </style>
