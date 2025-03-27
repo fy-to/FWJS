@@ -9,7 +9,8 @@ import {
   InformationCircleIcon,
   XMarkIcon,
 } from '@heroicons/vue/24/solid'
-import { computed, h, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useDebounceFn, useEventListener, useFullscreen, useResizeObserver } from '@vueuse/core'
+import { computed, h, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef, watch } from 'vue'
 import { useEventBus } from '../../composables/event-bus'
 import DefaultPaging from './DefaultPaging.vue'
 
@@ -21,6 +22,21 @@ const isFullscreen = ref<boolean>(false)
 const infoPanel = ref<boolean>(true) // Show info panel by default
 const touchStartTime = ref<number>(0)
 const infoHeight = ref<number>(0)
+const galleryContainerRef = shallowRef<HTMLElement | null>(null)
+
+// Use VueUse's useFullscreen for better fullscreen handling
+const { isFullscreen: isElementFullscreen, enter: enterFullscreen, exit: exitFullscreen } = useFullscreen(galleryContainerRef)
+
+// Track when fullscreen changes externally (like Escape key)
+watch(isElementFullscreen, (newValue) => {
+  isFullscreen.value = newValue
+  if (newValue) {
+    // Force update of image size when entering fullscreen
+    nextTick(() => {
+      updateImageSizes()
+    })
+  }
+})
 
 const props = withDefaults(
   defineProps<{
@@ -72,14 +88,34 @@ const modelValue = computed({
 const direction = ref<'next' | 'prev'>('next')
 
 let controlsTimeout: number | null = null
+let fullscreenResizeTimeout: number | null = null
+
+// Used to maintain consistent image sizes
+function updateImageSizes() {
+  nextTick(() => {
+    const imageContainers = document.querySelectorAll('.image-container img, .image-container .video-component') as NodeListOf<HTMLElement>
+    if (imageContainers && imageContainers.length > 0) {
+      imageContainers.forEach((img) => {
+        // Force a reflow to ensure correct sizing
+        if (img.style.maxHeight) {
+          const currentMaxHeight = img.style.maxHeight
+          img.style.maxHeight = ''
+          // Force browser to recalculate styles
+          void img.offsetHeight
+          img.style.maxHeight = currentMaxHeight
+        }
+      })
+    }
+  })
+}
 
 function setModal(value: boolean) {
   if (value === true) {
     if (props.onOpen) props.onOpen()
     document.body.style.overflow = 'hidden' // Prevent scrolling when gallery is open
     if (!import.meta.env.SSR) {
-      document.addEventListener('keydown', handleKeyboardInput)
-      document.addEventListener('keyup', handleKeyboardRelease)
+      useEventListener(document, 'keydown', handleKeyboardInput)
+      useEventListener(document, 'keyup', handleKeyboardRelease)
     }
     // Auto-hide controls after 3 seconds on mobile
     if (window.innerWidth < 1024) {
@@ -91,19 +127,15 @@ function setModal(value: boolean) {
   else {
     if (props.onClose) props.onClose()
     document.body.style.overflow = '' // Restore scrolling
-    if (!import.meta.env.SSR) {
-      document.removeEventListener('keydown', handleKeyboardInput)
-      document.removeEventListener('keyup', handleKeyboardRelease)
+    // Exit fullscreen if active
+    if (isFullscreen.value) {
+      exitFullscreen()
+      isFullscreen.value = false
     }
     // Clear timeout if modal is closed
     if (controlsTimeout) {
       clearTimeout(controlsTimeout)
       controlsTimeout = null
-    }
-    // Exit fullscreen if active
-    if (isFullscreen.value && document.exitFullscreen) {
-      document.exitFullscreen().catch(() => {})
-      isFullscreen.value = false
     }
   }
   isGalleryOpen.value = value
@@ -111,7 +143,7 @@ function setModal(value: boolean) {
   // Don't reset info panel state when opening/closing
 }
 
-function openGalleryImage(index: number | undefined) {
+const openGalleryImage = useDebounceFn((index: number | undefined) => {
   if (index === undefined) {
     modelValue.value = 0
   }
@@ -119,7 +151,7 @@ function openGalleryImage(index: number | undefined) {
     modelValue.value = Number.parseInt(index.toString())
   }
   setModal(true)
-}
+}, 50) // Debounce to prevent accidental double-opens
 
 function goNextImage() {
   direction.value = 'next'
@@ -200,24 +232,31 @@ function toggleInfoPanel() {
 
 function toggleFullscreen() {
   if (!isFullscreen.value) {
-    const element = document.querySelector('.gallery-container') as HTMLElement
-    if (element && element.requestFullscreen) {
-      element.requestFullscreen().then(() => {
-        isFullscreen.value = true
-      }).catch(() => {})
+    if (galleryContainerRef.value) {
+      enterFullscreen()
+        .then(() => {
+          isFullscreen.value = true
+          // Give browser time to adjust fullscreen before updating sizing
+          if (fullscreenResizeTimeout) clearTimeout(fullscreenResizeTimeout)
+          fullscreenResizeTimeout = window.setTimeout(() => {
+            updateImageSizes()
+          }, 50)
+        })
+        .catch(() => {})
     }
   }
   else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen().then(() => {
+    exitFullscreen()
+      .then(() => {
         isFullscreen.value = false
-      }).catch(() => {})
-    }
+      })
+      .catch(() => {})
   }
   resetControlsTimer()
 }
 
-function touchStart(event: TouchEvent) {
+// Touch handling with debounce to prevent multiple rapid changes
+const touchStart = useDebounceFn((event: TouchEvent) => {
   const touch = event.touches[0]
   const targetElement = touch.target as HTMLElement
 
@@ -231,9 +270,9 @@ function touchStart(event: TouchEvent) {
 
   start.x = touch.screenX
   start.y = touch.screenY
-}
+}, 50)
 
-function touchEnd(event: TouchEvent) {
+const touchEnd = useDebounceFn((event: TouchEvent) => {
   const touch = event.changedTouches[0]
   const targetElement = touch.target as HTMLElement
   const touchDuration = Date.now() - touchStartTime.value
@@ -265,7 +304,7 @@ function touchEnd(event: TouchEvent) {
       goPrevImage()
     }
   }
-}
+}, 50)
 
 function getBorderColor(i: any) {
   if (props.borderColor !== undefined) {
@@ -316,18 +355,23 @@ function closeGallery() {
   setModal(false)
 }
 
-// Click outside gallery content to close
-function handleBackdropClick(event: MouseEvent) {
+// Click outside gallery content to close - with debounce to prevent accidental closes
+const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
   if (event.target === event.currentTarget) {
     setModal(false)
   }
-}
+}, 200)
 
-watch(currentImage, () => {
-  // Only update the info height, don't change user's preference
+// Watch for both image changes and fullscreen mode changes
+watch([currentImage, isFullscreen], () => {
+  // Update the info height when image changes or fullscreen state changes
   if (infoPanel.value) {
     nextTick(() => {
       updateInfoHeight()
+      // Fix image sizing issue when navigating in fullscreen
+      if (isFullscreen.value) {
+        updateImageSizes()
+      }
     })
   }
 })
@@ -349,36 +393,58 @@ onMounted(() => {
   eventBus.on(`${props.id}Gallery`, openGalleryImage)
   eventBus.on(`${props.id}GalleryClose`, closeGallery)
 
+  // Store reference to the gallery container
+  galleryContainerRef.value = document.querySelector('.gallery-container')
+
   // Initialize info height once mounted (only if info panel is shown)
   if (infoPanel.value) {
     updateInfoHeight()
   }
 
-  // Set up a resize observer to track info panel height changes
-  const resizeObserver = new ResizeObserver(() => {
-    if (infoPanel.value) {
-      updateInfoHeight()
-    }
-  })
-
+  // Use vueUse's useResizeObserver instead of native ResizeObserver
   const infoElement = document.querySelector('.info-panel-slot')
   if (infoElement) {
-    resizeObserver.observe(infoElement)
+    useResizeObserver(infoElement, () => {
+      if (infoPanel.value) {
+        updateInfoHeight()
+      }
+    })
   }
+
+  // Listen for fullscreen changes to update image sizes
+  useEventListener(document, 'fullscreenchange', () => {
+    if (document.fullscreenElement) {
+      // This handles the case of using F11 or browser fullscreen controls
+      isFullscreen.value = true
+      updateImageSizes()
+    }
+    else {
+      isFullscreen.value = false
+    }
+  })
 })
 
 onUnmounted(() => {
   eventBus.off(`${props.id}Gallery`, openGalleryImage)
   eventBus.off(`${props.id}GalleryImage`, openGalleryImage)
   eventBus.off(`${props.id}GalleryClose`, closeGallery)
+
   if (!import.meta.env.SSR) {
-    document.removeEventListener('keydown', handleKeyboardInput)
-    document.removeEventListener('keyup', handleKeyboardRelease)
     document.body.style.overflow = '' // Ensure body scrolling is restored
   }
+
   // Clear any remaining timeouts
   if (controlsTimeout) {
     clearTimeout(controlsTimeout)
+  }
+
+  if (fullscreenResizeTimeout) {
+    clearTimeout(fullscreenResizeTimeout)
+  }
+
+  // Ensure we exit fullscreen mode on unmount
+  if (isFullscreen.value) {
+    exitFullscreen().catch(() => {})
   }
 })
 </script>
@@ -451,7 +517,7 @@ onUnmounted(() => {
                       class="flex-1 w-full max-w-full flex flex-col items-center justify-center absolute inset-0 z-[2]"
                     >
                       <div
-                        class="flex-1 w-full max-w-full flex items-center justify-center"
+                        class="flex-1 w-full max-w-full flex items-center justify-center image-container"
                       >
                         <template
                           v-if="videoComponent && isVideo(images[modelValue])"
@@ -460,9 +526,15 @@ onUnmounted(() => {
                             <component
                               :is="videoComponent"
                               :src="isVideo(images[modelValue])"
-                              class="shadow max-w-full h-auto object-contain"
+                              class="shadow max-w-full h-auto object-contain video-component"
                               :style="{
-                                maxHeight: infoPanel ? 'calc(80vh - var(--info-height, 0px) - 4rem)' : 'calc(80vh - 4rem)',
+                                maxHeight: isFullscreen
+                                  ? infoPanel
+                                    ? 'calc(90vh - var(--info-height, 0px) - 4rem)'
+                                    : 'calc(90vh - 4rem)'
+                                  : infoPanel
+                                    ? 'calc(80vh - var(--info-height, 0px) - 4rem)'
+                                    : 'calc(80vh - 4rem)',
                               }"
                             />
                           </ClientOnly>
@@ -472,7 +544,13 @@ onUnmounted(() => {
                             v-if="modelValueSrc && imageComponent === 'img'"
                             class="shadow max-w-full h-auto object-contain"
                             :style="{
-                              maxHeight: infoPanel ? 'calc(80vh - var(--info-height, 0px) - 4rem)' : 'calc(80vh - 4rem)',
+                              maxHeight: isFullscreen
+                                ? infoPanel
+                                  ? 'calc(90vh - var(--info-height, 0px) - 4rem)'
+                                  : 'calc(90vh - 4rem)'
+                                : infoPanel
+                                  ? 'calc(80vh - var(--info-height, 0px) - 4rem)'
+                                  : 'calc(80vh - 4rem)',
                             }"
                             :src="modelValueSrc"
                             :alt="`Gallery image ${modelValue + 1}`"
@@ -485,7 +563,13 @@ onUnmounted(() => {
                             :alt="modelValueSrc.alt"
                             class="shadow max-w-full h-auto object-contain"
                             :style="{
-                              maxHeight: infoPanel ? 'calc(80vh - var(--info-height, 0px) - 4rem)' : 'calc(80vh - 4rem)',
+                              maxHeight: isFullscreen
+                                ? infoPanel
+                                  ? 'calc(90vh - var(--info-height, 0px) - 4rem)'
+                                  : 'calc(90vh - 4rem)'
+                                : infoPanel
+                                  ? 'calc(80vh - var(--info-height, 0px) - 4rem)'
+                                  : 'calc(80vh - 4rem)',
                             }"
                           />
                         </template>

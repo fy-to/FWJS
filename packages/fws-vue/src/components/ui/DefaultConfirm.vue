@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDebounceFn } from '@vueuse/core'
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useEventBus } from '../../composables/event-bus'
 import DefaultModal from './DefaultModal.vue'
@@ -17,12 +18,12 @@ interface ConfirmModalData {
   onConfirm: Function
 }
 
-async function _onConfirm() {
+const _onConfirm = useDebounceFn(async () => {
   if (onConfirm.value) {
     await onConfirm.value()
   }
   resetConfirm()
-}
+}, 300)
 
 function resetConfirm() {
   title.value = null
@@ -43,19 +44,20 @@ function showConfirm(data: ConfirmModalData) {
   // Emit event first to ensure it's registered before opening the modal
   eventBus.emit('confirmModal', true)
 
-  // Force this to happen at the end of the event loop
-  // to ensure it happens after any other modal operations
-  setTimeout(() => {
+  // Use requestAnimationFrame instead of setTimeout for better performance
+  requestAnimationFrame(() => {
     isOpen.value = true
     eventBus.emit('confirmModal', true)
 
     nextTick(() => {
       previouslyFocusedElement = document.activeElement as HTMLElement
-      if (modalRef.value) {
-        modalRef.value.focus()
+      try {
+        modalRef.value?.focus()
+      }
+      catch {
       }
     })
-  }, 0)
+  })
 }
 
 onMounted(() => {

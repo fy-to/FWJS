@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onClickOutside, useEventListener } from '@vueuse/core'
+import { onMounted, shallowRef } from 'vue'
 import ScaleTransition from './transitions/ScaleTransition.vue'
 
 const props = defineProps<{
@@ -16,31 +17,22 @@ const props = defineProps<{
   closeDropdown: () => void
 }>()
 
-const dropdownRef = ref<HTMLElement | null>(null)
+const dropdownRef = shallowRef<HTMLElement | null>(null)
 
-// Custom implementation of click-outside functionality
-function handleClickOutsideElement(event: MouseEvent) {
-  if (props.preventClickOutside) return
-
-  if (props.show && dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
-    props.handleClickOutside()
-  }
-}
-
-function handleCloseOnEscape(event: KeyboardEvent) {
-  if (['Escape', 'Esc'].includes(event.key)) {
-    props.closeDropdown()
-  }
-}
-
+// Use VueUse's onClickOutside for more efficient click handling
 onMounted(() => {
-  document.addEventListener('keydown', handleCloseOnEscape)
-  document.addEventListener('click', handleClickOutsideElement)
-})
+  onClickOutside(dropdownRef, (_event) => {
+    if (!props.preventClickOutside && props.show) {
+      props.handleClickOutside()
+    }
+  })
 
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleCloseOnEscape)
-  document.removeEventListener('click', handleClickOutsideElement)
+  // Use VueUse's useEventListener for cleaner event management
+  useEventListener(document, 'keydown', (event: KeyboardEvent) => {
+    if (['Escape', 'Esc'].includes(event.key) && props.show) {
+      props.closeDropdown()
+    }
+  })
 })
 </script>
 

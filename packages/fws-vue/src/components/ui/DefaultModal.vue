@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { XCircleIcon } from '@heroicons/vue/24/solid'
-import { h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useDebounceFn, useEventListener } from '@vueuse/core'
+import { h, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useEventBus } from '../../composables/event-bus'
 
 // Use a shared global registry in the window to track all modals across instances
@@ -83,15 +84,24 @@ let focusableElements: HTMLElement[] = []
 const baseZIndex = 40 // Starting z-index value
 const zIndex = ref<number>(baseZIndex)
 
-// Trap focus within modal for accessibility
+// Cache the modal ID to avoid repeated string concatenation
+const modalId = shallowRef(`${props.id}Modal`)
+const modalUniqueId = shallowRef('')
+
+// Trap focus within modal for accessibility - memoize selector for better performance
+const focusableSelector = 'a[href], button, input, textarea, select, details, [tabindex]:not([tabindex="-1"])'
+
 function getFocusableElements(element: HTMLElement): HTMLElement[] {
   return Array.from(
-    element.querySelectorAll(
-      'a[href], button, input, textarea, select, details, [tabindex]:not([tabindex="-1"])',
-    ),
+    element.querySelectorAll(focusableSelector),
   ).filter(
     el => !el.hasAttribute('disabled') && !el.getAttribute('aria-hidden'),
   ) as HTMLElement[]
+}
+
+// Use VueUse's useEventListener for better event handling
+function setupKeydownListener() {
+  useEventListener(document, 'keydown', handleKeyDown)
 }
 
 function handleKeyDown(event: KeyboardEvent) {
@@ -99,7 +109,7 @@ function handleKeyDown(event: KeyboardEvent) {
   if (!isOpen.value) return
 
   // Check if this modal is the top-most one
-  const isTopMost = isTopMostModal(props.id)
+  const isTopMost = isTopMostModal(modalUniqueId.value)
   if (!isTopMost) {
     return
   }
@@ -107,7 +117,8 @@ function handleKeyDown(event: KeyboardEvent) {
   // Close on escape
   if (event.key === 'Escape') {
     event.preventDefault()
-    setModal(false)
+    // Use direct state to avoid the use-before-define issue
+    isOpen.value = false
     return
   }
 
@@ -141,7 +152,7 @@ function isTopMostModal(id: string): boolean {
   return highestEntry[0] === id
 }
 
-function setModal(value: boolean) {
+const setModal = useDebounceFn((value: boolean) => {
   if (value === true) {
     if (props.onOpen) props.onOpen()
     previouslyFocusedElement = document.activeElement as HTMLElement
@@ -149,8 +160,9 @@ function setModal(value: boolean) {
     // Get the next z-index from the global registry
     const newZIndex = modalRegistry.getNextZIndex()
 
-    // Register this modal in the global registry with a unique ID (combines component id with instance id)
+    // Register this modal in the global registry with a unique ID
     const uniqueId = `${props.id}-${Date.now()}`
+    modalUniqueId.value = uniqueId
     modalRegistry.modals.set(uniqueId, newZIndex)
 
     // Store the unique ID as a data attribute for future reference
@@ -164,27 +176,22 @@ function setModal(value: boolean) {
     // Set this modal's z-index
     zIndex.value = newZIndex
 
-    document.addEventListener('keydown', handleKeyDown)
+    setupKeydownListener()
   }
   if (value === false) {
     if (props.onClose) props.onClose()
 
     // Find and remove this modal from the registry
-    const modalElement = document.querySelector(`[data-modal-id="${props.id}"]`) as HTMLElement
-    if (modalElement) {
-      const uniqueId = modalElement.getAttribute('data-modal-unique-id')
-      if (uniqueId) {
-        modalRegistry.modals.delete(uniqueId)
-      }
+    if (modalUniqueId.value) {
+      modalRegistry.modals.delete(modalUniqueId.value)
     }
 
-    document.removeEventListener('keydown', handleKeyDown)
     if (previouslyFocusedElement) {
       previouslyFocusedElement.focus()
     }
   }
   isOpen.value = value
-}
+}, 50)
 
 // After modal is opened, set focus and collect focusable elements
 watch(isOpen, async (newVal) => {
@@ -193,49 +200,44 @@ watch(isOpen, async (newVal) => {
     if (modalRef.value) {
       focusableElements = getFocusableElements(modalRef.value)
 
-      // Focus the first focusable element or the close button if available
-      const closeButton = modalRef.value.querySelector('button[aria-label="Close modal"]') as HTMLElement
-      if (closeButton) {
-        closeButton.focus()
-      }
-      else if (focusableElements.length > 0) {
-        focusableElements[0].focus()
-      }
-      else {
-        // If no focusable elements, focus the modal itself
-        modalRef.value.focus()
-      }
+      // Focus the close button or first focusable element
+      requestAnimationFrame(() => {
+        const closeButton = modalRef.value?.querySelector('button[aria-label="Close modal"]') as HTMLElement
+        if (closeButton) {
+          closeButton.focus()
+        }
+        else if (focusableElements.length > 0) {
+          focusableElements[0].focus()
+        }
+        else {
+          // If no focusable elements, focus the modal itself
+          modalRef.value?.focus()
+        }
+      })
     }
   }
 })
 
 onMounted(() => {
-  eventBus.on(`${props.id}Modal`, setModal)
+  eventBus.on(modalId.value, setModal)
 })
 
 onUnmounted(() => {
-  eventBus.off(`${props.id}Modal`, setModal)
-  document.removeEventListener('keydown', handleKeyDown)
+  eventBus.off(modalId.value, setModal)
 
   // Clean up the modal registry if this modal was open when unmounted
-  if (isOpen.value) {
-    const modalElement = document.querySelector(`[data-modal-id="${props.id}"]`) as HTMLElement
-    if (modalElement) {
-      const uniqueId = modalElement.getAttribute('data-modal-unique-id')
-      if (uniqueId) {
-        modalRegistry.modals.delete(uniqueId)
-      }
-    }
+  if (isOpen.value && modalUniqueId.value) {
+    modalRegistry.modals.delete(modalUniqueId.value)
   }
 })
 
-// Click outside to close
-function handleBackdropClick(event: MouseEvent) {
+// Click outside to close - use debounce to prevent accidental double-clicks
+const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
   // Close only if clicking the backdrop, not the modal content
   if (event.target === event.currentTarget) {
     setModal(false)
   }
-}
+}, 200)
 </script>
 
 <template>

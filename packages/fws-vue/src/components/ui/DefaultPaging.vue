@@ -5,7 +5,8 @@ import type { APIPaging } from '../../composables/rest'
 import { getURL, hasFW } from '@fy-/fws-js'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/solid'
 import { useServerHead } from '@unhead/vue'
-import { computed, onMounted, ref, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
+import { computed, onMounted, shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEventBus } from '../../composables/event-bus'
 import { useServerRouter } from '../../stores/serverRouter'
@@ -27,120 +28,150 @@ const route = useRoute()
 const eventBus = useEventBus()
 const history = useServerRouter()
 
+// Using shallowRef for non-reactive values
+const isMounted = shallowRef(false)
+const pageWatcher = shallowRef<WatchStopHandle>()
+
+// Memoize the hash string to avoid repeated computation
+const hashString = computed(() => props.hash !== '' ? `#${props.hash}` : undefined)
+
+// Check if a page is valid to navigate to
 function isNewPage(page: number) {
   return (
     page >= 1 && page <= props.items.page_max && page !== props.items.page_no
   )
 }
 
-const pageWatcher = ref<WatchStopHandle>()
-
-function next() {
+// Debounced navigation functions to prevent rapid clicks
+const next = useDebounceFn(() => {
   const page = props.items.page_no + 1
 
   if (!isNewPage(page)) return
+
   const newQuery = { ...route.query }
   newQuery.page = page.toString()
+
   history.push({
     path: history.currentRoute.path,
     query: newQuery,
-    hash: props.hash !== '' ? `#${props.hash}` : undefined,
+    hash: hashString.value,
   })
-}
+}, 300)
 
-function prev() {
+const prev = useDebounceFn(() => {
   const page = props.items.page_no - 1
+
   if (!isNewPage(page)) return
+
   const newQuery = { ...route.query }
   newQuery.page = page.toString()
+
   history.push({
     path: history.currentRoute.path,
     query: newQuery,
-    hash: props.hash !== '' ? `#${props.hash}` : undefined,
+    hash: hashString.value,
   })
-}
+}, 300)
 
+// Extract route generation to a reusable function to reduce duplicated code
 function page(page: number): RouteLocationRaw {
+  if (!isNewPage(page)) {
+    // Return current route if the page is not valid
+    return {
+      path: history.currentRoute.path,
+      query: route.query,
+      hash: hashString.value,
+    }
+  }
+
   const newQuery = { ...route.query }
   newQuery.page = page.toString()
+
   return {
     path: history.currentRoute.path,
     query: newQuery,
-    hash: props.hash !== '' ? `#${props.hash}` : undefined,
+    hash: hashString.value,
   }
 }
-const isMounted = ref(false)
+
+// Watch for route changes to trigger page change events
 pageWatcher.value = watch(
   () => route.query.page,
   (v, oldValue) => {
+    // Skip if component is not mounted or value hasn't changed
     if (v === oldValue || !isMounted.value) return
+
+    // Emit page change event with fallback to page 1
     eventBus.emit(`${props.id}GoToPage`, v || 1)
   },
 )
 
-// Compute pagination links for useHead
+// Compute pagination links for SEO head tags with performance optimizations
 const paginationLinks = computed(() => {
+  // Early exit if basic conditions aren't met
+  if (!hasFW() || props.items.page_max <= 1) {
+    return []
+  }
+
   const result: any[] = []
   const page_max = Number(props.items.page_max)
+  const url = getURL()
 
-  let next
-  let prev
+  if (!url) return result
 
-  if (hasFW()) {
-    const url = getURL()
-    if (url) {
-      // Parse the canonical URL to get the base URL and current query parameters
-      const canonicalUrl = new URL(url.Canonical)
+  try {
+    // Parse the canonical URL once
+    const canonicalUrl = new URL(url.Canonical)
+    const baseUrl = `${url.Scheme}://${url.Host}${url.Path}`
 
-      const baseUrl = `${url.Scheme}://${url.Host}${url.Path}`
-      const currentQuery: Record<string, string> = {}
-      canonicalUrl.searchParams.forEach((value, key) => {
-        currentQuery[key] = value
+    // Build query params object
+    const currentQuery: Record<string, string> = {}
+    canonicalUrl.searchParams.forEach((value, key) => {
+      currentQuery[key] = value
+    })
+
+    // Get current page and create hash part once
+    const page = Number(currentQuery.page) || 1
+    const hashPart = props.hash !== '' ? `#${props.hash}` : ''
+
+    // Remove page from query params to avoid duplicates
+    delete currentQuery.page
+
+    // Add next link if applicable
+    if (page + 1 <= page_max) {
+      const nextQuery = { ...currentQuery, page: (page + 1).toString() }
+      const nextQueryString = new URLSearchParams(nextQuery).toString()
+      result.push({
+        rel: 'next',
+        href: `${baseUrl}?${nextQueryString}${hashPart}`,
+        key: `paging-next${props.id}`,
+        hid: `paging-next${props.id}`,
+        id: `paging-next${props.id}`,
       })
-      // Remove the existing 'page' parameter to avoid duplicates
-      const page = Number(currentQuery.page)
+    }
 
-      delete currentQuery.page
-
-      const hashPart = props.hash !== '' ? `#${props.hash}` : ''
-
-      if (page + 1 <= page_max) {
-        const nextQuery = { ...currentQuery, page: (page + 1).toString() }
-        const nextQueryString = new URLSearchParams(nextQuery).toString()
-        next = `${baseUrl}?${nextQueryString}${hashPart}`
-      }
-
-      if (page - 1 >= 1) {
-        const prevQuery = { ...currentQuery, page: (page - 1).toString() }
-        const prevQueryString = new URLSearchParams(prevQuery).toString()
-        prev = `${baseUrl}?${prevQueryString}${hashPart}`
-      }
+    // Add prev link if applicable
+    if (page - 1 >= 1) {
+      const prevQuery = { ...currentQuery, page: (page - 1).toString() }
+      const prevQueryString = new URLSearchParams(prevQuery).toString()
+      result.push({
+        rel: 'prev',
+        href: `${baseUrl}?${prevQueryString}${hashPart}`,
+        key: `paging-prev${props.id}`,
+        hid: `paging-prev${props.id}`,
+        id: `paging-prev${props.id}`,
+      })
     }
   }
-
-  if (next) {
-    result.push({
-      rel: 'next',
-      href: next,
-      key: `paging-next${props.id}`,
-      hid: `paging-next${props.id}`,
-      id: `paging-next${props.id}`,
-    })
-  }
-  if (prev) {
-    result.push({
-      rel: 'prev',
-      href: prev,
-      key: `paging-prev${props.id}`,
-      hid: `paging-prev${props.id}`,
-      id: `paging-prev${props.id}`,
-    })
+  catch (e) {
+    // Silently fail if URL parsing fails
+    console.error('Error generating pagination links:', e)
   }
 
   return result
 })
 
-// Use useHead outside of any reactive context to ensure it runs during SSR
+// Set head tags using useServerHead
 useServerHead({
   link: paginationLinks.value,
 })

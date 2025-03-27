@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { useDebounceFn, useVModel } from '@vueuse/core'
+import { computed, onMounted, shallowRef, watch } from 'vue'
 import { useEventBus } from '../../composables/event-bus'
 
 /**
@@ -41,23 +42,41 @@ const props = withDefaults(
 )
 
 /**
- * Refs & Data
+ * Refs & Data - using shallowRef for DOM elements for better performance
  */
-const textInput = ref<HTMLElement>()
-const isMaxReached = ref(false)
-const inputContainer = ref<HTMLElement>()
+const textInput = shallowRef<HTMLElement>()
+const isMaxReached = shallowRef(false)
+const inputContainer = shallowRef<HTMLElement>()
 
 const emit = defineEmits(['update:modelValue'])
 
 /**
- * Create a two-way computed property for modelValue
+ * Use VueUse's useVModel for more efficient two-way binding
  */
-const model = computed({
-  get: () => props.modelValue,
-  set: (items) => {
-    emit('update:modelValue', items)
-  },
-})
+const model = useVModel(props, 'modelValue', emit)
+
+/**
+ * Cache regex patterns to avoid creating them on each input
+ */
+const getSeparatorRegex = (() => {
+  let cachedRegex: RegExp | null = null
+  let cachedGlobalRegex: RegExp | null = null
+
+  return (isGlobal = false) => {
+    if (isGlobal) {
+      if (!cachedGlobalRegex) {
+        cachedGlobalRegex = new RegExp(props.separators.join('|'), 'g')
+      }
+      return cachedGlobalRegex
+    }
+    else {
+      if (!cachedRegex) {
+        cachedRegex = new RegExp(props.separators.join('|'))
+      }
+      return cachedRegex
+    }
+  }
+})()
 
 /**
  * Compute aria-describedby IDs if help or error exist
@@ -101,9 +120,11 @@ onMounted(() => {
 const eventBus = useEventBus()
 
 /**
- * Copy the tags to clipboard
+ * Copy the tags to clipboard with debounce to prevent multiple executions
  */
-async function copyText() {
+const copyText = useDebounceFn(async () => {
+  if (!model.value.length) return
+
   const text = model.value.join(', ')
 
   try {
@@ -122,35 +143,33 @@ async function copyText() {
       time: 2500,
     })
   }
-}
+}, 300)
 
 /**
  * On each character input, check if user typed a separator
  */
-function handleInput(event: Event) {
+const handleInput = useDebounceFn((event: Event) => {
   const inputEvent = event as InputEvent
   if (!inputEvent.data) return
-  const separatorsRegex = new RegExp(props.separators.join('|'))
-  if (separatorsRegex.test(inputEvent.data)) {
+
+  if (getSeparatorRegex().test(inputEvent.data)) {
     addTag()
   }
-}
+}, 50)
 
 /**
- * Add a tag by splitting on the separator
+ * Add a tag by splitting on the separator - optimized with fewer operations
  */
 function addTag() {
   if (!textInput.value || isMaxReached.value) return
 
-  const separatorsRegex = new RegExp(props.separators.join('|'))
   const textContent = textInput.value.textContent?.trim()
-
   if (!textContent) return
 
   const newTags = textContent
-    .split(separatorsRegex)
-    .map((tag: string) => tag.trim())
-    .filter((tag: string) => tag.length > 0)
+    .split(getSeparatorRegex())
+    .map(tag => tag.trim())
+    .filter(tag => tag.length > 0)
 
   // Remove duplicates if noDuplicates is enabled
   const filteredTags = props.noDuplicates
@@ -160,28 +179,41 @@ function addTag() {
   // If maxTags is set, ensure adding tags doesn't exceed the limit
   if (props.maxTags && props.maxTags > 0) {
     const slotsAvailable = props.maxTags - model.value.length
-    filteredTags.splice(slotsAvailable)
+    if (slotsAvailable <= 0) {
+      // If no slots are available, clear input and return
+      textInput.value.textContent = ''
+      return
+    }
+    if (filteredTags.length > slotsAvailable) {
+      filteredTags.splice(slotsAvailable)
+    }
   }
 
-  model.value = [...model.value, ...filteredTags]
+  if (filteredTags.length) {
+    model.value = [...model.value, ...filteredTags]
+  }
+
   textInput.value.textContent = ''
 }
 
 /**
  * Remove a tag by index
  */
-function removeTag(index: number) {
+const removeTag = useDebounceFn((index: number) => {
+  if (index < 0 || index >= model.value.length) return
+
   const newTags = [...model.value]
   newTags.splice(index, 1)
   model.value = newTags
   focusInput()
-}
+}, 50)
 
 /**
  * Handle backspace/delete on an empty input
  */
 function removeLastTag() {
   if (!textInput.value) return
+
   if (textInput.value.textContent === '') {
     // If input is empty, remove the last tag
     if (model.value.length > 0) {
@@ -201,16 +233,20 @@ function removeLastTag() {
 
 /**
  * Place the cursor at the end of the contenteditable text
+ * Using requestAnimationFrame for better performance
  */
 function placeCursorToEnd() {
   if (!textInput.value) return
-  const range = document.createRange()
-  const sel = window.getSelection()
-  range.selectNodeContents(textInput.value)
-  range.collapse(false)
-  if (!sel) return
-  sel.removeAllRanges()
-  sel.addRange(range)
+
+  requestAnimationFrame(() => {
+    const range = document.createRange()
+    const sel = window.getSelection()
+    range.selectNodeContents(textInput.value!)
+    range.collapse(false)
+    if (!sel) return
+    sel.removeAllRanges()
+    sel.addRange(range)
+  })
 }
 
 /**
@@ -224,32 +260,37 @@ function focusInput() {
 }
 
 /**
- * Handle pasting text
+ * Handle pasting text with debounce
  */
-function handlePaste(e: ClipboardEvent) {
+const handlePaste = useDebounceFn((e: ClipboardEvent) => {
   if (!textInput.value || isMaxReached.value) return
 
   const clipboardData = e.clipboardData ?? (window as any).clipboardData
   if (!clipboardData) return
 
   const text = clipboardData.getData('text')
-  const separatorsRegex = new RegExp(props.separators.join('|'), 'g')
-  const pasteText = text.replace(separatorsRegex, ',')
-  textInput.value.textContent += pasteText
+  if (!text.trim()) return
+
+  const pasteText = text.replace(getSeparatorRegex(true), ',')
+
+  // Set the text content directly, rather than appending
+  textInput.value.textContent = pasteText
   e.preventDefault()
   addTag()
-}
+}, 50)
 
 /**
- * Handle keyboard navigation between tags
+ * Handle keyboard navigation between tags - optimized with element lookup caching
  */
 function handleKeyNavigation(e: KeyboardEvent, index: number) {
+  if (!inputContainer.value) return
+
   if (e.key === 'ArrowLeft' && index > 0) {
-    const prevTag = inputContainer.value?.querySelector(`[data-index="${index - 1}"] button`) as HTMLElement
+    const prevTag = inputContainer.value.querySelector(`[data-index="${index - 1}"] button`) as HTMLElement
     if (prevTag) prevTag.focus()
   }
   else if (e.key === 'ArrowRight' && index < model.value.length - 1) {
-    const nextTag = inputContainer.value?.querySelector(`[data-index="${index + 1}"] button`) as HTMLElement
+    const nextTag = inputContainer.value.querySelector(`[data-index="${index + 1}"] button`) as HTMLElement
     if (nextTag) nextTag.focus()
   }
 }

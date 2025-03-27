@@ -7,7 +7,8 @@ import {
   SparklesIcon,
   XMarkIcon,
 } from '@heroicons/vue/24/solid'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useDebounceFn, useRafFn } from '@vueuse/core'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useEventBus } from '../../composables/event-bus'
 import ScaleTransition from './transitions/ScaleTransition.vue'
 
@@ -30,7 +31,7 @@ interface NotifProps {
 const eventBus = useEventBus()
 
 /** Current displayed notification */
-const currentNotif = ref<NotifProps | null>(null)
+const currentNotif = shallowRef<NotifProps | null>(null)
 
 /** Progress percentage (0 to 100) for the notification's life */
 const progress = ref(0)
@@ -40,7 +41,7 @@ const isPaused = ref(false)
 
 /** References to setTimeout / setInterval so we can clear them properly */
 let hideTimeout: ReturnType<typeof setTimeout> | null = null
-let progressInterval: ReturnType<typeof setInterval> | null = null
+let rafStop: Function | null = null
 
 /**
  * Primary logic when a 'SendNotif' event is called.
@@ -48,7 +49,7 @@ let progressInterval: ReturnType<typeof setInterval> | null = null
  * - Sets up the new notification
  * - Starts a progress bar
  */
-function onCall(data: NotifProps) {
+const onCall = useDebounceFn((data: NotifProps) => {
   // If there's an existing notification, remove it first
   hideNotif()
 
@@ -68,19 +69,30 @@ function onCall(data: NotifProps) {
   // (A) Hide the notification after the specified time
   hideTimeout = setTimeout(() => hideNotif(), data.time)
 
-  // (B) Animate the progress bar from 0 to 100% within that time
+  // (B) Use requestAnimationFrame for smoother animation
   progress.value = 0
-  progressInterval = setInterval(() => {
-    if (currentNotif.value && data.time && !isPaused.value) {
-      // update progress based on a 100ms tick
-      progress.value += (100 / (data.time / 100))
-      // if progress hits or exceeds 100, hide
-      if (progress.value >= 100) {
-        hideNotif()
-      }
+  const startTime = performance.now()
+  const duration = data.time || 5000
+
+  const { pause, stop } = useRafFn((now) => {
+    if (isPaused.value) return
+
+    const elapsed = now - startTime
+    const newProgress = Math.min(100, (elapsed / duration) * 100)
+    progress.value = newProgress
+
+    if (newProgress >= 100) {
+      hideNotif()
     }
-  }, 100)
-}
+  })
+
+  rafStop = stop
+
+  // Pause if initially paused
+  if (isPaused.value) {
+    pause()
+  }
+}, 50)
 
 /**
  * Clears everything related to the current notification
@@ -94,9 +106,10 @@ function hideNotif() {
     clearTimeout(hideTimeout)
     hideTimeout = null
   }
-  if (progressInterval) {
-    clearInterval(progressInterval)
-    progressInterval = null
+
+  if (rafStop) {
+    rafStop()
+    rafStop = null
   }
 }
 
@@ -126,96 +139,83 @@ function resumeTimer() {
 }
 
 /** Execute CTA action if provided */
-function handleCtaClick() {
+const handleCtaClick = useDebounceFn(() => {
   if (currentNotif.value?.ctaAction) {
     currentNotif.value.ctaAction()
   }
-}
+}, 300)
 
-/** Get ARIA label based on notification type */
+/** Get ARIA label based on notification type - moved to computed for caching */
 const ariaDescribedBy = computed(() => {
   if (!currentNotif.value) return ''
   return `notif-${currentNotif.value.type || 'info'}`
 })
 
+// Color computation mapping - reduces repeated switch statements
+const typeColorMap = {
+  success: {
+    bg: 'bg-green-50 dark:bg-green-900/20',
+    border: 'border-green-300 dark:border-green-700',
+    text: 'text-green-800 dark:text-green-200',
+    icon: 'text-green-500 dark:text-green-400',
+    progress: 'bg-green-500 dark:bg-green-400',
+  },
+  warning: {
+    bg: 'bg-amber-50 dark:bg-amber-900/20',
+    border: 'border-amber-300 dark:border-amber-700',
+    text: 'text-amber-800 dark:text-amber-200',
+    icon: 'text-amber-500 dark:text-amber-400',
+    progress: 'bg-amber-500 dark:bg-amber-400',
+  },
+  secret: {
+    bg: 'bg-fuchsia-50 dark:bg-fuchsia-900/20',
+    border: 'border-fuchsia-300 dark:border-fuchsia-700',
+    text: 'text-fuchsia-800 dark:text-fuchsia-200',
+    icon: 'text-fuchsia-500 dark:text-fuchsia-400',
+    progress: 'bg-fuchsia-500 dark:bg-fuchsia-400',
+  },
+  info: {
+    bg: 'bg-blue-50 dark:bg-blue-900/20',
+    border: 'border-blue-300 dark:border-blue-700',
+    text: 'text-blue-800 dark:text-blue-200',
+    icon: 'text-blue-500 dark:text-blue-400',
+    progress: 'bg-blue-500 dark:bg-blue-400',
+  },
+}
+
 /** Get background color based on notification type */
 const bgColor = computed(() => {
   if (!currentNotif.value) return ''
-
-  switch (currentNotif.value.type) {
-    case 'success':
-      return 'bg-green-50 dark:bg-green-900/20'
-    case 'warning':
-      return 'bg-amber-50 dark:bg-amber-900/20'
-    case 'secret':
-      return 'bg-fuchsia-50 dark:bg-fuchsia-900/20'
-    default: // info
-      return 'bg-blue-50 dark:bg-blue-900/20'
-  }
+  const type = currentNotif.value.type || 'info'
+  return typeColorMap[type].bg
 })
 
 /** Get border color based on notification type */
 const borderColor = computed(() => {
   if (!currentNotif.value) return ''
-
-  switch (currentNotif.value.type) {
-    case 'success':
-      return 'border-green-300 dark:border-green-700'
-    case 'warning':
-      return 'border-amber-300 dark:border-amber-700'
-    case 'secret':
-      return 'border-fuchsia-300 dark:border-fuchsia-700'
-    default: // info
-      return 'border-blue-300 dark:border-blue-700'
-  }
+  const type = currentNotif.value.type || 'info'
+  return typeColorMap[type].border
 })
 
 /** Get text color based on notification type */
 const textColor = computed(() => {
   if (!currentNotif.value) return ''
-
-  switch (currentNotif.value.type) {
-    case 'success':
-      return 'text-green-800 dark:text-green-200'
-    case 'warning':
-      return 'text-amber-800 dark:text-amber-200'
-    case 'secret':
-      return 'text-fuchsia-800 dark:text-fuchsia-200'
-    default: // info
-      return 'text-blue-800 dark:text-blue-200'
-  }
+  const type = currentNotif.value.type || 'info'
+  return typeColorMap[type].text
 })
 
 /** Get icon color based on notification type */
 const iconColor = computed(() => {
   if (!currentNotif.value) return ''
-
-  switch (currentNotif.value.type) {
-    case 'success':
-      return 'text-green-500 dark:text-green-400'
-    case 'warning':
-      return 'text-amber-500 dark:text-amber-400'
-    case 'secret':
-      return 'text-fuchsia-500 dark:text-fuchsia-400'
-    default: // info
-      return 'text-blue-500 dark:text-blue-400'
-  }
+  const type = currentNotif.value.type || 'info'
+  return typeColorMap[type].icon
 })
 
 /** Get progress bar color based on notification type */
 const progressColor = computed(() => {
   if (!currentNotif.value) return ''
-
-  switch (currentNotif.value.type) {
-    case 'success':
-      return 'bg-green-500 dark:bg-green-400'
-    case 'warning':
-      return 'bg-amber-500 dark:bg-amber-400'
-    case 'secret':
-      return 'bg-fuchsia-500 dark:bg-fuchsia-400'
-    default: // info
-      return 'bg-blue-500 dark:bg-blue-400'
-  }
+  const type = currentNotif.value.type || 'info'
+  return typeColorMap[type].progress
 })
 
 /**
@@ -230,6 +230,7 @@ onMounted(() => {
  */
 onUnmounted(() => {
   eventBus.off('SendNotif', onCall)
+  hideNotif()
 })
 </script>
 
@@ -238,7 +239,7 @@ onUnmounted(() => {
     <div
       v-if="currentNotif !== null"
       id="base-notif"
-      class="fixed !text-xs md:!text-sm bottom-3 right-3 sm:right-8 z-[2000] max-w-xs w-[calc(100%-1.5rem)] sm:w-72 rounded-lg border shadow-lg overflow-hidden backdrop-blur-sm transition-all duration-300 transform"
+      class="fixed !text-xs md:!text-sm bottom-3 right-3 sm:right-8 z-[2000] max-w-xs w-[calc(100%-1.5rem)] sm:w-auto sm:max-w-sm rounded-lg border shadow-lg overflow-hidden backdrop-blur-sm transition-all duration-300 transform"
       role="alert"
       :aria-describedby="ariaDescribedBy"
       :class="[bgColor, borderColor, textColor]"
@@ -256,9 +257,9 @@ onUnmounted(() => {
 
       <div class="p-2 sm:p-3">
         <!-- Header with icon and title -->
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2 sm:gap-3">
-            <div class="flex-shrink-0" :class="[iconColor]">
+        <div class="flex justify-between">
+          <div class="flex gap-2 sm:gap-3">
+            <div class="flex-shrink-0 mt-0.5" :class="[iconColor]">
               <img
                 v-if="currentNotif.imgSrc"
                 class="w-5 h-5 sm:w-6 sm:h-6 rounded-full"
@@ -274,7 +275,7 @@ onUnmounted(() => {
             </div>
             <h3
               :id="ariaDescribedBy"
-              class="text-sm sm:text-base font-semibold truncate"
+              class="text-sm sm:text-base font-semibold break-words flex-1"
               v-text="currentNotif.title"
             />
           </div>
@@ -282,7 +283,7 @@ onUnmounted(() => {
           <!-- Close button -->
           <button
             type="button"
-            class="inline-flex rounded-md p-1 sm:p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900"
+            class="inline-flex rounded-md p-1 sm:p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-900 ml-2 flex-shrink-0 self-start"
             :class="iconColor"
             aria-label="Close notification"
             @click="hideNotif"
@@ -294,7 +295,7 @@ onUnmounted(() => {
         <!-- Notification content -->
         <div
           v-if="currentNotif.content"
-          class="mt-1.5 sm:mt-2 text-xs sm:text-sm"
+          class="mt-1.5 sm:mt-2 text-xs sm:text-sm whitespace-normal break-words"
           :class="textColor"
           v-html="currentNotif.content"
         />
