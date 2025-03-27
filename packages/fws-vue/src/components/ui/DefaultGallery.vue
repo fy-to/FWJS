@@ -690,7 +690,7 @@ onUnmounted(() => {
             <div
               v-if="sidePanel"
               ref="sidePanelRef"
-              class="side-panel hidden lg:block absolute right-0 top-0 bottom-0 w-64 bg-fv-neutral-800/90 backdrop-blur-md overflow-y-auto z-40 cool-scroll"
+              class="side-panel hidden lg:block absolute right-0 top-0 bottom-0 w-64 overflow-y-auto z-40 cool-scroll"
               :style="{ paddingTop: `${topControlsHeight + 8}px` }"
             >
               <!-- Paging Controls if needed -->
