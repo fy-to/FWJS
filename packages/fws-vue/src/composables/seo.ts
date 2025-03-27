@@ -46,12 +46,12 @@ function processImageUrl(image: string | undefined, imageType: string | undefine
 }
 
 // Helper function to normalize image type
-function normalizeImageType(imageType: string | undefined): string | undefined {
-  if (!imageType) return undefined
+function normalizeImageType(imageType: string | undefined): 'image/jpeg' | 'image/gif' | 'image/png' | false {
+  if (!imageType) return false
 
   const type = imageType.includes('image/') ? imageType : `image/${imageType}`
   if (type === 'image/jpeg' || type === 'image/gif' || type === 'image/png') {
-    return type
+    return type as 'image/jpeg' | 'image/gif' | 'image/png'
   }
   return 'image/png'
 }

@@ -56,7 +56,7 @@ const breadcrumbId = computed(() => {
 if (props.nav && props.nav.length) {
   useSchemaOrg([
     defineBreadcrumb({
-      '@id': computed(() => `#${breadcrumbId.value}`),
+      '@id': `#${breadcrumbId.value}`,
       'itemListElement': breadcrumbsSchemaFormat,
     }),
   ])

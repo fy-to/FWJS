@@ -72,12 +72,12 @@ const onCall = useDebounceFn((data: NotifProps) => {
   // (B) Use requestAnimationFrame for smoother animation
   progress.value = 0
   const startTime = performance.now()
-  const duration = data.time || 5000
+  const duration = Number(data.time || 5000)
 
-  const { pause, stop } = useRafFn((now) => {
+  const { pause } = useRafFn((timestamp) => {
     if (isPaused.value) return
 
-    const elapsed = now - startTime
+    const elapsed = timestamp.timestamp - startTime
     const newProgress = Math.min(100, (elapsed / duration) * 100)
     progress.value = newProgress
 
@@ -86,7 +86,7 @@ const onCall = useDebounceFn((data: NotifProps) => {
     }
   })
 
-  rafStop = stop
+  rafStop = pause
 
   // Pause if initially paused
   if (isPaused.value) {

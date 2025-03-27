@@ -12,7 +12,7 @@ export interface UserStore {
 
 // Create a debounce mechanism for authentication checks
 let refreshPromise: Promise<void> | null = null
-const refreshDebounceTime = 2000 // 2 seconds
+const refreshDebounceTime = 200 // 200ms
 let lastRefreshTime = 0
 
 export const useUserStore = defineStore('userStore', {

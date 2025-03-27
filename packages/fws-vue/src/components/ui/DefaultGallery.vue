@@ -9,35 +9,78 @@ import {
   InformationCircleIcon,
   XMarkIcon,
 } from '@heroicons/vue/24/solid'
-import { useDebounceFn, useEventListener, useFullscreen, useResizeObserver } from '@vueuse/core'
+import {
+  useDebounceFn,
+  useElementSize,
+  useEventListener,
+  useFullscreen,
+  useResizeObserver,
+  useWindowSize,
+} from '@vueuse/core'
 import { computed, h, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef, watch } from 'vue'
 import { useEventBus } from '../../composables/event-bus'
+import { ClientOnly } from '../ssr/ClientOnly'
 import DefaultPaging from './DefaultPaging.vue'
 
+// Core state
 const isGalleryOpen = ref<boolean>(false)
 const eventBus = useEventBus()
 const sidePanel = ref<boolean>(true)
 const showControls = ref<boolean>(true)
 const isFullscreen = ref<boolean>(false)
 const infoPanel = ref<boolean>(true) // Show info panel by default
-const touchStartTime = ref<number>(0)
-const infoHeight = ref<number>(0)
-const galleryContainerRef = shallowRef<HTMLElement | null>(null)
+const direction = ref<'next' | 'prev'>('next')
+
+// Refs to track DOM elements and their sizes
+const galleryRef = shallowRef<HTMLElement | null>(null)
+const galleryContentRef = shallowRef<HTMLElement | null>(null)
+const imageContainerRef = shallowRef<HTMLElement | null>(null)
+const infoPanelRef = shallowRef<HTMLElement | null>(null)
+const sidePanelRef = shallowRef<HTMLElement | null>(null)
+const topControlsRef = shallowRef<HTMLElement | null>(null)
+
+// Use VueUse's useElementSize for reliable sizing
+const { width: galleryWidth, height: galleryHeight } = useElementSize(galleryRef)
+const { width: windowWidth, height: windowHeight } = useWindowSize()
+const { height: topControlsHeight } = useElementSize(topControlsRef)
+const { height: infoPanelHeight } = useElementSize(infoPanelRef)
+
+// Derived measurements
+const availableHeight = computed(() => {
+  let height = isFullscreen.value
+    ? windowHeight.value * 0.95 // 95% of viewport in fullscreen
+    : windowHeight.value * 0.85 // 85% of viewport in normal mode
+
+  // Subtract top controls
+  height -= topControlsHeight.value
+
+  // Subtract info panel if visible
+  if (infoPanel.value && infoPanelHeight.value > 0) {
+    height -= infoPanelHeight.value
+  }
+
+  // Convert to rem for consistent sizing
+  return `${height / 16}rem`
+})
 
 // Use VueUse's useFullscreen for better fullscreen handling
-const { isFullscreen: isElementFullscreen, enter: enterFullscreen, exit: exitFullscreen } = useFullscreen(galleryContainerRef)
+const { isFullscreen: isElementFullscreen, enter: enterFullscreen, exit: exitFullscreen } = useFullscreen(galleryRef)
 
 // Track when fullscreen changes externally (like Escape key)
 watch(isElementFullscreen, (newValue) => {
   isFullscreen.value = newValue
-  if (newValue) {
-    // Force update of image size when entering fullscreen
-    nextTick(() => {
-      updateImageSizes()
-    })
-  }
 })
 
+// Touch handling state
+const touchStartTime = ref<number>(0)
+const start = reactive({ x: 0, y: 0 })
+const isKeyPressed = ref<boolean>(false)
+
+// Timers for automatic control hiding
+let controlsTimeout: number | null = null
+let fullscreenResizeTimeout: number | null = null
+
+// Props definition with defaults
 const props = withDefaults(
   defineProps<{
     id: string
@@ -77,7 +120,10 @@ const props = withDefaults(
   },
 )
 
+// Emits
 const emit = defineEmits(['update:modelValue'])
+
+// Two-way binding for model value
 const modelValue = computed({
   get: () => props.modelValue,
   set: (i) => {
@@ -85,40 +131,61 @@ const modelValue = computed({
   },
 })
 
-const direction = ref<'next' | 'prev'>('next')
+// Computed values
+const modelValueSrc = computed(() => {
+  if (props.images.length === 0) return false
+  if (props.images[modelValue.value] === undefined) return false
+  return props.getImageUrl(props.images[modelValue.value])
+})
 
-let controlsTimeout: number | null = null
-let fullscreenResizeTimeout: number | null = null
+const currentImage = computed(() => {
+  if (props.images.length === 0) return null
+  return props.images[modelValue.value]
+})
 
-// Used to maintain consistent image sizes
-function updateImageSizes() {
+const imageCount = computed(() => props.images.length)
+const currentIndex = computed(() => modelValue.value + 1)
+
+// Image size and positioning
+const calculateImageSize = useDebounceFn(() => {
+  if (!imageContainerRef.value) return
+
   nextTick(() => {
-    const imageContainers = document.querySelectorAll('.image-container img, .image-container .video-component') as NodeListOf<HTMLElement>
-    if (imageContainers && imageContainers.length > 0) {
-      imageContainers.forEach((img) => {
-        // Force a reflow to ensure correct sizing
-        if (img.style.maxHeight) {
-          const currentMaxHeight = img.style.maxHeight
-          img.style.maxHeight = ''
-          // Force browser to recalculate styles
-          void img.offsetHeight
-          img.style.maxHeight = currentMaxHeight
-        }
-      })
-    }
-  })
-}
+    const imageElements = imageContainerRef.value?.querySelectorAll('.image-display img, .image-display .video-component') as NodeListOf<HTMLElement>
 
+    if (!imageElements || imageElements.length === 0) return
+
+    imageElements.forEach((img) => {
+      // Reset to ensure proper recalculation
+      img.style.maxHeight = ''
+      // Force browser to recalculate styles
+      void img.offsetHeight
+
+      // Set proper height
+      img.style.maxHeight = availableHeight.value
+      img.style.maxWidth = sidePanel.value ? 'calc(100vw - 16rem)' : '100vw'
+    })
+  })
+}, 50)
+
+// Update all layout measurements
+const updateLayout = useDebounceFn(() => {
+  calculateImageSize()
+}, 50)
+
+// Modal controls
 function setModal(value: boolean) {
   if (value === true) {
     if (props.onOpen) props.onOpen()
     document.body.style.overflow = 'hidden' // Prevent scrolling when gallery is open
+
     if (!import.meta.env.SSR) {
       useEventListener(document, 'keydown', handleKeyboardInput)
       useEventListener(document, 'keyup', handleKeyboardRelease)
     }
+
     // Auto-hide controls after 3 seconds on mobile
-    if (window.innerWidth < 1024) {
+    if (windowWidth.value < 1024) {
       controlsTimeout = window.setTimeout(() => {
         showControls.value = false
       }, 3000)
@@ -127,11 +194,13 @@ function setModal(value: boolean) {
   else {
     if (props.onClose) props.onClose()
     document.body.style.overflow = '' // Restore scrolling
+
     // Exit fullscreen if active
     if (isFullscreen.value) {
       exitFullscreen()
       isFullscreen.value = false
     }
+
     // Clear timeout if modal is closed
     if (controlsTimeout) {
       clearTimeout(controlsTimeout)
@@ -143,6 +212,7 @@ function setModal(value: boolean) {
   // Don't reset info panel state when opening/closing
 }
 
+// Open gallery with debounce to prevent accidental double-clicks
 const openGalleryImage = useDebounceFn((index: number | undefined) => {
   if (index === undefined) {
     modelValue.value = 0
@@ -151,8 +221,14 @@ const openGalleryImage = useDebounceFn((index: number | undefined) => {
     modelValue.value = Number.parseInt(index.toString())
   }
   setModal(true)
-}, 50) // Debounce to prevent accidental double-opens
 
+  // Update layout after opening
+  nextTick(() => {
+    updateLayout()
+  })
+}, 50)
+
+// Navigation functions
 function goNextImage() {
   direction.value = 'next'
   if (modelValue.value < props.images.length - 1) {
@@ -170,34 +246,18 @@ function goPrevImage() {
     modelValue.value--
   }
   else {
-    modelValue.value
-      = props.images.length - 1 > 0 ? props.images.length - 1 : 0
+    modelValue.value = props.images.length - 1 > 0 ? props.images.length - 1 : 0
   }
   resetControlsTimer()
 }
 
-const modelValueSrc = computed(() => {
-  if (props.images.length === 0) return false
-  if (props.images[modelValue.value] === undefined) return false
-  return props.getImageUrl(props.images[modelValue.value])
-})
-
-const currentImage = computed(() => {
-  if (props.images.length === 0) return null
-  return props.images[modelValue.value]
-})
-
-const imageCount = computed(() => props.images.length)
-const currentIndex = computed(() => modelValue.value + 1)
-
-const start = reactive({ x: 0, y: 0 })
-
+// UI control functions
 function resetControlsTimer() {
   // Show controls when user interacts
   showControls.value = true
 
   // Only set timer on mobile
-  if (window.innerWidth < 1024) {
+  if (windowWidth.value < 1024) {
     if (controlsTimeout) {
       clearTimeout(controlsTimeout)
     }
@@ -209,7 +269,7 @@ function resetControlsTimer() {
 
 function toggleControls() {
   showControls.value = !showControls.value
-  if (showControls.value && window.innerWidth < 1024) {
+  if (showControls.value && windowWidth.value < 1024) {
     resetControlsTimer()
   }
 }
@@ -218,28 +278,32 @@ function toggleInfoPanel() {
   infoPanel.value = !infoPanel.value
   resetControlsTimer()
 
-  // Update the info height after panel toggle
-  if (infoPanel.value) {
-    nextTick(() => {
-      updateInfoHeight()
-    })
-  }
-  else {
-    // Reset when hiding
-    document.documentElement.style.setProperty('--info-height', '0px')
-  }
+  // Update layout after panel toggle
+  nextTick(() => {
+    updateLayout()
+  })
+}
+
+function toggleSidePanel() {
+  sidePanel.value = !sidePanel.value
+  resetControlsTimer()
+
+  // Update layout after panel toggle
+  nextTick(() => {
+    updateLayout()
+  })
 }
 
 function toggleFullscreen() {
   if (!isFullscreen.value) {
-    if (galleryContainerRef.value) {
+    if (galleryRef.value) {
       enterFullscreen()
         .then(() => {
           isFullscreen.value = true
           // Give browser time to adjust fullscreen before updating sizing
           if (fullscreenResizeTimeout) clearTimeout(fullscreenResizeTimeout)
           fullscreenResizeTimeout = window.setTimeout(() => {
-            updateImageSizes()
+            updateLayout()
           }, 50)
         })
         .catch(() => {})
@@ -249,6 +313,10 @@ function toggleFullscreen() {
     exitFullscreen()
       .then(() => {
         isFullscreen.value = false
+        if (fullscreenResizeTimeout) clearTimeout(fullscreenResizeTimeout)
+        fullscreenResizeTimeout = window.setTimeout(() => {
+          updateLayout()
+        }, 50)
       })
       .catch(() => {})
   }
@@ -265,7 +333,7 @@ const touchStart = useDebounceFn((event: TouchEvent) => {
 
   // Check if the touch started on an interactive element
   if (targetElement.closest('button, a, input, textarea, select')) {
-    return // Don't handle swipe if interacting with an interactive element
+    return // Don't handle swipe if interacting with controls
   }
 
   start.x = touch.screenX
@@ -279,7 +347,7 @@ const touchEnd = useDebounceFn((event: TouchEvent) => {
 
   // Check if the touch ended on an interactive element
   if (targetElement.closest('button, a, input, textarea, select')) {
-    return // Don't handle swipe if interacting with an interactive element
+    return // Don't handle swipe if interacting with controls
   }
 
   const end = { x: touch.screenX, y: touch.screenY }
@@ -296,16 +364,15 @@ const touchEnd = useDebounceFn((event: TouchEvent) => {
   // Add a threshold to prevent accidental swipes
   if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
     if (diffX > 0) {
-      direction.value = 'next'
       goNextImage()
     }
     else {
-      direction.value = 'prev'
       goPrevImage()
     }
   }
 }, 50)
 
+// Border color function
 function getBorderColor(i: any) {
   if (props.borderColor !== undefined) {
     return props.borderColor(i)
@@ -313,8 +380,7 @@ function getBorderColor(i: any) {
   return ''
 }
 
-const isKeyPressed = ref<boolean>(false)
-
+// Keyboard handlers
 function handleKeyboardInput(event: KeyboardEvent) {
   if (!isGalleryOpen.value) return
   if (isKeyPressed.value) return
@@ -326,12 +392,10 @@ function handleKeyboardInput(event: KeyboardEvent) {
       break
     case 'ArrowRight':
       isKeyPressed.value = true
-      direction.value = 'next'
       goNextImage()
       break
     case 'ArrowLeft':
       isKeyPressed.value = true
-      direction.value = 'prev'
       goPrevImage()
       break
     case 'f':
@@ -362,65 +426,55 @@ const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
   }
 }, 200)
 
-// Watch for both image changes and fullscreen mode changes
-watch([currentImage, isFullscreen], () => {
-  // Update the info height when image changes or fullscreen state changes
-  if (infoPanel.value) {
-    nextTick(() => {
-      updateInfoHeight()
-      // Fix image sizing issue when navigating in fullscreen
-      if (isFullscreen.value) {
-        updateImageSizes()
-      }
-    })
-  }
-})
+// Watch for image changes, fullscreen, or panel visibility changes
+watch(
+  [
+    currentImage,
+    isFullscreen,
+    infoPanel,
+    sidePanel,
+    windowWidth,
+    windowHeight,
+    galleryWidth,
+    galleryHeight,
+    topControlsHeight,
+    infoPanelHeight,
+  ],
+  () => {
+    updateLayout()
+  },
+)
 
-// Update CSS variable with info panel height
-function updateInfoHeight() {
-  nextTick(() => {
-    const infoElement = document.querySelector('.info-panel-slot') as HTMLElement
-    if (infoElement) {
-      const height = infoElement.offsetHeight
-      infoHeight.value = height
-      document.documentElement.style.setProperty('--info-height', `${height}px`)
-    }
-  })
-}
-
+// Lifecycle hooks
 onMounted(() => {
   eventBus.on(`${props.id}GalleryImage`, openGalleryImage)
   eventBus.on(`${props.id}Gallery`, openGalleryImage)
   eventBus.on(`${props.id}GalleryClose`, closeGallery)
 
-  // Store reference to the gallery container
-  galleryContainerRef.value = document.querySelector('.gallery-container')
+  // Initialize layout
+  nextTick(() => {
+    updateLayout()
+  })
 
-  // Initialize info height once mounted (only if info panel is shown)
-  if (infoPanel.value) {
-    updateInfoHeight()
+  // Set up observers for dynamic resizing
+  if (topControlsRef.value) {
+    useResizeObserver(topControlsRef.value, updateLayout)
   }
 
-  // Use vueUse's useResizeObserver instead of native ResizeObserver
-  const infoElement = document.querySelector('.info-panel-slot')
-  if (infoElement) {
-    useResizeObserver(infoElement, () => {
-      if (infoPanel.value) {
-        updateInfoHeight()
-      }
-    })
+  if (infoPanelRef.value) {
+    useResizeObserver(infoPanelRef.value, updateLayout)
   }
 
-  // Listen for fullscreen changes to update image sizes
+  if (sidePanelRef.value) {
+    useResizeObserver(sidePanelRef.value, updateLayout)
+  }
+
+  // Listen for fullscreen changes
   useEventListener(document, 'fullscreenchange', () => {
-    if (document.fullscreenElement) {
-      // This handles the case of using F11 or browser fullscreen controls
-      isFullscreen.value = true
-      updateImageSizes()
-    }
-    else {
-      isFullscreen.value = false
-    }
+    isFullscreen.value = !!document.fullscreenElement
+    nextTick(() => {
+      updateLayout()
+    })
   })
 })
 
@@ -461,284 +515,262 @@ onUnmounted(() => {
     >
       <div
         v-if="isGalleryOpen"
-        class="fixed bg-fv-neutral-900 text-white inset-0 max-w-[100vw] overflow-hidden gallery-container"
+        ref="galleryRef"
+        class="fixed bg-fv-neutral-900 text-white inset-0 max-w-[100vw] max-h-[100vh] overflow-hidden gallery-container"
         style="z-index: 37"
         role="dialog"
         aria-modal="true"
         @click="handleBackdropClick"
       >
-        <div
-          class="relative w-full h-full max-w-full flex flex-col justify-center items-center"
-          style="z-index: 38"
-          @click.stop
+        <!-- Top Controls Bar - Fixed at top -->
+        <transition
+          enter-active-class="transition-opacity duration-300"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-active-class="transition-opacity duration-300"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
         >
-          <!-- Main Content Area -->
-          <div class="flex flex-grow gap-4 w-full h-full max-w-full">
-            <div class="flex-grow h-full flex items-center relative">
-              <!-- Image Display Area -->
-              <div
-                class="flex h-full relative flex-grow items-center justify-center gap-2 z-[1]"
-                @touchstart="touchStart"
-                @touchend="touchEnd"
-              >
-                <!-- Image Navigation - Left -->
-                <transition
-                  enter-active-class="transition-opacity duration-300"
-                  enter-from-class="opacity-0"
-                  enter-to-class="opacity-100"
-                  leave-active-class="transition-opacity duration-300"
-                  leave-from-class="opacity-100"
-                  leave-to-class="opacity-0"
-                >
-                  <div
-                    v-if="showControls && images.length > 1"
-                    class="absolute left-0 z-[40] h-full flex items-center px-2 md:px-4"
-                  >
-                    <button
-                      class="btn bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 backdrop-blur-sm p-2 rounded-full transition-transform transform hover:scale-110"
-                      aria-label="Previous image"
-                      @click="goPrevImage()"
-                    >
-                      <ChevronLeftIcon class="w-6 h-6 md:w-8 md:h-8" />
-                    </button>
-                  </div>
-                </transition>
-
-                <!-- Main Image Container -->
-                <div
-                  class="flex-1 flex flex-col z-[2] items-center justify-center max-w-full lg:max-w-[calc(100vw - 256px)] relative"
-                >
-                  <transition
-                    :name="direction === 'next' ? 'slide-next' : 'slide-prev'"
-                    mode="out-in"
-                  >
-                    <div
-                      :key="`image-display-${modelValue}`"
-                      class="flex-1 w-full max-w-full flex flex-col items-center justify-center absolute inset-0 z-[2]"
-                    >
-                      <div
-                        class="flex-1 w-full max-w-full flex items-center justify-center image-container"
-                      >
-                        <template
-                          v-if="videoComponent && isVideo(images[modelValue])"
-                        >
-                          <ClientOnly>
-                            <component
-                              :is="videoComponent"
-                              :src="isVideo(images[modelValue])"
-                              class="shadow max-w-full h-auto object-contain video-component"
-                              :style="{
-                                maxHeight: isFullscreen
-                                  ? infoPanel
-                                    ? 'calc(90vh - var(--info-height, 0px) - 4rem)'
-                                    : 'calc(90vh - 4rem)'
-                                  : infoPanel
-                                    ? 'calc(80vh - var(--info-height, 0px) - 4rem)'
-                                    : 'calc(80vh - 4rem)',
-                              }"
-                            />
-                          </ClientOnly>
-                        </template>
-                        <template v-else>
-                          <img
-                            v-if="modelValueSrc && imageComponent === 'img'"
-                            class="shadow max-w-full h-auto object-contain"
-                            :style="{
-                              maxHeight: isFullscreen
-                                ? infoPanel
-                                  ? 'calc(90vh - var(--info-height, 0px) - 4rem)'
-                                  : 'calc(90vh - 4rem)'
-                                : infoPanel
-                                  ? 'calc(80vh - var(--info-height, 0px) - 4rem)'
-                                  : 'calc(80vh - 4rem)',
-                            }"
-                            :src="modelValueSrc"
-                            :alt="`Gallery image ${modelValue + 1}`"
-                          >
-                          <component
-                            :is="imageComponent"
-                            v-else-if="modelValueSrc && imageComponent"
-                            :image="modelValueSrc.image"
-                            :variant="modelValueSrc.variant"
-                            :alt="modelValueSrc.alt"
-                            class="shadow max-w-full h-auto object-contain"
-                            :style="{
-                              maxHeight: isFullscreen
-                                ? infoPanel
-                                  ? 'calc(90vh - var(--info-height, 0px) - 4rem)'
-                                  : 'calc(90vh - 4rem)'
-                                : infoPanel
-                                  ? 'calc(80vh - var(--info-height, 0px) - 4rem)'
-                                  : 'calc(80vh - 4rem)',
-                            }"
-                          />
-                        </template>
-                      </div>
-
-                      <!-- Image Slot Content -->
-                      <div
-                        v-if="infoPanel"
-                        class="info-panel-slot flex-0 px-4 py-3 backdrop-blur-md bg-fv-neutral-900/70 rounded-t-lg flex items-center justify-center max-w-full w-full !z-[45] transition-all"
-                        @transitionend="updateInfoHeight"
-                      >
-                        <slot :value="images[modelValue]" />
-                      </div>
-                    </div>
-                  </transition>
-                </div>
-
-                <!-- Image Navigation - Right -->
-                <transition
-                  enter-active-class="transition-opacity duration-300"
-                  enter-from-class="opacity-0"
-                  enter-to-class="opacity-100"
-                  leave-active-class="transition-opacity duration-300"
-                  leave-from-class="opacity-100"
-                  leave-to-class="opacity-0"
-                >
-                  <div
-                    v-if="showControls && images.length > 1"
-                    class="absolute right-0 z-[40] h-full flex items-center px-2 md:px-4"
-                  >
-                    <button
-                      class="btn bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 backdrop-blur-sm p-2 rounded-full transition-transform transform hover:scale-110"
-                      aria-label="Next image"
-                      @click="goNextImage()"
-                    >
-                      <ChevronRightIcon class="w-6 h-6 md:w-8 md:h-8" />
-                    </button>
-                  </div>
-                </transition>
-              </div>
+          <div
+            v-if="showControls"
+            ref="topControlsRef"
+            class="fixed top-0 left-0 right-0 px-4 py-2 flex justify-between items-center bg-fv-neutral-900/90 backdrop-blur-sm z-50 controls-bar"
+          >
+            <!-- Title and Counter -->
+            <div class="flex items-center space-x-2">
+              <span v-if="title" class="font-medium text-lg">{{ title }}</span>
+              <span class="text-sm opacity-80">{{ currentIndex }} / {{ imageCount }}</span>
             </div>
 
-            <!-- Side Panel for Thumbnails -->
+            <!-- Control Buttons -->
+            <div class="flex items-center space-x-2">
+              <button
+                class="btn p-1.5 rounded-full bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
+                :class="{ 'bg-fv-primary-500/70': infoPanel }"
+                :title="infoPanel ? 'Hide info' : 'Show info'"
+                @click="toggleInfoPanel"
+              >
+                <InformationCircleIcon class="w-5 h-5" />
+              </button>
+
+              <button
+                class="btn p-1.5 rounded-full bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
+                :title="sidePanel ? 'Hide thumbnails' : 'Show thumbnails'"
+                @click="toggleSidePanel"
+              >
+                <ChevronDoubleRightIcon v-if="sidePanel" class="w-5 h-5" />
+                <ChevronDoubleLeftIcon v-else class="w-5 h-5" />
+              </button>
+
+              <button
+                class="btn p-1.5 rounded-full bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
+                aria-label="Close gallery"
+                @click="setModal(false)"
+              >
+                <component :is="closeIcon" class="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </transition>
+
+        <!-- Main Gallery Content - Flexbox layout -->
+        <div
+          ref="galleryContentRef"
+          class="w-full h-full flex flex-col lg:flex-row"
+          style="margin-top: var(--controls-height, 0px)"
+        >
+          <!-- Main Image Area - Fills available space -->
+          <div
+            class="relative flex-1 h-full flex items-center justify-center"
+            :class="{ 'lg:pr-64': sidePanel }"
+          >
+            <!-- Image Navigation Controls - Left -->
             <transition
-              enter-active-class="transform transition ease-in-out duration-300"
-              enter-from-class="translate-x-full"
-              enter-to-class="translate-x-0"
-              leave-active-class="transform transition ease-in-out duration-300"
-              leave-from-class="translate-x-0"
-              leave-to-class="translate-x-full"
+              enter-active-class="transition-opacity duration-300"
+              enter-from-class="opacity-0"
+              enter-to-class="opacity-100"
+              leave-active-class="transition-opacity duration-300"
+              leave-from-class="opacity-100"
+              leave-to-class="opacity-0"
             >
               <div
-                v-if="sidePanel"
-                class="hidden lg:block flex-shrink-0 w-64 bg-fv-neutral-800/90 backdrop-blur-md h-full max-h-full overflow-y-auto pt-16"
+                v-if="showControls && images.length > 1"
+                class="absolute left-0 z-40 h-full flex items-center px-2 md:px-4"
               >
-                <!-- Paging Controls -->
-                <div v-if="paging" class="flex items-center justify-center pt-2">
-                  <DefaultPaging :id="id" :items="paging" />
-                </div>
+                <button
+                  class="btn bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 backdrop-blur-sm p-2 rounded-full transition-transform transform hover:scale-110"
+                  aria-label="Previous image"
+                  @click="goPrevImage()"
+                >
+                  <ChevronLeftIcon class="w-6 h-6 md:w-8 md:h-8" />
+                </button>
+              </div>
+            </transition>
 
-                <!-- Thumbnail Grid -->
-                <div class="grid grid-cols-2 gap-2 p-2">
-                  <div
-                    v-for="i in images.length"
-                    :key="`bg_${id}_${i}`"
-                    class="group relative"
-                  >
-                    <div
-                      class="absolute inset-0 rounded-lg transition-colors duration-300 group-hover:bg-fv-neutral-700/40"
-                      :class="{ 'bg-fv-primary-500/40': i - 1 === modelValue }"
-                    />
+            <!-- Image Display Container -->
+            <div
+              ref="imageContainerRef"
+              class="image-container flex-grow flex items-center justify-center"
+              :class="{ 'has-info': infoPanel }"
+              @touchstart="touchStart"
+              @touchend="touchEnd"
+            >
+              <transition
+                :name="direction === 'next' ? 'slide-next' : 'slide-prev'"
+                mode="out-in"
+              >
+                <div
+                  :key="`image-display-${modelValue}`"
+                  class="image-display relative w-full h-full flex flex-col items-center justify-center"
+                >
+                  <!-- Actual Image/Video Content -->
+                  <template v-if="videoComponent && isVideo(images[modelValue])">
+                    <ClientOnly>
+                      <component
+                        :is="videoComponent"
+                        :src="isVideo(images[modelValue])"
+                        class="shadow max-w-full h-auto object-contain video-component"
+                        :style="{ maxHeight: availableHeight }"
+                      />
+                    </ClientOnly>
+                  </template>
+                  <template v-else>
                     <img
-                      v-if="imageComponent === 'img'"
-                      :class="`h-auto max-w-full rounded-lg cursor-pointer shadow transition-all duration-300 group-hover:brightness-110 ${getBorderColor(
-                        images[i - 1],
-                      )}`"
-                      :style="{
-                        filter:
-                          i - 1 === modelValue ? 'brightness(1)' : 'brightness(0.7)',
-                      }"
-                      :src="getThumbnailUrl(images[i - 1])"
-                      :alt="`Thumbnail ${i}`"
-                      @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+                      v-if="modelValueSrc && imageComponent === 'img'"
+                      class="shadow max-w-full h-auto object-contain"
+                      :style="{ maxHeight: availableHeight }"
+                      :src="modelValueSrc"
+                      :alt="`Gallery image ${modelValue + 1}`"
                     >
                     <component
                       :is="imageComponent"
-                      v-else
-                      :image="getThumbnailUrl(images[i - 1]).image"
-                      :variant="getThumbnailUrl(images[i - 1]).variant"
-                      :alt="getThumbnailUrl(images[i - 1]).alt"
-                      :class="`h-auto max-w-full rounded-lg cursor-pointer shadow transition-all duration-300 group-hover:brightness-110 ${getBorderColor(
-                        images[i - 1],
-                      )}`"
-                      :style="{
-                        filter:
-                          i - 1 === modelValue ? 'brightness(1)' : 'brightness(0.7)',
-                      }"
-                      :likes="getThumbnailUrl(images[i - 1]).likes"
-                      :show-likes="getThumbnailUrl(images[i - 1]).showLikes"
-                      :is-author="getThumbnailUrl(images[i - 1]).isAuthor"
-                      :user-uuid="getThumbnailUrl(images[i - 1]).userUUID"
-                      @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+                      v-else-if="modelValueSrc && imageComponent"
+                      :image="modelValueSrc.image"
+                      :variant="modelValueSrc.variant"
+                      :alt="modelValueSrc.alt"
+                      class="shadow max-w-full h-auto object-contain"
+                      :style="{ maxHeight: availableHeight }"
+                      :likes="modelValueSrc.likes"
+                      :show-likes="modelValueSrc.showLikes"
+                      :is-author="modelValueSrc.isAuthor"
+                      :user-uuid="modelValueSrc.userUUID"
                     />
-                  </div>
+                  </template>
                 </div>
+              </transition>
+            </div>
+
+            <!-- Image Navigation Controls - Right -->
+            <transition
+              enter-active-class="transition-opacity duration-300"
+              enter-from-class="opacity-0"
+              enter-to-class="opacity-100"
+              leave-active-class="transition-opacity duration-300"
+              leave-from-class="opacity-100"
+              leave-to-class="opacity-0"
+            >
+              <div
+                v-if="showControls && images.length > 1"
+                class="absolute right-0 z-40 h-full flex items-center px-2 md:px-4"
+              >
+                <button
+                  class="btn bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 backdrop-blur-sm p-2 rounded-full transition-transform transform hover:scale-110"
+                  aria-label="Next image"
+                  @click="goNextImage()"
+                >
+                  <ChevronRightIcon class="w-6 h-6 md:w-8 md:h-8" />
+                </button>
+              </div>
+            </transition>
+
+            <!-- Info Panel Below Image -->
+            <transition
+              enter-active-class="transition-all duration-300 ease-out"
+              enter-from-class="opacity-0 transform translate-y-4"
+              enter-to-class="opacity-100 transform translate-y-0"
+              leave-active-class="transition-all duration-300 ease-in"
+              leave-from-class="opacity-100 transform translate-y-0"
+              leave-to-class="opacity-0 transform translate-y-4"
+            >
+              <div
+                v-if="infoPanel && images[modelValue]"
+                ref="infoPanelRef"
+                class="info-panel absolute bottom-0 left-0 right-0 px-4 py-3 backdrop-blur-md bg-fv-neutral-900/70 z-45"
+              >
+                <slot :value="images[modelValue]" />
               </div>
             </transition>
           </div>
 
-          <!-- Top Controls -->
+          <!-- Side Thumbnails Panel -->
           <transition
-            enter-active-class="transition-opacity duration-300"
-            enter-from-class="opacity-0"
-            enter-to-class="opacity-100"
-            leave-active-class="transition-opacity duration-300"
-            leave-from-class="opacity-100"
-            leave-to-class="opacity-0"
+            enter-active-class="transform transition ease-in-out duration-300"
+            enter-from-class="translate-x-full"
+            enter-to-class="translate-x-0"
+            leave-active-class="transform transition ease-in-out duration-300"
+            leave-from-class="translate-x-0"
+            leave-to-class="translate-x-full"
           >
             <div
-              v-if="showControls"
-              class="absolute top-0 left-0 right-0 px-4 py-3 flex justify-between items-center bg-gradient-to-b from-fv-neutral-900/90 to-transparent backdrop-blur-sm z-[50] transition-opacity h-16"
+              v-if="sidePanel"
+              ref="sidePanelRef"
+              class="side-panel hidden lg:block absolute right-0 top-0 bottom-0 w-64 bg-fv-neutral-800/90 backdrop-blur-md overflow-y-auto z-40"
+              :style="{ 'padding-top': `${topControlsHeight}px` }"
             >
-              <!-- Title and Counter -->
-              <div class="flex items-center space-x-2">
-                <span v-if="title" class="font-medium text-lg">{{ title }}</span>
-                <span class="text-sm opacity-80">{{ currentIndex }} / {{ imageCount }}</span>
+              <!-- Paging Controls if needed -->
+              <div v-if="paging" class="flex items-center justify-center pt-2">
+                <DefaultPaging :id="id" :items="paging" />
               </div>
 
-              <!-- Control Buttons -->
-              <div class="flex items-center space-x-2">
-                <button
-                  class="btn p-1.5 rounded-full bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
-                  :class="{ 'bg-fv-primary-500/70': infoPanel }"
-                  :title="infoPanel ? 'Hide info' : 'Show info'"
-                  @click="toggleInfoPanel"
+              <!-- Thumbnail Grid -->
+              <div class="grid grid-cols-2 gap-2 p-2">
+                <div
+                  v-for="i in images.length"
+                  :key="`bg_${id}_${i}`"
+                  class="group relative"
                 >
-                  <InformationCircleIcon class="w-5 h-5" />
-                </button>
-
-                <button
-                  class="btn p-1.5 rounded-full lg:hidden bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
-                  :title="sidePanel ? 'Hide thumbnails' : 'Show thumbnails'"
-                  @click="() => (sidePanel = !sidePanel)"
-                >
-                  <ChevronDoubleRightIcon v-if="sidePanel" class="w-5 h-5" />
-                  <ChevronDoubleLeftIcon v-else class="w-5 h-5" />
-                </button>
-
-                <button
-                  class="btn p-1.5 rounded-full hidden lg:block bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
-                  :title="sidePanel ? 'Hide thumbnails' : 'Show thumbnails'"
-                  @click="() => (sidePanel = !sidePanel)"
-                >
-                  <ChevronDoubleRightIcon v-if="sidePanel" class="w-5 h-5" />
-                  <ChevronDoubleLeftIcon v-else class="w-5 h-5" />
-                </button>
-
-                <button
-                  class="btn p-1.5 rounded-full bg-fv-neutral-800/70 hover:bg-fv-neutral-700/90 transition-transform transform hover:scale-110"
-                  aria-label="Close gallery"
-                  @click="setModal(false)"
-                >
-                  <component :is="closeIcon" class="w-5 h-5" />
-                </button>
+                  <div
+                    class="absolute inset-0 rounded-lg transition-colors duration-300 group-hover:bg-fv-neutral-700/40"
+                    :class="{ 'bg-fv-primary-500/40': i - 1 === modelValue }"
+                  />
+                  <img
+                    v-if="imageComponent === 'img'"
+                    :class="`h-auto max-w-full rounded-lg cursor-pointer shadow transition-all duration-300 group-hover:brightness-110 ${getBorderColor(
+                      images[i - 1],
+                    )}`"
+                    :style="{
+                      filter:
+                        i - 1 === modelValue ? 'brightness(1)' : 'brightness(0.7)',
+                    }"
+                    :src="getThumbnailUrl(images[i - 1])"
+                    :alt="`Thumbnail ${i}`"
+                    @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+                  >
+                  <component
+                    :is="imageComponent"
+                    v-else
+                    :image="getThumbnailUrl(images[i - 1]).image"
+                    :variant="getThumbnailUrl(images[i - 1]).variant"
+                    :alt="getThumbnailUrl(images[i - 1]).alt"
+                    :class="`h-auto max-w-full rounded-lg cursor-pointer shadow transition-all duration-300 group-hover:brightness-110 ${getBorderColor(
+                      images[i - 1],
+                    )}`"
+                    :style="{
+                      filter:
+                        i - 1 === modelValue ? 'brightness(1)' : 'brightness(0.7)',
+                    }"
+                    :likes="getThumbnailUrl(images[i - 1]).likes"
+                    :show-likes="getThumbnailUrl(images[i - 1]).showLikes"
+                    :is-author="getThumbnailUrl(images[i - 1]).isAuthor"
+                    :user-uuid="getThumbnailUrl(images[i - 1]).userUUID"
+                    @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+                  />
+                </div>
               </div>
             </div>
           </transition>
 
-          <!-- Mobile Thumbnail Preview -->
+          <!-- Mobile Thumbnail Preview (bottom of screen on mobile) -->
           <transition
             enter-active-class="transition-transform duration-300 ease-out"
             enter-from-class="translate-y-full"
@@ -749,7 +781,8 @@ onUnmounted(() => {
           >
             <div
               v-if="showControls && images.length > 1 && !sidePanel"
-              class="absolute bottom-0 left-0 right-0 p-2 lg:hidden bg-gradient-to-t from-fv-neutral-900/90 to-transparent backdrop-blur-sm z-[50]"
+              class="absolute bottom-0 left-0 right-0 p-2 lg:hidden bg-gradient-to-t from-fv-neutral-900/90 to-transparent backdrop-blur-sm z-45"
+              :class="{ 'pb-20': infoPanel }"
             >
               <div class="overflow-x-auto flex space-x-2 pb-1 px-1">
                 <div
@@ -787,7 +820,7 @@ onUnmounted(() => {
       </div>
     </transition>
 
-    <!-- Thumbnail Grid/Mason/Custom Layouts -->
+    <!-- Thumbnail Grid/Mason/Custom Layouts for non-opened gallery -->
     <div v-if="mode === 'grid' || mode === 'mason' || mode === 'custom'" class="gallery-grid">
       <div
         :class="{
@@ -881,6 +914,43 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Ensure controls stay fixed at top */
+.controls-bar {
+  height: auto;
+}
+
+/* Layout container for main image and info panel */
+.image-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+/* Side panel positioning */
+.side-panel {
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Info panel styling */
+.info-panel {
+  width: 100%;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+/* Image sizing in different contexts */
+.image-display img,
+.image-display .video-component {
+  transition: max-height 0.3s ease-out, max-width 0.3s ease-out;
+  object-fit: contain;
+}
+
 /* Transition styles for next (right) navigation */
 .slide-next-enter-active,
 .slide-next-leave-active {
@@ -892,8 +962,8 @@ onUnmounted(() => {
 
 .slide-next-enter-from {
   opacity: 0;
-  transform: translateX(100%);
-  filter: blur(10px);
+  transform: translateX(30px);
+  filter: blur(8px);
 }
 
 .slide-next-enter-to {
@@ -910,8 +980,8 @@ onUnmounted(() => {
 
 .slide-next-leave-to {
   opacity: 0;
-  transform: translateX(-100%);
-  filter: blur(10px);
+  transform: translateX(-30px);
+  filter: blur(8px);
 }
 
 /* Transition styles for prev (left) navigation */
@@ -925,8 +995,8 @@ onUnmounted(() => {
 
 .slide-prev-enter-from {
   opacity: 0;
-  transform: translateX(-100%);
-  filter: blur(10px);
+  transform: translateX(-30px);
+  filter: blur(8px);
 }
 
 .slide-prev-enter-to {
@@ -943,11 +1013,11 @@ onUnmounted(() => {
 
 .slide-prev-leave-to {
   opacity: 0;
-  transform: translateX(100%);
-  filter: blur(10px);
+  transform: translateX(30px);
+  filter: blur(8px);
 }
 
-/* Modern grids */
+/* Grid layouts for thumbnails */
 .gallery-grid {
   min-height: 200px;
 }
