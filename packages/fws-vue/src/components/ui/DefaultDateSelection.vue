@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useDebounceFn } from '@vueuse/core'
 import { computed } from 'vue'
 import { DefaultInput } from '../..'
 
@@ -22,10 +23,15 @@ const props = withDefaults(
 
 const emit = defineEmits(['update:modelValue'])
 
+// Use debounced emitter to reduce update frequency
+const emitUpdate = useDebounceFn((value: DateInterval) => {
+  emit('update:modelValue', value)
+}, 150)
+
 const model = computed({
   get: () => props.modelValue,
   set: (items) => {
-    emit('update:modelValue', items)
+    emitUpdate(items)
   },
 })
 </script>

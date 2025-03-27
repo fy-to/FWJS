@@ -4,6 +4,7 @@ import { getURL, stringHash } from '@fy-/fws-js'
 import { ChevronRightIcon, HomeIcon } from '@heroicons/vue/24/solid'
 import { defineBreadcrumb } from '@unhead/schema-org'
 import { useSchemaOrg } from '@unhead/schema-org/vue'
+import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -16,27 +17,46 @@ const props = withDefaults(
   },
 )
 
-const breadcrumbsSchemaFormat = props.nav.map((item, index) => {
-  const fullUrl = `${
-    getURL().Host
-  }${item.to}`.replace(/\/\//g, '/')
+// Memoize URL computation
+const baseUrl = computed(() => {
+  const url = getURL()
+  return {
+    host: url.Host,
+    scheme: url.Scheme,
+  }
+})
+
+// Memoize breadcrumb schema format to avoid recalculation
+const breadcrumbsSchemaFormat = computed(() => props.nav.map((item, index) => {
+  if (!item.to) {
+    return {
+      'position': index + 1,
+      'name': item.name,
+      '@type': 'ListItem',
+    }
+  }
+
+  const fullUrl = `${baseUrl.value.host}${item.to}`.replace(/\/\//g, '/')
   return {
     'position': index + 1,
     'name': item.name,
-    'item': item.to
-      ? `${getURL().Scheme}://${fullUrl}`
-      : undefined,
+    'item': `${baseUrl.value.scheme}://${fullUrl}`,
     '@type': 'ListItem',
   }
-})
-function getBreadcrumbID() {
+}))
+
+// Cache breadcrumb ID to avoid string operations on every render
+const breadcrumbId = computed(() => {
+  if (!props.nav.length) return ''
   const chain = props.nav.map(item => item.name).join(' > ')
   return stringHash(chain)
-}
+})
+
+// Only run schema.org setup if we have breadcrumbs
 if (props.nav && props.nav.length) {
   useSchemaOrg([
     defineBreadcrumb({
-      '@id': `#${getBreadcrumbID()}`,
+      '@id': computed(() => `#${breadcrumbId.value}`),
       'itemListElement': breadcrumbsSchemaFormat,
     }),
   ])

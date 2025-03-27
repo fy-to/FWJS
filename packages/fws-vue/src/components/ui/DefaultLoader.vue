@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useEventBus } from '../../composables/event-bus'
 
 const props = withDefaults(
@@ -13,18 +14,26 @@ const props = withDefaults(
     id: '',
   },
 )
+
 const eventBus = useEventBus()
 const loading = ref<boolean>(false)
-function setLoading(value: boolean) {
+
+// Compute event name once to avoid string concatenation on each event
+const eventName = computed(() => props.id ? `${props.id}-loading` : 'loading')
+
+// Debounce the loading state change to prevent rapid toggles
+const setLoading = useDebounceFn((value: boolean) => {
   loading.value = value
-}
+}, 50)
+
+// Setup event listeners with computed event name
 onMounted(() => {
-  if (props.id) eventBus.on(`${props.id}-loading`, setLoading)
-  else eventBus.on('loading', setLoading)
+  eventBus.on(eventName.value, setLoading)
 })
+
+// Proper cleanup of event listeners
 onUnmounted(() => {
-  if (props.id) eventBus.off(`${props.id}-loading`, setLoading)
-  else eventBus.off('loading', setLoading)
+  eventBus.off(eventName.value, setLoading)
 })
 </script>
 

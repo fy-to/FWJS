@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ErrorObject } from '@vuelidate/core'
-import { computed, ref, toRef } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
+import { computed, shallowRef, toRef } from 'vue'
 import { useTranslation } from '../../composables/translations'
 import DefaultTagInput from './DefaultTagInput.vue'
 
@@ -53,11 +54,13 @@ const props = withDefaults(
 )
 
 const translate = useTranslation()
-const inputRef = ref<HTMLInputElement>()
+// Use shallowRef for DOM elements to reduce reactivity overhead
+const inputRef = shallowRef<HTMLInputElement>()
 
 const errorProps = toRef(props, 'error')
 const errorVuelidateProps = toRef(props, 'errorVuelidate')
 
+// Memoized error calculation
 const checkErrors = computed(() => {
   if (errorProps.value) return errorProps.value
   if (errorVuelidateProps.value && errorVuelidateProps.value.length > 0) {
@@ -84,20 +87,23 @@ const emit = defineEmits([
   'blur',
 ])
 
-function handleFocus() {
+// Debounced event handlers to reduce CPU usage from rapid events
+const handleFocus = useDebounceFn(() => {
   emit('focus', props.id)
-}
-function handleBlur() {
-  emit('blur', props.id)
-}
+}, 50)
 
-// Copy input value to clipboard
-function copyToClipboard() {
+const handleBlur = useDebounceFn(() => {
+  emit('blur', props.id)
+}, 50)
+
+// Copy input value to clipboard with debounce
+const copyToClipboard = useDebounceFn(() => {
   if (props.modelValue) {
     navigator.clipboard.writeText(props.modelValue.toString())
   }
-}
+}, 200)
 
+// Optimized computed properties with explicit types
 const model = computed<modelValueType>({
   get: () => props.modelValue,
   set: (value) => {

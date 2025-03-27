@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import type { NavLink } from '../../types'
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/solid'
-import { useStorage } from '@vueuse/core'
+import { useDebounceFn, useStorage } from '@vueuse/core'
+import { computed, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
 
 const props = withDefaults(
@@ -15,21 +16,48 @@ const props = withDefaults(
     baseUrl: '/',
   },
 )
+
 const route = useRoute()
+
+// Cache storage key to avoid string concatenation
+const storageKey = computed(() => `isOpenSidebar-${props.id}`)
+
+// Create a cache for active links to avoid recalculation
+const activeLinkCache = shallowRef(new Map<string, string>())
+
+// Optimized link active check with memoization
 function isLinkActive(link: NavLink) {
-  if (link.to !== props.baseUrl) {
-    if (route.path === link.to || route.path.includes(link.to)) {
-      return 'fvside-active'
+  const linkTo = link.to
+
+  // Return from cache if available
+  if (activeLinkCache.value.has(linkTo)) {
+    return activeLinkCache.value.get(linkTo)
+  }
+
+  let result = ''
+  if (linkTo !== props.baseUrl) {
+    if (route.path === linkTo || route.path.includes(linkTo)) {
+      result = 'fvside-active'
     }
   }
   else {
-    if (route.path === link.to) {
-      return 'fvside-active'
+    if (route.path === linkTo) {
+      result = 'fvside-active'
     }
   }
-  return ''
+
+  // Cache the result
+  activeLinkCache.value.set(linkTo, result)
+  return result
 }
-const isOpen = useStorage(`isOpenSidebar-${props.id}`, true)
+
+// Debounce storage updates to prevent rapid toggling
+const isOpen = useStorage(storageKey.value, true)
+
+// Debounced toggle function
+const toggleSidebar = useDebounceFn(() => {
+  isOpen.value = !isOpen.value
+}, 150)
 </script>
 
 <template>
@@ -38,7 +66,7 @@ const isOpen = useStorage(`isOpenSidebar-${props.id}`, true)
       <button
         class="btn neutral defaults"
         aria-controls="side-nav"
-        @click="isOpen = !isOpen"
+        @click="toggleSidebar"
       >
         <ArrowLeftIcon v-if="isOpen" />
         <ArrowRightIcon v-else />
