@@ -262,14 +262,14 @@ const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
       >
         <!-- Backdrop with click to close functionality -->
         <div
-          class="flex absolute backdrop-blur-[8px] inset-0 flex-col items-center justify-center min-h-screen text-fv-neutral-800 dark:text-fv-neutral-300 bg-fv-neutral-900/[.20] dark:bg-fv-neutral-50/[.20]"
+          class="flex fixed backdrop-blur-[8px] inset-0 flex-col items-center py-8 px-4 overflow-y-auto text-fv-neutral-800 dark:text-fv-neutral-300 bg-fv-neutral-900/[.20] dark:bg-fv-neutral-50/[.20]"
           :style="{ zIndex }"
           @click="handleBackdropClick"
         >
           <!-- Modal panel -->
           <div
             ref="modalRef"
-            :class="`relative ${mSize} max-w-6xl max-h-[85vh] px-0 box-border bg-white rounded-lg shadow dark:bg-fv-neutral-900 flex flex-col`"
+            :class="`relative ${mSize} max-w-6xl max-h-[85vh] my-auto px-0 box-border bg-white rounded-lg shadow dark:bg-fv-neutral-900 flex flex-col`"
             :style="{ zIndex }"
             tabindex="-1"
             @click.stop

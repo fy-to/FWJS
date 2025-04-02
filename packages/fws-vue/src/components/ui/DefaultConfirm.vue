@@ -74,38 +74,52 @@ onUnmounted(() => {
 <template>
   <DefaultModal
     id="confirm"
-
     ref="modalRef"
+    m-size="!max-w-3xl w-full"
   >
     <div
-      class="relative bg-fv-neutral-200 rounded-lg shadow dark:bg-fv-neutral-900"
+      class="bg-gradient-to-br from-gray-900/70 to-gray-800/50 rounded-lg border border-gray-700/30 overflow-hidden"
       :aria-labelledby="title ? 'confirm-modal-title' : undefined"
       :aria-describedby="desc ? 'confirm-modal-desc' : undefined"
       aria-modal="true"
       role="dialog"
       tabindex="-1"
     >
+      <!-- Header with gradient background -->
       <div
-        class="p-1.5 lg:p-5 text-center max-h-[80vh] overflow-y-auto cool-scroll"
+        v-if="title"
+        class="bg-gradient-to-r from-indigo-900/30 to-indigo-800/20 p-4 border-b border-indigo-700/30"
       >
-        <h2
-          v-if="title"
+        <h3
           id="confirm-modal-title"
-          class="text-xl font-semibold text-fv-neutral-900 dark:text-white"
+          class="text-xl font-semibold text-white"
         >
           {{ title }}
-        </h2>
-        <p
-          v-if="desc"
-          id="confirm-modal-desc"
-          class="mb-3 text-left prose prose-invert prose-sm min-w-full"
-          v-html="desc"
-        />
-        <div class="flex justify-between gap-3 mt-4">
-          <button class="btn danger defaults" @click="_onConfirm()">
+        </h3>
+      </div>
+
+      <!-- Content area with styled box -->
+      <div class="p-5 text-fv-neutral-100">
+        <div v-if="desc" class="bg-gradient-to-r from-blue-950/50 to-indigo-950/50 p-4 rounded-lg border border-blue-700/30 mb-6 shadow-md">
+          <p
+            id="confirm-modal-desc"
+            class="text-sm sm:text-base text-gray-200 prose prose-invert prose-sm min-w-full"
+            v-html="desc"
+          />
+        </div>
+
+        <!-- Action buttons with modern styling -->
+        <div class="flex justify-center gap-4 mt-6">
+          <button
+            class="btn accent large shadow-lg hover:shadow-fuchsia-500/30 transition-all duration-300 hover:scale-105 active:scale-95 px-8 rounded-lg"
+            @click="_onConfirm()"
+          >
             {{ $t("confirm_modal_cta_confirm") }}
           </button>
-          <button class="btn neutral defaults" @click="resetConfirm()">
+          <button
+            class="btn neutral large shadow-md transform transition hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-500 px-8 rounded-lg"
+            @click="resetConfirm()"
+          >
             {{ $t("confirm_modal_cta_cancel") }}
           </button>
         </div>
