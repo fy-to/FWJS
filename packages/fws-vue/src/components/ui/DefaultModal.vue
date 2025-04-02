@@ -269,7 +269,7 @@ const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
           <!-- Modal panel -->
           <div
             ref="modalRef"
-            :class="`relative ${mSize} max-w-6xl max-h-[85vh] px-4 sm:px-0 box-border bg-white rounded-lg shadow dark:bg-fv-neutral-900 flex flex-col`"
+            :class="`relative ${mSize} max-w-6xl max-h-[85vh] px-0 box-border bg-white rounded-lg shadow dark:bg-fv-neutral-900 flex flex-col`"
             :style="{ zIndex }"
             tabindex="-1"
             @click.stop
@@ -295,7 +295,7 @@ const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
               </button>
             </div>
             <!-- Content area -->
-            <div :class="`p-3 space-y-3 flex-grow ${ofy}`">
+            <div :class="`p-2 space-y-3 flex-grow ${ofy}`">
               <slot />
             </div>
           </div>

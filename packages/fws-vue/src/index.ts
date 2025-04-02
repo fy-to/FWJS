@@ -99,6 +99,7 @@ export {
   CmsArticleSingle,
   CollapseTransition,
   createFWS,
+  cropText as cropTextFunction,
   DataTable,
   DefaultBreadcrumb,
   DefaultConfirm,
@@ -109,20 +110,26 @@ export {
   DefaultInput,
   DefaultLoader,
   DefaultModal,
-  DefaultNotif,
 
+  DefaultNotif,
   DefaultPaging,
   DefaultSidebar,
   DefaultTagInput,
   ExpandTransition,
-  FadeTransition,
 
+  FadeTransition,
   FilterData,
+  formatBytes as formatBytesFunction,
+  formatDate as formatDateFunction,
+  formatDatetime as formatDatetimeFunction,
+  formatTimeago as formatTimeagoFunction,
+  getContrastingTextColor as getContrastingTextColorFunction,
   i18nextPromise,
   initVueClient,
   initVueServer,
   isServerRendered,
   ScaleTransition,
+
   // Components
   // UI/Transitions
   SlideTransition,
@@ -132,10 +139,10 @@ export {
   // FWS
   UserFlow,
   UserOAuth2,
-
   UserProfile,
   UserProfileStrict,
   useSeo,
+
   useServerRouter,
   useTranslation,
   useUserCheck,

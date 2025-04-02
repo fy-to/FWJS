@@ -46,8 +46,8 @@ function processImageUrl(image: string | undefined, imageType: string | undefine
 }
 
 // Helper function to normalize image type
-function normalizeImageType(imageType: string | undefined): 'image/jpeg' | 'image/gif' | 'image/png' | false {
-  if (!imageType) return false
+function normalizeImageType(imageType: string | undefined): 'image/jpeg' | 'image/gif' | 'image/png' | null {
+  if (!imageType) return null
 
   const type = imageType.includes('image/') ? imageType : `image/${imageType}`
   if (type === 'image/jpeg' || type === 'image/gif' || type === 'image/png') {
@@ -72,7 +72,10 @@ export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
   // Memoize common values
   const localeForOg = computed(() => currentLocale?.replace('-', '_'))
   const imageUrl = computed(() => processImageUrl(seoData.value.image, seoData.value.imageType))
-  const imageType = computed(() => normalizeImageType(seoData.value.imageType))
+  const imageType = computed(() => {
+    const type = normalizeImageType(seoData.value.imageType)
+    return type === null ? undefined : type
+  })
   const imageAlt = computed(() => seoData.value.image ? seoData.value.title : undefined)
 
   useHead({

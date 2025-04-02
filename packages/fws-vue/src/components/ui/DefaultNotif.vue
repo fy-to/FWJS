@@ -61,18 +61,19 @@ const onCall = useDebounceFn((data: NotifProps) => {
     else if (data.type === 'secret') data.imgIcon = SparklesIcon
   }
 
-  // Set the new notification
+  // Set the new notification with default time of 2000ms (2 seconds) if not specified
   currentNotif.value = {
     ...data,
+    time: data.time || 2000, // Set default to 2 seconds if not specified
   }
 
   // (A) Hide the notification after the specified time
-  hideTimeout = setTimeout(() => hideNotif(), data.time)
+  hideTimeout = setTimeout(() => hideNotif(), currentNotif.value.time)
 
   // (B) Use requestAnimationFrame for smoother animation
   progress.value = 0
   const startTime = performance.now()
-  const duration = Number(data.time || 5000)
+  const duration = Number(currentNotif.value.time)
 
   const { pause } = useRafFn((timestamp) => {
     if (isPaused.value) return
@@ -132,7 +133,7 @@ function resumeTimer() {
   // Calculate remaining time based on progress
   const remainingTime = currentNotif.value.time
     ? Math.max(currentNotif.value.time * (1 - progress.value / 100), 1000)
-    : 5000
+    : 2000 // Default to 2 seconds
 
   // Reset the timeout with the remaining time
   hideTimeout = setTimeout(() => hideNotif(), remainingTime)

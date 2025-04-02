@@ -1,6 +1,32 @@
 import { getLocale } from '@fy-/fws-js'
-import { format as formatDateTimeago } from 'timeago.js'
+import { format as formatDateTimeago, register } from 'timeago.js'
+import de from 'timeago.js/esm/lang/de'
+import es from 'timeago.js/esm/lang/es'
+// Import common locales individually to avoid CommonJS issues
+import fr from 'timeago.js/esm/lang/fr'
+import it from 'timeago.js/esm/lang/it'
+import ja from 'timeago.js/esm/lang/ja'
+import nl from 'timeago.js/esm/lang/nl'
+import ru from 'timeago.js/esm/lang/ru'
+import zh_CN from 'timeago.js/esm/lang/zh_CN'
 import { useTranslation } from './translations'
+
+// Register common locales
+register('fr', fr)
+register('fr_FR', fr)
+register('es', es)
+register('es_ES', es)
+register('de', de)
+register('de_DE', de)
+register('it', it)
+register('it_IT', it)
+register('nl', nl)
+register('nl_NL', nl)
+register('ru', ru)
+register('ru_RU', ru)
+register('ja', ja)
+register('ja_JP', ja)
+register('zh_CN', zh_CN)
 
 // Cache common constants and patterns
 const k = 1024
@@ -109,9 +135,17 @@ function formatDatetime(dt: Date | string | number) {
 
 function formatTimeago(dt: Date | string | number) {
   const timestamp = parseDateInput(dt)
-  const locale = getLocale().replace('_', '-')
+  const dateObj = new Date(timestamp)
 
-  return formatDateTimeago(new Date(timestamp), locale)
+  // Get browser locale and format it for timeago.js
+  const fullLocale = getLocale()
+
+  // Convert locale format (e.g., fr-FR to fr_FR)
+  const localeWithUnderscore = fullLocale.replace('-', '_')
+
+  // Use the locale directly - the registration above ensures support
+  // timeago.js will fall back to en_US if no matching locale is found
+  return formatDateTimeago(dateObj, localeWithUnderscore)
 }
 
 export {

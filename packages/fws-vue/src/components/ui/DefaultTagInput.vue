@@ -260,24 +260,31 @@ function focusInput() {
 }
 
 /**
- * Handle pasting text with debounce
+ * Handle pasting text - without debounce for direct response
  */
-const handlePaste = useDebounceFn((e: ClipboardEvent) => {
+function handlePaste(e: ClipboardEvent) {
   if (!textInput.value || isMaxReached.value) return
 
-  const clipboardData = e.clipboardData ?? (window as any).clipboardData
+  // Prevent the default paste behavior
+  e.preventDefault()
+
+  // Get clipboard data
+  const clipboardData = e.clipboardData
   if (!clipboardData) return
 
+  // Get the pasted text
   const text = clipboardData.getData('text')
-  if (!text.trim()) return
+  if (!text || !text.trim()) return
 
-  const pasteText = text.replace(getSeparatorRegex(true), ',')
+  // Process the text (replace separator characters)
+  const pasteText = text.replace(/,/g, ',')
 
-  // Set the text content directly, rather than appending
+  // Simply set the content - the most reliable approach
   textInput.value.textContent = pasteText
-  e.preventDefault()
+
+  // Add tags immediately
   addTag()
-}, 50)
+}
 
 /**
  * Handle keyboard navigation between tags - optimized with element lookup caching
