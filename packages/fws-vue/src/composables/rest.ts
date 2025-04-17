@@ -30,11 +30,16 @@ export interface APIResult {
 // Cache for URL parsing to avoid repeated parsing of the same URL
 const urlParseCache = new Map<string, string>()
 
+// Global request hash cache shared across all instances
+const globalHashCache = new Map<string, number>()
+
+// Detect if we're in SSR mode once and cache the result
+let isSSRMode: boolean | null = null
+
 // Memoized function to extract URL pathname and search for hashing
 function getUrlForHash(url: string): string {
-  if (urlParseCache.has(url)) {
-    return urlParseCache.get(url)!
-  }
+  const cached = urlParseCache.get(url)
+  if (cached) return cached
 
   let urlForHash: string
   try {
@@ -49,18 +54,32 @@ function getUrlForHash(url: string): string {
   return urlForHash
 }
 
-// Detect if we're in SSR mode once and cache the result
-let isSSRMode: boolean | null = null
+// Check SSR mode with caching
 function checkSSRMode(): boolean {
   if (isSSRMode === null) {
     isSSRMode = getMode() === 'ssr'
   }
+
   return isSSRMode
 }
 
-// Optimized JSON.stringify for params
+// Fast JSON.stringify for params
 function stringifyParams(params?: RestParams): string {
   return params ? JSON.stringify(params) : ''
+}
+
+// Compute request hash with global caching
+function computeRequestHash(url: string, method: RestMethod, params?: RestParams): number {
+  const cacheKey = `${url}|${method}|${stringifyParams(params)}`
+
+  const cached = globalHashCache.get(cacheKey)
+  if (cached !== undefined) return cached
+
+  const urlForHash = getUrlForHash(url)
+  const hash = stringHash(urlForHash + method + stringifyParams(params))
+
+  globalHashCache.set(cacheKey, hash)
+  return hash
 }
 
 export function useRest(): <ResultType extends APIResult>(
@@ -71,23 +90,8 @@ params?: RestParams,
   const serverRouter = useServerRouter()
   const eventBus = useEventBus()
 
-  // Cache for request hash computations
-  const hashCache = new Map<string, number>()
-
-  // Function to compute and cache request hash
-  function computeRequestHash(url: string, method: RestMethod, params?: RestParams): number {
-    const cacheKey = `${url}|${method}|${stringifyParams(params)}`
-
-    if (hashCache.has(cacheKey)) {
-      return hashCache.get(cacheKey)!
-    }
-
-    const urlForHash = getUrlForHash(url)
-    const hash = stringHash(urlForHash + method + stringifyParams(params))
-
-    hashCache.set(cacheKey, hash)
-    return hash
-  }
+  // Pre-check for server rendering state
+  const isSSR = isServerRendered()
 
   // Handle API error response consistently
   function handleErrorResult<ResultType extends APIResult>(result: ResultType): Promise<ResultType> {
@@ -104,7 +108,7 @@ params?: RestParams,
     const requestHash = computeRequestHash(url, method, params)
 
     // Check for server-rendered results first
-    if (isServerRendered()) {
+    if (isSSR) {
       const hasResult = serverRouter.getResult(requestHash)
       if (hasResult !== undefined) {
         const result = hasResult as ResultType
