@@ -33,6 +33,9 @@ const urlParseCache = new Map<string, string>()
 // Global request hash cache shared across all instances
 const globalHashCache = new Map<string, number>()
 
+// Track in-flight requests to avoid duplicates
+const inFlightRequests = new Map<number, Promise<any>>()
+
 // Detect if we're in SSR mode once and cache the result
 let isSSRMode: boolean | null = null
 
@@ -122,35 +125,55 @@ params?: RestParams,
       }
     }
 
-    try {
-      const restResult: ResultType = await rest(url, method, params)
-
-      // Store result in server router if in SSR mode
-      if (checkSSRMode()) {
-        // Use structuredClone if available for better performance than JSON.parse/stringify
-        const resultCopy = typeof structuredClone !== 'undefined'
-          ? structuredClone(restResult)
-          : JSON.parse(JSON.stringify(restResult))
-
-        serverRouter.addResult(requestHash, resultCopy)
-      }
-
-      if (restResult.result === 'error') {
-        return handleErrorResult(restResult)
-      }
-
-      return Promise.resolve(restResult)
+    // Check if this exact request is already in-flight
+    const existingRequest = inFlightRequests.get(requestHash)
+    if (existingRequest) {
+      // Return the existing promise for the in-flight request
+      return existingRequest
     }
-    catch (error) {
-      const restError = error as ResultType
 
-      if (checkSSRMode()) {
-        serverRouter.addResult(requestHash, restError)
+    // Create the actual request function
+    const performRequest = async (): Promise<ResultType> => {
+      try {
+        const restResult: ResultType = await rest(url, method, params)
+
+        // Store result in server router if in SSR mode
+        if (checkSSRMode()) {
+          // Use structuredClone if available for better performance than JSON.parse/stringify
+          const resultCopy = typeof structuredClone !== 'undefined'
+            ? structuredClone(restResult)
+            : JSON.parse(JSON.stringify(restResult))
+
+          serverRouter.addResult(requestHash, resultCopy)
+        }
+
+        if (restResult.result === 'error') {
+          return handleErrorResult(restResult)
+        }
+
+        return Promise.resolve(restResult)
       }
+      catch (error) {
+        const restError = error as ResultType
 
-      eventBus.emit('main-loading', false)
-      eventBus.emit('rest-error', restError)
-      return Promise.resolve(restError)
+        if (checkSSRMode()) {
+          serverRouter.addResult(requestHash, restError)
+        }
+
+        eventBus.emit('main-loading', false)
+        eventBus.emit('rest-error', restError)
+        return Promise.resolve(restError)
+      }
+      finally {
+        // Always remove from in-flight requests when done
+        inFlightRequests.delete(requestHash)
+      }
     }
+
+    // Track this request as in-flight
+    const requestPromise = performRequest()
+    inFlightRequests.set(requestHash, requestPromise)
+
+    return requestPromise
   }
 }
