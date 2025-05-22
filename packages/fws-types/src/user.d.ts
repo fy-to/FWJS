@@ -47,4 +47,6 @@ interface UserProfile {
     CreatedAt: TimeResponse;
     UpdatedAt: TimeResponse;
     AvatarUUID?: string;
+    UsernameChangedAt?: TimeResponse;
+    PreviousSlug?: string;
 }

@@ -1,4 +1,3 @@
-# This file has been completely rewritten and optimized
 <script setup lang="ts">
 import type { Component } from 'vue'
 import type { APIPaging } from '../../composables/rest'
@@ -129,29 +128,46 @@ const currentImage = computed(() => {
 const imageCount = computed(() => props.images.length)
 const currentIndex = computed(() => modelValue.value + 1)
 
-// Simple image sizing that relies on flexbox layout to handle the info panel
+/**
+ * Dynamically update the size of the displayed image/video
+ * so it fits inside the viewport, taking into account:
+ * - Top controls
+ * - Info panel (if open)
+ * - Side panel (if open)
+ * - A little padding
+ */
 const updateImageSizes = useDebounceFn(() => {
-  // Get the main image
-  const mainImage = document.querySelector('.image-display img') as HTMLImageElement
-  if (!mainImage) return
+  // Only adjust if gallery is open
+  if (!isGalleryOpen.value) return
+
+  // Find the container and the main media element (img or video)
+  const container = document.querySelector('.image-display') as HTMLDivElement
+  if (!container) return
+  const mainMedia = container.querySelector('img, video') as HTMLElement | null
+  if (!mainMedia) return
 
   // Standard padding
   const padding = 24
 
-  // Handle width constraints
+  // Side panel width if visible
   const sidebarWidth = sidePanel.value ? 256 : 0
+
+  // Calculate available width
   const availableWidth = windowWidth.value - sidebarWidth - padding * 2
 
-  // Set width constraints
-  mainImage.style.maxWidth = windowWidth.value <= 768
-    ? '90vw'
-    : `${availableWidth}px`
+  // Set max width
+  mainMedia.style.maxWidth
+    = windowWidth.value <= 768 ? '90vw' : `${availableWidth}px`
 
-  // Let height be auto to preserve aspect ratio and fit in flexbox container
-  mainImage.style.height = 'auto'
+  // Preserve aspect ratio; let height be auto
+  mainMedia.style.height = 'auto'
 
-  // Set a reasonable max-height if needed
-  mainImage.style.maxHeight = '75vh'
+  // Deduct top controls height + info panel height (if open) + padding
+  const topSpace = topControlsHeight.value || 0
+  const infoSpace = infoPanel.value ? (infoPanelHeight.value || 0) : 0
+  const availableHeight = windowHeight.value - topSpace - infoSpace - padding * 2
+
+  mainMedia.style.maxHeight = `${availableHeight}px`
 }, 50)
 
 // Modal controls
@@ -164,8 +180,6 @@ function setModal(value: boolean) {
       useEventListener(document, 'keydown', handleKeyboardInput)
       useEventListener(document, 'keyup', handleKeyboardRelease)
     }
-
-    // No longer auto-hide controls on mobile
   }
   else {
     if (props.onClose) props.onClose()
@@ -185,7 +199,6 @@ function setModal(value: boolean) {
   }
   isGalleryOpen.value = value
   showControls.value = true
-  // Don't reset info panel state when opening/closing
 }
 
 // Open gallery with debounce to prevent accidental double-clicks
@@ -207,7 +220,6 @@ const openGalleryImage = useDebounceFn((index: number | undefined) => {
 // Navigation functions
 function goNextImage() {
   direction.value = 'next'
-
   if (modelValue.value < props.images.length - 1) {
     modelValue.value++
   }
@@ -216,7 +228,6 @@ function goNextImage() {
   }
   resetControlsTimer()
 
-  // Force image sizing update after navigation
   nextTick(() => {
     updateImageSizes()
   })
@@ -224,7 +235,6 @@ function goNextImage() {
 
 function goPrevImage() {
   direction.value = 'prev'
-
   if (modelValue.value > 0) {
     modelValue.value--
   }
@@ -233,7 +243,6 @@ function goPrevImage() {
   }
   resetControlsTimer()
 
-  // Force image sizing update after navigation
   nextTick(() => {
     updateImageSizes()
   })
@@ -245,11 +254,6 @@ function resetControlsTimer() {
   showControls.value = true
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
-function toggleControls() {
-  showControls.value = !showControls.value
-}
-
 function toggleInfoPanel() {
   infoPanel.value = !infoPanel.value
   resetControlsTimer()
@@ -257,10 +261,8 @@ function toggleInfoPanel() {
   // Update layout immediately AND after nextTick to ensure DOM updates
   updateImageSizes()
 
-  // Schedule multiple updates to handle any transition effects
   nextTick(() => {
     updateImageSizes()
-
     // Additional delayed updates to catch transitions
     setTimeout(() => updateImageSizes(), 50)
     setTimeout(() => updateImageSizes(), 300)
@@ -271,7 +273,6 @@ function toggleSidePanel() {
   sidePanel.value = !sidePanel.value
   resetControlsTimer()
 
-  // Update layout after panel toggle
   nextTick(() => {
     updateImageSizes()
   })
@@ -283,7 +284,6 @@ function toggleFullscreen() {
       enterFullscreen()
         .then(() => {
           isFullscreen.value = true
-          // Give browser time to adjust fullscreen before updating sizing
           if (fullscreenResizeTimeout) clearTimeout(fullscreenResizeTimeout)
           fullscreenResizeTimeout = window.setTimeout(() => {
             updateImageSizes()
@@ -311,12 +311,11 @@ const touchStart = useDebounceFn((event: TouchEvent) => {
   const touch = event.touches[0]
   const targetElement = touch.target as HTMLElement
 
-  // Store start time for tap detection
   touchStartTime.value = Date.now()
 
-  // Check if the touch started on an interactive element
+  // Ignore swipes if starting on an interactive element
   if (targetElement.closest('button, a, input, textarea, select')) {
-    return // Don't handle swipe if interacting with controls
+    return
   }
 
   start.x = touch.screenX
@@ -328,9 +327,9 @@ const touchEnd = useDebounceFn((event: TouchEvent) => {
   const targetElement = touch.target as HTMLElement
   const touchDuration = Date.now() - touchStartTime.value
 
-  // Check if the touch ended on an interactive element
+  // Ignore swipes if ending on an interactive element
   if (targetElement.closest('button, a, input, textarea, select')) {
-    return // Don't handle swipe if interacting with controls
+    return
   }
 
   const end = { x: touch.screenX, y: touch.screenY }
@@ -338,12 +337,12 @@ const touchEnd = useDebounceFn((event: TouchEvent) => {
   const diffX = start.x - end.x
   const diffY = start.y - end.y
 
-  // For taps, we don't toggle controls anymore - they always stay visible
+  // If it's a quick tap (not a swipe), do nothing
   if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10 && touchDuration < 300) {
     return
   }
 
-  // Add a threshold to prevent accidental swipes
+  // Left/right swipe
   if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
     if (diffX > 0) {
       goNextImage()
@@ -401,14 +400,14 @@ function closeGallery() {
   setModal(false)
 }
 
-// Click outside gallery content to close - with debounce to prevent accidental closes
+// Click outside gallery content to close - with debounce
 const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
   if (event.target === event.currentTarget) {
     setModal(false)
   }
 }, 200)
 
-// Watch for image changes, fullscreen, or panel visibility changes
+// Watch for changes that affect sizing
 watch(
   [
     currentImage,
@@ -462,7 +461,7 @@ onUnmounted(() => {
   eventBus.off(`${props.id}GalleryClose`, closeGallery)
 
   if (!import.meta.env.SSR) {
-    document.body.style.overflow = '' // Ensure body scrolling is restored
+    document.body.style.overflow = '' // Restore scrolling
   }
 
   // Clear any remaining timeouts
@@ -500,7 +499,7 @@ onUnmounted(() => {
         aria-modal="true"
         @click="handleBackdropClick"
       >
-        <!-- Top Controls Bar - Fixed at top -->
+        <!-- Top Controls Bar -->
         <transition
           enter-active-class="transition-opacity duration-300"
           enter-from-class="opacity-0"
@@ -551,19 +550,19 @@ onUnmounted(() => {
           </div>
         </transition>
 
-        <!-- Main Gallery Content - Flexbox layout -->
+        <!-- Main Gallery Content -->
         <div
           ref="galleryContentRef"
           class="w-full h-full flex flex-col lg:flex-row"
         >
-          <!-- Main Image Area with flex column layout -->
+          <!-- Main Image Area -->
           <div
             class="relative flex-1 h-full flex flex-col"
             :style="{ paddingTop: `${topControlsHeight}px` }"
             :class="{ 'lg:pr-64': sidePanel, 'lg:max-w-[calc(100%-16rem)]': sidePanel }"
             style="max-width: 100%;"
           >
-            <!-- Image Navigation Controls - Left -->
+            <!-- Left Navigation (Previous) -->
             <transition
               enter-active-class="transition-opacity duration-300"
               enter-from-class="opacity-0"
@@ -586,7 +585,7 @@ onUnmounted(() => {
               </div>
             </transition>
 
-            <!-- Image Container - flex-grow to fill available space -->
+            <!-- Image/Video Container -->
             <div
               ref="imageContainerRef"
               class="flex-grow flex items-center justify-center"
@@ -603,17 +602,19 @@ onUnmounted(() => {
                   :key="`image-display-${modelValue}`"
                   class="image-display relative w-full h-full flex flex-col items-center justify-center"
                 >
-                  <!-- Actual Image/Video Content -->
+                  <!-- If video -->
                   <template v-if="videoComponent && isVideo(images[modelValue])">
                     <ClientOnly>
                       <component
                         :is="videoComponent"
                         :src="isVideo(images[modelValue])"
                         class="shadow max-w-full h-auto object-contain video-component"
-                        @load="updateImageSizes"
+                        @loadedmetadata="updateImageSizes"
+                        @loadeddata="updateImageSizes"
                       />
                     </ClientOnly>
                   </template>
+                  <!-- Otherwise, image -->
                   <template v-else>
                     <img
                       v-if="modelValueSrc && imageComponent === 'img'"
@@ -635,7 +636,7 @@ onUnmounted(() => {
               </transition>
             </div>
 
-            <!-- Image Navigation Controls - Right -->
+            <!-- Right Navigation (Next) -->
             <transition
               enter-active-class="transition-opacity duration-300"
               enter-from-class="opacity-0"
@@ -659,7 +660,7 @@ onUnmounted(() => {
               </div>
             </transition>
 
-            <!-- Info Panel directly in flex column flow -->
+            <!-- Info Panel -->
             <transition
               enter-active-class="transition-all duration-300 ease-out"
               enter-from-class="opacity-0 transform translate-y-4"
@@ -678,7 +679,7 @@ onUnmounted(() => {
             </transition>
           </div>
 
-          <!-- Side Thumbnails Panel -->
+          <!-- Side Thumbnails Panel (Desktop) -->
           <transition
             enter-active-class="transform transition ease-in-out duration-300"
             enter-from-class="translate-x-full"
@@ -693,12 +694,12 @@ onUnmounted(() => {
               class="side-panel hidden lg:block absolute right-0 top-0 bottom-0 w-64 overflow-y-auto z-40 cool-scroll"
               :style="{ paddingTop: `${topControlsHeight + 8}px` }"
             >
-              <!-- Paging Controls if needed -->
+              <!-- Paging Controls -->
               <div v-if="paging" class="flex items-center justify-center pt-2">
                 <DefaultPaging :id="id" :items="paging" />
               </div>
 
-              <!-- Thumbnail Grid -->
+              <!-- Thumbnails -->
               <div class="grid grid-cols-2 gap-2 p-2">
                 <div
                   v-for="i in images.length"
@@ -746,7 +747,7 @@ onUnmounted(() => {
             </div>
           </transition>
 
-          <!-- Mobile Thumbnail Preview (bottom of screen on mobile) -->
+          <!-- Mobile Thumbnail Row (Bottom) -->
           <transition
             enter-active-class="transition-transform duration-300 ease-out"
             enter-from-class="translate-y-full"
@@ -799,7 +800,7 @@ onUnmounted(() => {
       </div>
     </transition>
 
-    <!-- Thumbnail Grid/Mason/Custom Layouts for non-opened gallery -->
+    <!-- Thumbnail Grid/Masonry/Custom Layouts if gallery is not open -->
     <div v-if="mode === 'grid' || mode === 'mason' || mode === 'custom'" class="gallery-grid">
       <div
         :class="{
@@ -809,8 +810,11 @@ onUnmounted(() => {
         }"
       >
         <slot name="thumbnail" />
+
+        <!-- Iterate images -->
         <template v-for="i in images.length" :key="`g_${id}_${i}`">
           <template v-if="mode === 'mason'">
+            <!-- Example naive "masonry" approach -->
             <div
               v-if="i + (1 % gridHeight) === 0"
               class="masonry-column relative"
@@ -818,7 +822,6 @@ onUnmounted(() => {
               <div v-if="ranking" class="img-gallery-ranking">
                 {{ i }}
               </div>
-
               <template v-for="j in gridHeight" :key="`gi_${id}_${i + j}`">
                 <div class="masonry-item">
                   <img
@@ -893,12 +896,10 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Ensure controls stay fixed at top */
 .controls-bar {
   height: auto;
 }
 
-/* Layout container for main image and info panel */
 .image-container {
   position: relative;
   display: flex;
@@ -909,54 +910,21 @@ onUnmounted(() => {
   width: 100%;
 }
 
-/* Side panel positioning */
 .side-panel {
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* Info panel styling */
 .info-panel {
   width: 100%;
   border-top-left-radius: 0.5rem;
   border-top-right-radius: 0.5rem;
 }
 
-/* Transition styles for next (right) navigation */
+/* Transitions for next/prev images */
 .slide-next-enter-active,
-.slide-next-leave-active {
-  transition:
-    opacity 0.15s,
-    transform 0.15s,
-    filter 0.15s;
-}
-
-.slide-next-enter-from {
-  opacity: 0;
-  transform: translateX(30px);
-  filter: blur(8px);
-}
-
-.slide-next-enter-to {
-  opacity: 1;
-  transform: translateX(0);
-  filter: blur(0);
-}
-
-.slide-next-leave-from {
-  opacity: 1;
-  transform: translateX(0);
-  filter: blur(0);
-}
-
-.slide-next-leave-to {
-  opacity: 0;
-  transform: translateX(-30px);
-  filter: blur(8px);
-}
-
-/* Transition styles for prev (left) navigation */
+.slide-next-leave-active,
 .slide-prev-enter-active,
 .slide-prev-leave-active {
   transition:
@@ -965,31 +933,51 @@ onUnmounted(() => {
     filter 0.15s;
 }
 
-.slide-prev-enter-from {
+/* Next (slide from right) */
+.slide-next-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+  filter: blur(8px);
+}
+.slide-next-enter-to {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+}
+.slide-next-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+}
+.slide-next-leave-to {
   opacity: 0;
   transform: translateX(-30px);
   filter: blur(8px);
 }
 
+/* Prev (slide from left) */
+.slide-prev-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+  filter: blur(8px);
+}
 .slide-prev-enter-to {
   opacity: 1;
   transform: translateX(0);
   filter: blur(0);
 }
-
 .slide-prev-leave-from {
   opacity: 1;
   transform: translateX(0);
   filter: blur(0);
 }
-
 .slide-prev-leave-to {
   opacity: 0;
   transform: translateX(30px);
   filter: blur(8px);
 }
 
-/* Grid layouts for thumbnails */
+/* Grid layouts */
 .gallery-grid {
   min-height: 200px;
 }
@@ -999,32 +987,27 @@ onUnmounted(() => {
   grid-template-columns: repeat(1, 1fr);
   gap: 0.75rem;
 }
-
 @media (min-width: 480px) {
   .standard-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-
 @media (min-width: 768px) {
   .standard-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
   }
 }
-
 @media (min-width: 1024px) {
   .standard-grid {
     grid-template-columns: repeat(4, 1fr);
   }
 }
-
 @media (min-width: 1280px) {
   .standard-grid {
     grid-template-columns: repeat(5, 1fr);
   }
 }
-
 @media (min-width: 1536px) {
   .standard-grid {
     grid-template-columns: repeat(6, 1fr);
@@ -1036,20 +1019,17 @@ onUnmounted(() => {
   grid-template-columns: repeat(1, 1fr);
   gap: 0.75rem;
 }
-
 @media (min-width: 480px) {
   .masonry-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-
 @media (min-width: 768px) {
   .masonry-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
   }
 }
-
 @media (min-width: 1024px) {
   .masonry-grid {
     grid-template-columns: repeat(4, 1fr);
@@ -1087,13 +1067,12 @@ onUnmounted(() => {
   z-index: 10;
 }
 
-/* Special class to hide scrollbars on mobile */
+/* Hide scrollbars on mobile */
 .no-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
-
 .no-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  display: none; /* Chrome, Safari, and Opera */
 }
 </style>

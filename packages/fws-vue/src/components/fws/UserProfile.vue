@@ -48,6 +48,9 @@ const state = reactive({
     PublicBio: userData.value?.UserProfile?.PublicBio || false,
     PublicBirthdate: userData.value?.UserProfile?.PublicBirthdate || false,
   },
+  usernameUpdate: {
+    Username: userData.value?.UserProfile?.Username || '',
+  },
 })
 watchEffect(() => {
   state.userData = {
@@ -77,6 +80,11 @@ const rules = {
     PublicGender: {},
     PublicBio: {},
     PublicBirthdate: {},
+  },
+  usernameUpdate: {
+    Username: {
+      required,
+    },
   },
 }
 const v$ = useVuelidate(rules, state)
@@ -111,6 +119,36 @@ const cropResult = reactive({
   blobURL: '',
 })
 const uploader = ref(new Uploader())
+const canUpdateUsername = computed(() => {
+  // If user and UserProfile and UserProfile.UsernameChangedAt > 30 days
+  if (userData.value?.UserProfile?.UsernameChangedAt?.unixms) {
+    const date = new Date(userData.value?.UserProfile?.UsernameChangedAt.unixms)
+    const now = new Date()
+    const diff = Math.abs(now.getTime() - date.getTime())
+    const diffDays = Math.ceil(diff / (1000 * 3600 * 24))
+    return diffDays > 30
+  }
+  return true
+})
+const lastUsernameError = ref('')
+async function updateUsername() {
+  eventBus.emit('main-loading', true)
+  if (await v$.value.usernameUpdate.$validate()) {
+    const data = { ...state.usernameUpdate }
+    const response = await rest('User/_Username', 'PATCH', data).catch((err) => {
+      eventBus.emit('main-loading', false)
+      lastUsernameError.value = err.message
+    })
+    if (response && response.result === 'success') {
+      if (props.onCompleted) {
+        props.onCompleted(response)
+      }
+      eventBus.emit('user:refresh', true)
+      eventBus.emit('updateUsernameModal', false)
+    }
+  }
+  eventBus.emit('main-loading', false)
+}
 
 async function getCropResult() {
   if (!cropper) return
@@ -161,6 +199,30 @@ function selectFile(e: Event) {
 
 <template>
   <form class="space-y-4" @submit.prevent="patchUser">
+    <DefaultModal id="updateUsername" :title="$t('fws_username_update_title')">
+      <div class="flex flex-col gap-4">
+        <DefaultInput
+          id="usernameFWS"
+          v-model="state.usernameUpdate.Username"
+          type="text"
+          :label="$t('fws_username_label')"
+          :help="$t('fws_username_help')"
+          :error-vuelidate="v$.usernameUpdate.Username.$errors"
+          :disabled="!canUpdateUsername"
+        />
+        <div v-if="lastUsernameError" class="text-xs text-red-500">
+          {{ lastUsernameError }}
+        </div>
+        <div class="flex justify-end pt-2">
+          <button type="submit" class="btn defaults primary flex items-center gap-2" @click="updateUsername">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            {{ $t("fws_save_user_cta") }}
+          </button>
+        </div>
+      </div>
+    </DefaultModal>
     <div class="bg-white dark:bg-fv-neutral-900 p-4 sm:p-6 rounded-lg shadow-sm border border-fv-neutral-200 dark:border-fv-neutral-700">
       <h3 class="text-lg font-semibold text-fv-neutral-900 dark:text-white mb-4 pb-2 border-b border-fv-neutral-200 dark:border-fv-neutral-700">
         {{ $t('fws_profile_heading') || $t('fws_your_profile') }}
@@ -221,6 +283,18 @@ function selectFile(e: Event) {
             :error-vuelidate="v$.userData.Username.$errors"
             :disabled="userData?.UserProfile?.HasUsernameAndSlug ? true : false"
           />
+          <div v-if="!canUpdateUsername" class="text-xs text-fv-neutral-500 dark:text-fv-neutral-400 mt-1">
+            {{ $t('fws_username_update_help') }}
+          </div>
+          <div v-else>
+            <button
+              type="button"
+              class="btn small primary mt-1"
+              @click="$eventBus.emit('updateUsernameModal', true)"
+            >
+              {{ $t('fws_username_update_cta') }}
+            </button>
+          </div>
         </div>
       </div>
 
