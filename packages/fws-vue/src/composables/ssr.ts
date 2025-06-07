@@ -22,10 +22,15 @@ export interface SSRResult {
   redirect?: string
 }
 
+// Cache SSR state to avoid repeated checks
+let cachedSSRState: boolean | null = null
+
 export function isServerRendered() {
+  if (cachedSSRState !== null) return cachedSSRState
+
   const state = getInitialState()
-  if (state && state.isSSR) return true
-  return false
+  cachedSSRState = !!(state && state.isSSR)
+  return cachedSSRState
 }
 
 export function initVueClient(router: Router, pinia: Pinia) {
@@ -41,8 +46,9 @@ export async function initVueServer(
   callback: Function,
   options: { url?: string } = {},
 ) {
-  const url
-    = options.url || `${getPath()}${getURL().Query ? `?${getURL().Query}` : ''}`
+  // Cache URL object to avoid multiple calls
+  const urlObj = getURL()
+  const url = options.url || `${getPath()}${urlObj.Query ? `?${urlObj.Query}` : ''}`
   const { app, router, head, pinia } = await createApp(true)
   const serverRouter = useServerRouter(pinia)
   serverRouter._setRouter(router)
