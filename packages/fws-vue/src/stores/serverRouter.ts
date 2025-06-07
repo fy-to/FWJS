@@ -5,7 +5,7 @@ export interface ServerRouterState {
   _router: any | null
   status: number
   redirect?: string
-  results: Record<number, any | undefined>
+  results: Map<number, any>
 }
 
 export const useServerRouter = defineStore('routerStore', {
@@ -15,7 +15,7 @@ export const useServerRouter = defineStore('routerStore', {
       _router: null,
       status: 200,
       redirect: undefined,
-      results: {},
+      results: new Map(),
     }) as ServerRouterState,
   getters: {
     currentRoute: state => state._router?.currentRoute,
@@ -48,16 +48,22 @@ export const useServerRouter = defineStore('routerStore', {
       this._router?.go(1)
     },
     addResult(id: number, result: any) {
-      this.results[id] = result
+      // Limit results cache size to prevent memory leaks
+      if (this.results.size > 100) {
+        // Remove oldest entries (first 10)
+        const keysToDelete = Array.from(this.results.keys()).slice(0, 10)
+        keysToDelete.forEach(key => this.results.delete(key))
+      }
+      this.results.set(id, result)
     },
     hasResult(id: number) {
-      return this.results[id] !== undefined
+      return this.results.has(id)
     },
     getResult(id: number) {
-      return this.results[id]
+      return this.results.get(id)
     },
     removeResult(id: number) {
-      delete this.results[id]
+      this.results.delete(id)
     },
   },
 })

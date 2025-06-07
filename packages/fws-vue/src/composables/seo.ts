@@ -27,22 +27,29 @@ export interface LazyHead {
   twitterCreator?: string
 }
 
-// Helper function to process image URLs
+// Cache for processed image URLs
+const processedImageUrlCache = new Map<string, string>()
+
+// Helper function to process image URLs with caching
 function processImageUrl(image: string | undefined, imageType: string | undefined): string | undefined {
   if (!image) return undefined
 
+  // Create cache key
+  const cacheKey = `${image}|${imageType || ''}`
+  const cached = processedImageUrlCache.get(cacheKey)
+  if (cached) return cached
+
+  let result: string
   if (image.includes('?vars=')) {
-    if (imageType) {
-      return image.replace(
-        '?vars=',
-        `.${imageType.replace('image/', '')}?vars=`,
-      )
-    }
-    else {
-      return image.replace('?vars=', '.png?vars=')
-    }
+    const extension = imageType ? imageType.replace('image/', '') : 'png'
+    result = image.replace('?vars=', `.${extension}?vars=`)
   }
-  return image
+  else {
+    result = image
+  }
+
+  processedImageUrlCache.set(cacheKey, result)
+  return result
 }
 
 // Helper function to normalize image type
@@ -54,6 +61,11 @@ function normalizeImageType(imageType: string | undefined): 'image/jpeg' | 'imag
     return type as 'image/jpeg' | 'image/gif' | 'image/png'
   }
   return 'image/png'
+}
+
+// Precomputed alternate locale URL template
+function ALTERNATE_LOCALE_TEMPLATE(scheme: string, host: string, locale: string, path: string) {
+  return `${scheme}://${host}/l/${locale}${path}`
 }
 
 // eslint-disable-next-line unused-imports/no-unused-vars
@@ -106,18 +118,26 @@ export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
       })
       */
 
-      seoData.value.alternateLocales?.forEach((locale) => {
-        if (locale !== currentLocale) {
-          links.push({
-            rel: 'alternate',
-            hreflang: locale,
-            href: `${urlBase.value.scheme}://${
-              urlBase.value.host
-            }/l/${locale}${urlBase.value.path.replace(urlBase.value.prefix, '')}`,
-            key: `alternate-${locale}`,
-          })
+      // Optimize alternate locale generation
+      if (seoData.value.alternateLocales?.length) {
+        const pathWithoutPrefix = urlBase.value.path.replace(urlBase.value.prefix, '')
+
+        for (const locale of seoData.value.alternateLocales) {
+          if (locale !== currentLocale) {
+            links.push({
+              rel: 'alternate',
+              hreflang: locale,
+              href: ALTERNATE_LOCALE_TEMPLATE(
+                urlBase.value.scheme,
+                urlBase.value.host,
+                locale,
+                pathWithoutPrefix,
+              ),
+              key: `alternate-${locale}`,
+            })
+          }
         }
-      })
+      }
 
       /*
       if (seoData.value.image) {
@@ -134,25 +154,30 @@ export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
     },
   })
 
+  // Create memoized getters for frequently accessed values
+  const seoTitle = computed(() => seoData.value.title)
+  const seoDescription = computed(() => seoData.value.description)
+  const seoType = computed(() => seoData.value.type || 'website')
+  const twitterCreator = computed(() => seoData.value.twitterCreator)
+
   useSeoMeta({
     ogUrl: () => urlBase.value.canonical,
     ogLocale: () => localeForOg.value,
-    robots:
-      'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
-    title: () => seoData.value.title || '',
-    ogTitle: () => seoData.value.title,
-    ogDescription: () => seoData.value.description,
+    robots: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+    title: () => seoTitle.value || '',
+    ogTitle: () => seoTitle.value,
+    ogDescription: () => seoDescription.value,
     twitterCard: 'summary_large_image',
     ogSiteName: () => seoData.value.name,
-    twitterTitle: () => seoData.value.title,
-    twitterDescription: () => seoData.value.description,
+    twitterTitle: () => seoTitle.value,
+    twitterDescription: () => seoDescription.value,
     ogImageAlt: () => imageAlt.value,
     // @ts-expect-error: Type 'string' is not assignable to type 'undefined'.
-    ogType: () => (seoData.value.type ? seoData.value.type : 'website'),
-    twitterCreator: () => seoData.value.twitterCreator,
-    twitterSite: () => seoData.value.twitterCreator,
+    ogType: () => seoType.value,
+    twitterCreator: () => twitterCreator.value,
+    twitterSite: () => twitterCreator.value,
     twitterImageAlt: () => imageAlt.value,
-    description: () => seoData.value.description,
+    description: () => seoDescription.value,
     keywords: () => seoData.value.keywords,
     articlePublishedTime: () => seoData.value.published,
     articleModifiedTime: () => seoData.value.modified,
@@ -160,8 +185,6 @@ export function useSeo(seoData: Ref<LazyHead>, initial: boolean = false) {
     ogImageUrl: () => imageUrl.value,
     ogImageType: () => imageType.value,
     twitterImageUrl: () => imageUrl.value,
-    twitterImageType() {
-      return imageType.value
-    },
+    twitterImageType: () => imageType.value,
   })
 }

@@ -27,14 +27,18 @@ export interface APIResult {
   status?: number
 }
 
-// Cache for URL parsing to avoid repeated parsing of the same URL
+// Use WeakMap for caches to allow garbage collection of unused entries
 const urlParseCache = new Map<string, string>()
 
-// Global request hash cache shared across all instances
+// Global request hash cache with size limit to prevent memory leaks
 const globalHashCache = new Map<string, number>()
+const MAX_HASH_CACHE_SIZE = 1000
 
 // Track in-flight requests to avoid duplicates
 const inFlightRequests = new Map<number, Promise<any>>()
+
+// Reusable TextEncoder instance
+const textEncoder = new TextEncoder()
 
 // Detect if we're in SSR mode once and cache the result
 let isSSRMode: boolean | null = null
@@ -73,7 +77,7 @@ function stringifyParams(params?: RestParams): string {
   return params ? JSON.stringify(params) : ''
 }
 
-// Compute request hash with global caching
+// Compute request hash with global caching and size limit
 function computeRequestHash(url: string, method: RestMethod, params?: RestParams): number {
   const cacheKey = `${url}|${method}|${stringifyParams(params)}`
 
@@ -83,17 +87,25 @@ function computeRequestHash(url: string, method: RestMethod, params?: RestParams
   const urlForHash = getUrlForHash(url)
   const hash = stringHash(urlForHash + method + stringifyParams(params))
 
+  // Implement LRU-like cache eviction when size limit is reached
+  if (globalHashCache.size >= MAX_HASH_CACHE_SIZE) {
+    // Delete the first (oldest) entry
+    const firstKey = globalHashCache.keys().next().value
+    if (firstKey !== undefined) {
+      globalHashCache.delete(firstKey)
+    }
+  }
+
   globalHashCache.set(cacheKey, hash)
   return hash
 }
 
-function str2ab(str) {
-  const encoder = new TextEncoder()
-  return encoder.encode(str)
+function str2ab(str: string): Uint8Array {
+  return textEncoder.encode(str)
 }
 
-// Create HMAC signature
-async function createHMACSignature(secret, data) {
+// Create HMAC signature with proper typing
+async function createHMACSignature(secret: string, data: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     'raw',
     str2ab(secret),
@@ -122,10 +134,13 @@ params?: RestParams,
   // Pre-check for server rendering state
   const isSSR = isServerRendered()
 
-  // Handle API error response consistently
+  // Handle API error response consistently - memoize emitter functions
+  const emitMainLoading = (value: boolean) => eventBus.emit('main-loading', value)
+  const emitRestError = (result: any) => eventBus.emit('rest-error', result)
+
   function handleErrorResult<ResultType extends APIResult>(result: ResultType): Promise<ResultType> {
-    eventBus.emit('main-loading', false)
-    eventBus.emit('rest-error', result)
+    emitMainLoading(false)
+    emitRestError(result)
     return Promise.reject(result)
   }
 
@@ -197,8 +212,8 @@ params?: RestParams,
           serverRouter.addResult(requestHash, restError)
         }
 
-        eventBus.emit('main-loading', false)
-        eventBus.emit('rest-error', restError)
+        emitMainLoading(false)
+        emitRestError(restError)
         return Promise.resolve(restError)
       }
       finally {

@@ -3,7 +3,6 @@ import type { RouteLocation } from 'vue-router'
 import type { APIResult } from '../composables/rest'
 import { rest } from '@fy-/fws-js'
 import { defineStore } from 'pinia'
-import { computed, shallowRef } from 'vue'
 import { useServerRouter } from './serverRouter'
 
 export interface UserStore {
@@ -14,6 +13,10 @@ export interface UserStore {
 let refreshPromise: Promise<void> | null = null
 const refreshDebounceTime = 200 // 200ms
 let lastRefreshTime = 0
+
+// Cache for API endpoints
+const USER_GET_ENDPOINT = 'User:get'
+const USER_LOGOUT_ENDPOINT = 'User:logout'
 
 export const useUserStore = defineStore('userStore', {
   state: (): UserStore => ({
@@ -34,7 +37,7 @@ export const useUserStore = defineStore('userStore', {
 
       lastRefreshTime = now
       refreshPromise = new Promise((resolve) => {
-        rest('User:get', 'GET')
+        rest(USER_GET_ENDPOINT, 'GET')
           .then((user: APIResult) => {
             if (user.result === 'success') {
               this.setUser(user.data)
@@ -60,7 +63,7 @@ export const useUserStore = defineStore('userStore', {
 
     async logout() {
       try {
-        const user: APIResult = await rest('User:logout', 'POST')
+        const user: APIResult = await rest(USER_LOGOUT_ENDPOINT, 'POST')
         // In all cases, we set the user to null
         this.setUser(null)
         return user.result === 'success'
@@ -79,23 +82,24 @@ export const useUserStore = defineStore('userStore', {
 
 // Shared implementation for route checking to avoid code duplication
 function createUserChecker(path: string, redirectLink: boolean) {
-  // Use shallowRef for router since it doesn't need reactivity
-  const router = shallowRef(useServerRouter())
+  // Get router once instead of creating shallowRef
+  const router = useServerRouter()
+
+  // Pre-build redirect URL template
+  const redirectUrl = redirectLink ? `${path}?return_to=` : path
 
   return (route: RouteLocation, isAuthenticated: boolean) => {
-    if (!route.meta.reqLogin) return false
+    // Early return for most common case
+    if (!route.meta?.reqLogin || isAuthenticated) return false
 
-    if (!isAuthenticated) {
-      if (!redirectLink) {
-        router.value.push(path)
-      }
-      else {
-        router.value.status = 307
-        router.value.push(`${path}?return_to=${route.path}`)
-      }
-      return true
+    if (redirectLink) {
+      router.status = 307
+      router.push(`${redirectUrl}${route.path}`)
     }
-    return false
+    else {
+      router.push(path)
+    }
+    return true
   }
 }
 
@@ -105,17 +109,16 @@ export async function useUserCheckAsyncSimple(
 ) {
   const userStore = useUserStore()
   await userStore.refreshUser()
-  const isAuth = computed(() => userStore.isAuth)
   const router = useServerRouter()
   const checkUser = createUserChecker(path, redirectLink)
 
   // Check current route immediately
-  checkUser(router.currentRoute, isAuth.value)
+  checkUser(router.currentRoute, userStore.isAuth)
 
-  // Setup route guard
+  // Setup route guard - use arrow function to always get current auth state
   router._router.beforeEach((to: any) => {
     if (to.fullPath !== path) {
-      checkUser(to, isAuth.value)
+      checkUser(to, userStore.isAuth)
     }
   })
 }
@@ -123,46 +126,54 @@ export async function useUserCheckAsyncSimple(
 export async function useUserCheckAsync(path = '/login', redirectLink = false) {
   const userStore = useUserStore()
   await userStore.refreshUser()
-  const isAuth = computed(() => userStore.isAuth)
   const router = useServerRouter()
   const checkUser = createUserChecker(path, redirectLink)
 
   // Check current route immediately
-  checkUser(router.currentRoute, isAuth.value)
+  checkUser(router.currentRoute, userStore.isAuth)
 
-  // Setup route guards
-  router._router.afterEach(async () => {
-    await userStore.refreshUser()
+  // Setup route guards - throttle afterEach refresh
+  let afterEachTimeout: NodeJS.Timeout | null = null
+  router._router.afterEach(() => {
+    if (afterEachTimeout) clearTimeout(afterEachTimeout)
+    afterEachTimeout = setTimeout(() => {
+      userStore.refreshUser()
+      afterEachTimeout = null
+    }, 100)
   })
 
   router._router.beforeEach((to: any) => {
     if (to.fullPath !== path) {
-      checkUser(to, isAuth.value)
+      checkUser(to, userStore.isAuth)
     }
   })
 }
 
 export function useUserCheck(path = '/login', redirectLink = false) {
   const userStore = useUserStore()
-  const isAuth = computed(() => userStore.isAuth)
   const router = useServerRouter()
   const checkUser = createUserChecker(path, redirectLink)
 
   // Check current route after refresh
   userStore.refreshUser().then(() => {
     if (router.currentRoute) {
-      checkUser(router.currentRoute, isAuth.value)
+      checkUser(router.currentRoute, userStore.isAuth)
     }
   })
 
-  // Setup route guards
-  router._router.afterEach(async () => {
-    await userStore.refreshUser()
+  // Setup route guards - throttle afterEach refresh
+  let afterEachTimeout: NodeJS.Timeout | null = null
+  router._router.afterEach(() => {
+    if (afterEachTimeout) clearTimeout(afterEachTimeout)
+    afterEachTimeout = setTimeout(() => {
+      userStore.refreshUser()
+      afterEachTimeout = null
+    }, 100)
   })
 
   router._router.beforeEach((to: any) => {
     if (to.fullPath !== path) {
-      checkUser(to, isAuth.value)
+      checkUser(to, userStore.isAuth)
     }
   })
 }
