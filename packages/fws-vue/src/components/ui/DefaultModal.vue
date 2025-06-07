@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { XCircleIcon } from '@heroicons/vue/24/solid'
 import { useDebounceFn, useEventListener } from '@vueuse/core'
-import { h, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { computed, h, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useEventBus } from '../../composables/event-bus'
 
 // Use a shared global registry in the window to track all modals across instances
@@ -75,7 +75,7 @@ const props = withDefaults(
 const eventBus = useEventBus()
 
 const isOpen = ref<boolean>(false)
-const modalRef = ref<HTMLElement | null>(null)
+const modalRef = shallowRef<HTMLElement | null>(null)
 let previouslyFocusedElement: HTMLElement | null = null
 let focusableElements: HTMLElement[] = []
 
@@ -91,6 +91,14 @@ const modalUniqueId = shallowRef('')
 // Trap focus within modal for accessibility - memoize selector for better performance
 const focusableSelector = 'a[href], button, input, textarea, select, details, [tabindex]:not([tabindex="-1"])'
 
+// Mobile-optimized backdrop classes
+const backdropClasses = 'flex fixed backdrop-blur-[8px] inset-0 flex-col items-center py-4 md:py-8 px-2 md:px-4 overflow-y-auto text-fv-neutral-800 dark:text-fv-neutral-300 bg-fv-neutral-900/[.20] dark:bg-fv-neutral-50/[.20]'
+
+// Modal panel classes with mobile optimization
+const modalPanelClasses = computed(() => {
+  return `relative ${props.mSize} max-w-[calc(100vw-1rem)] md:max-w-6xl max-h-[85vh] my-auto px-0 box-border bg-white rounded-lg shadow-xl dark:bg-fv-neutral-900 flex flex-col`
+})
+
 function getFocusableElements(element: HTMLElement): HTMLElement[] {
   return Array.from(
     element.querySelectorAll(focusableSelector),
@@ -99,12 +107,11 @@ function getFocusableElements(element: HTMLElement): HTMLElement[] {
   ) as HTMLElement[]
 }
 
-// Use VueUse's useEventListener for better event handling
-function setupKeydownListener() {
-  useEventListener(document, 'keydown', handleKeyDown)
-}
+// Forward declare setModal to avoid use-before-define
+let setModal: any
 
-function handleKeyDown(event: KeyboardEvent) {
+// Memoize keydown handler for better performance
+const handleKeyDown = useDebounceFn((event: KeyboardEvent) => {
   // Only handle events for the top-most modal
   if (!isOpen.value) return
 
@@ -117,25 +124,28 @@ function handleKeyDown(event: KeyboardEvent) {
   // Close on escape
   if (event.key === 'Escape') {
     event.preventDefault()
-    // Use direct state to avoid the use-before-define issue
-    isOpen.value = false
+    setModal(false)
     return
   }
 
-  // Handle tab trapping
+  // Handle tab trapping only if we have focusable elements
   if (event.key === 'Tab' && focusableElements.length > 0) {
+    const firstElement = focusableElements[0]
+    const lastElement = focusableElements[focusableElements.length - 1]
+    const activeElement = document.activeElement
+
     // If shift + tab on first element, focus last element
-    if (event.shiftKey && document.activeElement === focusableElements[0]) {
+    if (event.shiftKey && activeElement === firstElement) {
       event.preventDefault()
-      focusableElements[focusableElements.length - 1].focus()
+      lastElement.focus()
     }
     // If tab on last element, focus first element
-    else if (!event.shiftKey && document.activeElement === focusableElements[focusableElements.length - 1]) {
+    else if (!event.shiftKey && activeElement === lastElement) {
       event.preventDefault()
-      focusableElements[0].focus()
+      firstElement.focus()
     }
   }
-}
+}, 10)
 
 // Check if this modal is the top-most (highest z-index)
 function isTopMostModal(id: string): boolean {
@@ -152,7 +162,7 @@ function isTopMostModal(id: string): boolean {
   return highestEntry[0] === id
 }
 
-const setModal = useDebounceFn((value: boolean) => {
+setModal = useDebounceFn((value: boolean) => {
   if (value === true) {
     if (props.onOpen) props.onOpen()
     previouslyFocusedElement = document.activeElement as HTMLElement
@@ -176,7 +186,8 @@ const setModal = useDebounceFn((value: boolean) => {
     // Set this modal's z-index
     zIndex.value = newZIndex
 
-    setupKeydownListener()
+    // Set up keyboard listener directly
+    useEventListener(document, 'keydown', handleKeyDown)
   }
   if (value === false) {
     if (props.onClose) props.onClose()
@@ -197,12 +208,13 @@ const setModal = useDebounceFn((value: boolean) => {
 watch(isOpen, async (newVal) => {
   if (newVal) {
     await nextTick()
-    if (modalRef.value) {
-      focusableElements = getFocusableElements(modalRef.value)
+    const modalEl = modalRef.value
+    if (modalEl) {
+      focusableElements = getFocusableElements(modalEl)
 
       // Focus the close button or first focusable element
       requestAnimationFrame(() => {
-        const closeButton = modalRef.value?.querySelector('button[aria-label="Close modal"]') as HTMLElement
+        const closeButton = modalEl.querySelector('button[aria-label="Close modal"]') as HTMLElement
         if (closeButton) {
           closeButton.focus()
         }
@@ -211,7 +223,7 @@ watch(isOpen, async (newVal) => {
         }
         else {
           // If no focusable elements, focus the modal itself
-          modalRef.value?.focus()
+          modalEl.focus()
         }
       })
     }
@@ -243,10 +255,10 @@ const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
 <template>
   <ClientOnly>
     <transition
-      enter-active-class="duration-50 ease-out"
+      enter-active-class="duration-150 ease-out"
       enter-from-class="opacity-0"
       enter-to-class="opacity-100"
-      leave-active-class="duration-50 ease-in"
+      leave-active-class="duration-100 ease-in"
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
@@ -262,14 +274,14 @@ const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
       >
         <!-- Backdrop with click to close functionality -->
         <div
-          class="flex fixed backdrop-blur-[8px] inset-0 flex-col items-center py-8 px-4 overflow-y-auto text-fv-neutral-800 dark:text-fv-neutral-300 bg-fv-neutral-900/[.20] dark:bg-fv-neutral-50/[.20]"
+          :class="backdropClasses"
           :style="{ zIndex }"
           @click="handleBackdropClick"
         >
           <!-- Modal panel -->
           <div
             ref="modalRef"
-            :class="`relative ${mSize} max-w-6xl max-h-[85vh] my-auto px-0 box-border bg-white rounded-lg shadow dark:bg-fv-neutral-900 flex flex-col`"
+            :class="modalPanelClasses"
             :style="{ zIndex }"
             tabindex="-1"
             @click.stop
@@ -277,17 +289,17 @@ const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
             <!-- Header with title if provided -->
             <div
               v-if="title"
-              class="flex items-center justify-between p-2 w-full border-b rounded-t dark:border-fv-neutral-700"
+              class="flex items-center justify-between p-2 md:p-3 w-full border-b rounded-t dark:border-fv-neutral-700"
             >
               <slot name="before" />
               <h2
                 v-if="title"
                 :id="`${props.id}-title`"
-                class="text-xl font-semibold text-fv-neutral-900 dark:text-white"
+                class="text-lg md:text-xl font-semibold text-fv-neutral-900 dark:text-white"
                 v-html="title"
               />
               <button
-                class="text-fv-neutral-400 bg-transparent hover:bg-fv-neutral-200 hover:text-fv-neutral-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-fv-neutral-600 dark:hover:text-white"
+                class="text-fv-neutral-400 bg-transparent hover:bg-fv-neutral-200 hover:text-fv-neutral-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-fv-neutral-600 dark:hover:text-white transition-colors duration-200"
                 aria-label="Close modal"
                 @click="setModal(false)"
               >
@@ -295,7 +307,7 @@ const handleBackdropClick = useDebounceFn((event: MouseEvent) => {
               </button>
             </div>
             <!-- Content area -->
-            <div :class="`p-2 space-y-3 flex-grow ${ofy}`">
+            <div :class="`p-2 md:p-4 space-y-3 flex-grow ${ofy}`">
               <slot />
             </div>
           </div>

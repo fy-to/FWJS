@@ -387,7 +387,7 @@ defineExpose({ focus, blur, getInputRef })
               @blur="handleBlur"
             >
               <option
-                v-for="opt in options"
+                v-for="opt in (options || [])"
                 :key="opt[0]?.toString()"
                 :value="opt[0]"
               >

@@ -282,12 +282,13 @@ onMounted(() => {
             </div>
             <input
               v-else
+              :id="`jump-input-${id}`"
               v-model="jumpPageValue"
               type="number"
               :min="1"
               :max="items.page_max"
               :class="`pagination-jump-input ${inputWidthClass}`"
-              placeholder=""
+              placeholder="#"
               @keydown="handleJumpInputKeydown"
               @blur="showJumpInput = false; jumpPageValue = ''"
             >
@@ -336,12 +337,13 @@ onMounted(() => {
             </div>
             <input
               v-else
+              :id="`jump-input-${id}`"
               v-model="jumpPageValue"
               type="number"
               :min="1"
               :max="items.page_max"
               :class="`pagination-jump-input ${inputWidthClass}`"
-              placeholder=""
+              placeholder="#"
               @keydown="handleJumpInputKeydown"
               @blur="showJumpInput = false; jumpPageValue = ''"
             >
@@ -366,12 +368,13 @@ onMounted(() => {
             </div>
             <input
               v-else
+              :id="`jump-input-${id}`"
               v-model="jumpPageValue"
               type="number"
               :min="1"
               :max="items.page_max"
               :class="`pagination-jump-input ${inputWidthClass}`"
-              placeholder=""
+              placeholder="#"
               @keydown="handleJumpInputKeydown"
               @blur="showJumpInput = false; jumpPageValue = ''"
             >
