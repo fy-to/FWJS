@@ -39,6 +39,8 @@ const inFlightRequests = new Map<number, Promise<any>>()
 // Detect if we're in SSR mode once and cache the result
 let isSSRMode: boolean | null = null
 
+const secret = import.meta.env.VITE_API_SECRET
+
 // Memoized function to extract URL pathname and search for hashing
 function getUrlForHash(url: string): string {
   const cached = urlParseCache.get(url)
@@ -83,6 +85,30 @@ function computeRequestHash(url: string, method: RestMethod, params?: RestParams
 
   globalHashCache.set(cacheKey, hash)
   return hash
+}
+
+function str2ab(str) {
+  const encoder = new TextEncoder()
+  return encoder.encode(str)
+}
+
+// Create HMAC signature
+async function createHMACSignature(secret, data) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    str2ab(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    str2ab(data),
+  )
+
+  return btoa(String.fromCharCode(...new Uint8Array(signature)))
 }
 
 export function useRest(): <ResultType extends APIResult>(
@@ -134,8 +160,19 @@ params?: RestParams,
 
     // Create the actual request function
     const performRequest = async (): Promise<ResultType> => {
+      const h: { [key: string]: string } = {}
+
+      if (secret && secret !== '') {
+        const timestamp = Date.now()
+        const dataToSign = `${method}${url}${timestamp}`
+        const signature = await createHMACSignature(secret, dataToSign)
+
+        h['X-Timestamp'] = timestamp.toString()
+        h['X-Signature'] = signature
+      }
+
       try {
-        const restResult: ResultType = await rest(url, method, params)
+        const restResult: ResultType = await rest(url, method, params, h)
 
         // Store result in server router if in SSR mode
         if (checkSSRMode()) {

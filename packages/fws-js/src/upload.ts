@@ -9,7 +9,7 @@ export interface FileUpload {
 
 export class Uploader {
     public files: FileUpload[] = [];
-
+    private headers: { [key: string]: string } = {};
     addFile(file: File) {
         this.files.push({
             file,
@@ -33,10 +33,11 @@ export class Uploader {
         }
     }
 
-    startUpload(endpoint: string = '/Blob/Upload', callback: any = null) {
+    startUpload(endpoint: string = '/Blob/Upload', callback: any = null, headers?: { [key: string]: string } | null) {
         let uploadCount = 0; 
         const totalFiles = this.files.length;
         const responses = new Array(totalFiles);
+        this.headers = headers || {};
 
         this.files.forEach((upload, index) => {
             if (upload.state === 'queue') {
@@ -70,11 +71,12 @@ export class Uploader {
         const fileUpload = this.files[index];
         const formData = new FormData();
         formData.append('file', fileUpload.file);
-
+        
         const xhr = new XMLHttpRequest();
+
         const cancelController = new AbortController();
         fileUpload.cancelController = { abort: () => xhr.abort(), signal: cancelController.signal };
-
+     
         xhr.upload.addEventListener('progress', (event) => {
             if (event.lengthComputable) {
                 const progress = Math.round((event.loaded / event.total) * 100);
@@ -114,6 +116,14 @@ export class Uploader {
 
         fileUpload.state = 'uploading';
         xhr.open('POST', endpoint);
+        // add headers if provided
+        if (this.headers) {
+            for (const key in this.headers) {
+                if (this.headers.hasOwnProperty(key)) {
+                    xhr.setRequestHeader(key, this.headers[key]);
+                }
+            }
+        }
         xhr.send(formData);
     }
 

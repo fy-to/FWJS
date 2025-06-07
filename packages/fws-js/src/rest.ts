@@ -47,10 +47,12 @@ function parseRestResponse(response: Response, resolve: (value: any) => void, re
     }).catch(reject);
 }
 
+
 export async function rest(
     path: string,
     method: RestMethod,
     params?: RestParams,
+    headers?: { [key: string]: string } | null
 ): Promise<any> {
     let callUrl = getRestURL(path);
     let body: string | null = null;
@@ -77,12 +79,15 @@ export async function rest(
             resolve(data)
         });
     }
+    
+
 
     return fetch(callUrl, {
         method: method,
         credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
+            ...headers
         },
         body: body,
     }).then(restResolved, restRejected).catch(restCatch)
