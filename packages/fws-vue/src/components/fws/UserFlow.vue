@@ -421,13 +421,13 @@ onMounted(async () => {
 
 <style scoped>
 .fws-login {
-  @apply transition-all duration-300;
+  @apply transition-opacity duration-300;
 }
 
 .fws-login__oauth a,
 .fws-login__oauth button,
 .fws-login__form button[type="submit"] {
-  @apply transition-all duration-200;
+  @apply transition-colors duration-200 transition-shadow;
 }
 
 @media (max-width: 640px) {

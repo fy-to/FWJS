@@ -12,12 +12,10 @@ const props = defineProps<{
 
 <style scoped>
 /* slide left */
-.slide-left-enter-active {
-  transition: all 0.2s;
-}
-
+.slide-left-enter-active,
 .slide-left-leave-active {
-  transition: all 0.2s;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
 }
 
 .slide-left-enter-from {
@@ -31,12 +29,10 @@ const props = defineProps<{
 }
 
 /* slide right */
-.slide-right-enter-active {
-  transition: all 0.2s;
-}
-
+.slide-right-enter-active,
 .slide-right-leave-active {
-  transition: all 0.2s;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
 }
 
 .slide-right-enter-from {
@@ -50,12 +46,10 @@ const props = defineProps<{
 }
 
 /* slide up */
-.slide-up-enter-active {
-  transition: all 0.2s;
-}
-
+.slide-up-enter-active,
 .slide-up-leave-active {
-  transition: all 0.2s;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
 }
 
 .slide-up-enter-from {
@@ -69,12 +63,10 @@ const props = defineProps<{
 }
 
 /* slide down */
-.slide-down-enter-active {
-  transition: all 0.2s;
-}
-
+.slide-down-enter-active,
 .slide-down-leave-active {
-  transition: all 0.2s;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
 }
 
 .slide-down-enter-from {
@@ -88,12 +80,10 @@ const props = defineProps<{
 }
 
 /* shelf up */
-.shelf-up-enter-active {
-  transition: all 0.2s;
-}
-
+.shelf-up-enter-active,
 .shelf-up-leave-active {
-  transition: all 0.2s;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
 }
 
 .shelf-up-enter-from {
@@ -107,12 +97,10 @@ const props = defineProps<{
 }
 
 /* shelf down */
-.shelf-down-enter-active {
-  transition: all 0.2s;
-}
-
+.shelf-down-enter-active,
 .shelf-down-leave-active {
-  transition: all 0.2s;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
 }
 
 .shelf-down-enter-from {

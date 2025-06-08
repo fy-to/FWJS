@@ -6,26 +6,18 @@
 
 <style scoped>
 .scale-enter-active {
-  transition: all 0.1s ease-out;
+  transition: transform 100ms cubic-bezier(0, 0, 0.2, 1), opacity 100ms cubic-bezier(0, 0, 0.2, 1);
+  will-change: transform, opacity;
 }
 
 .scale-leave-active {
-  transition: all 0.075s ease-in;
+  transition: transform 75ms cubic-bezier(0.4, 0, 1, 1), opacity 75ms cubic-bezier(0.4, 0, 1, 1);
+  will-change: transform, opacity;
 }
 
 .scale-enter-from {
   opacity: 0;
   transform: scale(0.95);
-}
-
-.scale-enter-to {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.scale-leave-from {
-  opacity: 1;
-  transform: scale(1);
 }
 
 .scale-leave-to {

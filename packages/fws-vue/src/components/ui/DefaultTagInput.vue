@@ -436,7 +436,7 @@ function handleKeyNavigation(e: KeyboardEvent, index: number) {
     dark:bg-fv-neutral-800 dark:border-fv-neutral-600
     dark:placeholder-fv-neutral-400 dark:text-white p-2
     dark:focus-within:ring-fv-primary-500 dark:focus-within:border-fv-primary-500
-    transition-all duration-200 ease-in-out shadow-sm;
+    transition-colors duration-200 ease-in-out shadow-sm;
   cursor: text;
   min-height: 2.5rem;
 }
@@ -455,7 +455,7 @@ function handleKeyNavigation(e: KeyboardEvent, index: number) {
 .tag {
   @apply inline-flex items-center justify-between
     text-sm font-medium rounded-full px-3 py-1
-    dark:text-white transition-all duration-200 ease-in-out;
+    dark:text-white transition-colors duration-200 ease-in-out;
 }
 
 .tag-text {

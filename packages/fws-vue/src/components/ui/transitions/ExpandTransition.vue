@@ -5,28 +5,20 @@
 </template>
 
 <style scoped>
-.expand-enter-active {
-  animation: expand reverse 300ms ease;
-}
-
+.expand-enter-active,
 .expand-leave-active {
-  animation: expand 300ms ease;
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+  will-change: transform, opacity;
 }
 
-@keyframes expand {
-  100% {
-    max-height: 0px;
-    opacity: 0;
-    transform: scale(0.9);
-  }
+.expand-enter-from {
+  transform: scale(0.9) scaleY(0);
+  opacity: 0;
+}
 
-  50% {
-    max-height: 400px;
-  }
-
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
+.expand-leave-to {
+  transform: scale(0.9) scaleY(0);
+  opacity: 0;
 }
 </style>

@@ -391,7 +391,7 @@ onUnmounted(() => {
 
 <style scoped>
 .data-table-container {
-  @apply transition-all duration-300;
+  @apply transition-shadow duration-300;
 }
 
 /* Responsive styles */
@@ -407,18 +407,19 @@ onUnmounted(() => {
 
 /* Loading spinner animation */
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .loading-spinner {
   animation: spin 1s linear infinite;
+  will-change: transform;
 }
 
 /* Fade in animation for rows */
 tbody tr {
-  animation: fadeIn 0.2s ease-out forwards;
+  animation: fadeIn 0.2s ease-out;
+  will-change: opacity;
 }
 
 @keyframes fadeIn {
@@ -427,7 +428,10 @@ tbody tr {
 }
 
 /* Improved hover states for better interactivity */
-th, td {
+th[scope="col"]:hover {
+  @apply transition-colors duration-200;
+}
+tbody tr:hover {
   @apply transition-colors duration-200;
 }
 

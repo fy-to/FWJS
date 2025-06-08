@@ -569,8 +569,11 @@ input[type="range"]:focus::-moz-range-thumb {
 }
 
 /* Add smooth transitions */
-input, select, textarea, input[type="range"]::-webkit-slider-thumb, input[type="range"]::-moz-range-thumb {
-  @apply transition-all duration-200;
+input, select, textarea {
+  @apply transition-colors duration-200 transition-shadow;
+}
+input[type="range"]::-webkit-slider-thumb, input[type="range"]::-moz-range-thumb {
+  @apply transition-transform duration-200;
 }
 
 /* Placeholder styling */

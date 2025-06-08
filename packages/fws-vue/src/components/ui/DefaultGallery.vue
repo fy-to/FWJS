@@ -927,54 +927,44 @@ onUnmounted(() => {
 .slide-next-leave-active,
 .slide-prev-enter-active,
 .slide-prev-leave-active {
-  transition:
-    opacity 0.15s,
-    transform 0.15s,
-    filter 0.15s;
+  transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
 }
 
 /* Next (slide from right) */
 .slide-next-enter-from {
   opacity: 0;
   transform: translateX(30px);
-  filter: blur(8px);
 }
 .slide-next-enter-to {
   opacity: 1;
   transform: translateX(0);
-  filter: blur(0);
 }
 .slide-next-leave-from {
   opacity: 1;
   transform: translateX(0);
-  filter: blur(0);
 }
 .slide-next-leave-to {
   opacity: 0;
   transform: translateX(-30px);
-  filter: blur(8px);
 }
 
 /* Prev (slide from left) */
 .slide-prev-enter-from {
   opacity: 0;
   transform: translateX(-30px);
-  filter: blur(8px);
 }
 .slide-prev-enter-to {
   opacity: 1;
   transform: translateX(0);
-  filter: blur(0);
 }
 .slide-prev-leave-from {
   opacity: 1;
   transform: translateX(0);
-  filter: blur(0);
 }
 .slide-prev-leave-to {
   opacity: 0;
   transform: translateX(30px);
-  filter: blur(8px);
 }
 
 /* Grid layouts */

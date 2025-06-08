@@ -7,7 +7,8 @@
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease-in;
+  transition: opacity 200ms cubic-bezier(0.4, 0, 1, 1);
+  will-change: opacity;
 }
 
 .fade-enter-from,

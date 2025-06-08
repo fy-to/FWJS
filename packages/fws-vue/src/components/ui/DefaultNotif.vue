@@ -342,18 +342,19 @@ onUnmounted(() => {
 <style scoped>
 /* Optional: Add animation for notifications */
 @keyframes slide-in-right {
-  0% {
+  from {
     transform: translateX(100%);
     opacity: 0;
   }
-  100% {
+  to {
     transform: translateX(0);
     opacity: 1;
   }
 }
 
 #base-notif {
-  animation: slide-in-right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation: slide-in-right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, opacity;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 

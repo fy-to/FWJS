@@ -5,26 +5,20 @@
 </template>
 
 <style scoped>
-.collapse-enter-active {
-  animation: collapse reverse 300ms ease;
-}
-
+.collapse-enter-active,
 .collapse-leave-active {
-  animation: collapse 300ms ease;
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+  will-change: transform, opacity;
 }
 
-@keyframes collapse {
-  100% {
-    max-height: 0px;
-    opacity: 0;
-  }
+.collapse-enter-from {
+  transform: scaleY(0);
+  opacity: 0;
+}
 
-  50% {
-    max-height: 400px;
-  }
-
-  0% {
-    opacity: 1;
-  }
+.collapse-leave-to {
+  transform: scaleY(0);
+  opacity: 0;
 }
 </style>

@@ -97,7 +97,7 @@ const toggleSidebar = useDebounceFn(() => {
 
 <style lang="scss" scoped>
 .fui-sidebar {
-  @apply w-60 transition-all duration-300 ease-in-out;
+  @apply w-60 transition-[width] duration-300 ease-in-out;
   .fui-sidebar__controller {
     @apply py-3 flex items-center justify-end pr-3;
     svg {
@@ -108,7 +108,7 @@ const toggleSidebar = useDebounceFn(() => {
     @apply relative flex w-full items-center py-3 px-3 font-semibold text-sm border-l-[.4rem] border-l-transparent;
     @apply text-fv-neutral-600 hover:bg-fv-neutral-200/[.3] focus:bg-fv-neutral-200/[.3] hover:text-fv-primary-600;
     @apply dark:text-fv-neutral-300 dark:hover:bg-fv-neutral-700/[.3] dark:focus:bg-fv-neutral-700/[.3] dark:hover:text-fv-primary-400;
-    @apply transition-all duration-300 ease-in-out;
+    @apply transition-colors duration-200 ease-in-out;
     &.fvside-active {
       @apply border-l-fv-primary-500 bg-fv-neutral-200  hover:text-fv-neutral-600 focus:text-fv-neutral-600;
       @apply dark:bg-fv-neutral-700 dark:hover:text-fv-neutral-300 dark:text-fv-neutral-300;
