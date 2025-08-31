@@ -27,8 +27,9 @@ export interface APIResult {
   status?: number
 }
 
-// Use WeakMap for caches to allow garbage collection of unused entries
+// Use Map with size limit for better performance than WeakMap in this case
 const urlParseCache = new Map<string, string>()
+const MAX_URL_CACHE_SIZE = 500
 
 // Global request hash cache with size limit to prevent memory leaks
 const globalHashCache = new Map<string, number>()
@@ -59,6 +60,14 @@ function getUrlForHash(url: string): string {
     urlForHash = url
   }
 
+  // Implement LRU-like cache eviction for URL cache
+  if (urlParseCache.size >= MAX_URL_CACHE_SIZE) {
+    const firstKey = urlParseCache.keys().next().value
+    if (firstKey !== undefined) {
+      urlParseCache.delete(firstKey)
+    }
+  }
+
   urlParseCache.set(url, urlForHash)
   return urlForHash
 }
@@ -72,9 +81,11 @@ function checkSSRMode(): boolean {
   return isSSRMode
 }
 
-// Fast JSON.stringify for params
+// Fast JSON.stringify for params with caching for common cases
+const EMPTY_PARAMS = ''
 function stringifyParams(params?: RestParams): string {
-  return params ? JSON.stringify(params) : ''
+  if (!params) return EMPTY_PARAMS
+  return JSON.stringify(params)
 }
 
 // Compute request hash with global caching and size limit
@@ -138,9 +149,13 @@ params?: RestParams,
   const emitMainLoading = (value: boolean) => eventBus.emit('main-loading', value)
   const emitRestError = (result: any) => eventBus.emit('rest-error', result)
 
+  // Pre-bind emit functions to avoid recreation
+  const boundEmitMainLoading = emitMainLoading
+  const boundEmitRestError = emitRestError
+
   function handleErrorResult<ResultType extends APIResult>(result: ResultType): Promise<ResultType> {
-    emitMainLoading(false)
-    emitRestError(result)
+    boundEmitMainLoading(false)
+    boundEmitRestError(result)
     return Promise.reject(result)
   }
 
@@ -212,8 +227,8 @@ params?: RestParams,
           serverRouter.addResult(requestHash, restError)
         }
 
-        emitMainLoading(false)
-        emitRestError(restError)
+        boundEmitMainLoading(false)
+        boundEmitRestError(restError)
         return Promise.resolve(restError)
       }
       finally {

@@ -57,11 +57,13 @@ const dateFormatOptions = {
   }),
 }
 
-// Color cache for contrast calculations to avoid repeated calculations
+// Color cache for contrast calculations with size limit
 const colorContrastCache = new Map<string, string>()
+const MAX_COLOR_CACHE_SIZE = 100
 
 // Locale transform cache to avoid repeated replacements
 const localeTransformCache = new Map<string, string>()
+const MAX_LOCALE_CACHE_SIZE = 50
 
 // Default colors for contrast errors
 const DEFAULT_DARK_COLOR = '#000000'
@@ -100,13 +102,26 @@ function getContrastingTextColor(backgroundColor: string) {
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
     const result = luminance > 0.5 ? DEFAULT_DARK_COLOR : DEFAULT_LIGHT_COLOR
 
-    // Cache the result
+    // Cache the result with LRU eviction
+    if (colorContrastCache.size >= MAX_COLOR_CACHE_SIZE) {
+      const firstKey = colorContrastCache.keys().next().value
+      if (firstKey !== undefined) {
+        colorContrastCache.delete(firstKey)
+      }
+    }
+
     colorContrastCache.set(backgroundColor, result)
     return result
   }
   catch {
     return DEFAULT_DARK_COLOR
   }
+}
+
+// Cache for power calculations in formatBytes
+const kPowerCache = new Float64Array(9) // Support up to YB
+for (let i = 0; i < 9; i++) {
+  kPowerCache[i] = k ** i
 }
 
 function formatBytes(bytes: number, decimals = 2) {
@@ -118,18 +133,40 @@ function formatBytes(bytes: number, decimals = 2) {
   // Use precomputed logK for better performance
   const i = Math.floor(Math.log(bytes) / logK)
 
-  return `${Number.parseFloat((bytes / k ** i).toFixed(dm))} ${byteSizes[i]}`
+  // Use cached power value instead of recalculating
+  const divisor = i < kPowerCache.length ? kPowerCache[i] : k ** i
+
+  return `${Number.parseFloat((bytes / divisor).toFixed(dm))} ${byteSizes[i]}`
 }
 
-// Helper to parse date inputs consistently
+// Cache for parsed date strings
+const parsedDateCache = new Map<string, number>()
+const MAX_DATE_CACHE_SIZE = 100
+
+// Helper to parse date inputs consistently with caching
 function parseDateInput(dt: Date | string | number): number {
   if (dt instanceof Date) {
     return dt.getTime()
   }
 
   if (typeof dt === 'string') {
+    // Check cache first
+    const cached = parsedDateCache.get(dt)
+    if (cached !== undefined) return cached
+
     const parsed = Date.parse(dt)
-    return Number.isNaN(parsed) ? Number.parseInt(dt, 10) : parsed
+    const result = Number.isNaN(parsed) ? Number.parseInt(dt, 10) : parsed
+
+    // Cache with LRU eviction
+    if (parsedDateCache.size >= MAX_DATE_CACHE_SIZE) {
+      const firstKey = parsedDateCache.keys().next().value
+      if (firstKey !== undefined) {
+        parsedDateCache.delete(firstKey)
+      }
+    }
+
+    parsedDateCache.set(dt, result)
+    return result
   }
 
   return dt
@@ -170,6 +207,15 @@ function formatTimeago(dt: Date | string | number) {
   let localeWithUnderscore = localeTransformCache.get(fullLocale)
   if (!localeWithUnderscore) {
     localeWithUnderscore = fullLocale.replace('-', '_')
+
+    // Implement LRU eviction for locale cache
+    if (localeTransformCache.size >= MAX_LOCALE_CACHE_SIZE) {
+      const firstKey = localeTransformCache.keys().next().value
+      if (firstKey !== undefined) {
+        localeTransformCache.delete(firstKey)
+      }
+    }
+
     localeTransformCache.set(fullLocale, localeWithUnderscore)
   }
 

@@ -183,7 +183,7 @@ const paginationLinks = computed(() => {
   try {
     // Parse the canonical URL once
     const canonicalUrl = new URL(url.Canonical)
-    const baseUrl = `${url.Scheme}://${url.Host}${url.Path}`
+    const baseUrl = `https://${url.Host}${url.Path}`
 
     // Build query params object
     const currentQuery: Record<string, string> = {}

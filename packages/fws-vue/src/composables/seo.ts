@@ -27,8 +27,9 @@ export interface LazyHead {
   twitterCreator?: string
 }
 
-// Cache for processed image URLs
+// Cache for processed image URLs with size limit
 const processedImageUrlCache = new Map<string, string>()
+const MAX_IMAGE_URL_CACHE_SIZE = 200
 
 // Helper function to process image URLs with caching
 function processImageUrl(image: string | undefined, imageType: string | undefined): string | undefined {
@@ -48,22 +49,46 @@ function processImageUrl(image: string | undefined, imageType: string | undefine
     result = image
   }
 
+  // Implement LRU-like cache eviction
+  if (processedImageUrlCache.size >= MAX_IMAGE_URL_CACHE_SIZE) {
+    const firstKey = processedImageUrlCache.keys().next().value
+    if (firstKey !== undefined) {
+      processedImageUrlCache.delete(firstKey)
+    }
+  }
+
   processedImageUrlCache.set(cacheKey, result)
   return result
 }
 
-// Helper function to normalize image type
-function normalizeImageType(imageType: string | undefined): 'image/jpeg' | 'image/gif' | 'image/png' | null {
-  if (!imageType) return null
+// Cache normalized image types
+const normalizedImageTypeCache = new Map<string | undefined, 'image/jpeg' | 'image/gif' | 'image/png' | null>()
 
-  const type = imageType.includes('image/') ? imageType : `image/${imageType}`
-  if (type === 'image/jpeg' || type === 'image/gif' || type === 'image/png') {
-    return type as 'image/jpeg' | 'image/gif' | 'image/png'
+// Helper function to normalize image type with caching
+function normalizeImageType(imageType: string | undefined): 'image/jpeg' | 'image/gif' | 'image/png' | null {
+  const cached = normalizedImageTypeCache.get(imageType)
+  if (cached !== undefined) return cached
+
+  let result: 'image/jpeg' | 'image/gif' | 'image/png' | null
+
+  if (!imageType) {
+    result = null
   }
-  return 'image/png'
+  else {
+    const type = imageType.includes('image/') ? imageType : `image/${imageType}`
+    if (type === 'image/jpeg' || type === 'image/gif' || type === 'image/png') {
+      result = type as 'image/jpeg' | 'image/gif' | 'image/png'
+    }
+    else {
+      result = 'image/png'
+    }
+  }
+
+  normalizedImageTypeCache.set(imageType, result)
+  return result
 }
 
-// Precomputed alternate locale URL template
+// Precomputed alternate locale URL template - inline for better JIT
 function ALTERNATE_LOCALE_TEMPLATE(scheme: string, host: string, locale: string, path: string) {
   return `${scheme}://${host}/l/${locale}${path}`
 }

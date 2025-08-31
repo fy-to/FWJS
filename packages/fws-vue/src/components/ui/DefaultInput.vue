@@ -35,6 +35,7 @@ const props = withDefaults(
     copyButton?: boolean
     maxRange?: number
     minRange?: number
+    maxTags?: number
   }>(),
   {
     showLabel: true,
@@ -262,6 +263,7 @@ defineExpose({ focus, blur, getInputRef })
             :disabled="disabled"
             :color="color"
             :error="checkErrors"
+            :max-tags="maxTags"
             :copy-button="copyButton"
             :help="help"
             :max-lenght-per-tag="maxLengthPerTag"

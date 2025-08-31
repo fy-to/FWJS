@@ -383,24 +383,23 @@ function handleKeyNavigation(e: KeyboardEvent, index: number) {
       >
         {{ help }}
       </span>
-      <!-- Tag counter when maxTags is set -->
     </div>
-    <div v-if="maxTags > 0" class="tag-counter">
-      <span>{{ model.length }}/{{ maxTags }}</span>
-    </div>
-    <!-- Inline error display if needed -->
-    <p
-      v-if="$props.error"
-      :id="`error_tags_${id}`"
-      class="text-xs text-red-500 mt-1"
-      aria-live="assertive"
-    >
-      {{ $props.error }}
-    </p>
 
-    <!-- Copy button / or any additional actions -->
-    <div v-if="copyButton" class="copy-button-container">
+    <!-- Tag count and copy button container -->
+    <div class="flex items-center justify-between mt-2">
+      <!-- Tag counter -->
+      <div class="tag-counter">
+        <span v-if="maxTags > 0">
+          {{ model.length }}/{{ maxTags }} tag{{ model.length !== 1 ? 's' : '' }}
+        </span>
+        <span v-else>
+          {{ model.length }} tag{{ model.length !== 1 ? 's' : '' }}
+        </span>
+      </div>
+
+      <!-- Copy button -->
       <button
+        v-if="copyButton"
         class="copy-button"
         type="button"
         :disabled="model.length === 0"
@@ -424,6 +423,16 @@ function handleKeyNavigation(e: KeyboardEvent, index: number) {
         Copy tags
       </button>
     </div>
+
+    <!-- Inline error display if needed -->
+    <p
+      v-if="$props.error"
+      :id="`error_tags_${id}`"
+      class="text-xs text-red-500 mt-1"
+      aria-live="assertive"
+    >
+      {{ $props.error }}
+    </p>
   </div>
 </template>
 
@@ -443,7 +452,7 @@ function handleKeyNavigation(e: KeyboardEvent, index: number) {
 
 /* Max tags reached state */
 .tags-input.max-reached {
-  @apply opacity-80 pointer-events-none bg-fv-neutral-100 dark:bg-fv-neutral-900;
+  @apply bg-fv-neutral-50 dark:bg-fv-neutral-900;
 }
 
 /* Error border */
@@ -522,10 +531,6 @@ function handleKeyNavigation(e: KeyboardEvent, index: number) {
 }
 
 /* Copy button styling */
-.copy-button-container {
-  @apply flex justify-end mt-2;
-}
-
 .copy-button {
   @apply inline-flex items-center justify-center
     bg-fv-neutral-100 hover:bg-fv-neutral-200
@@ -539,7 +544,7 @@ function handleKeyNavigation(e: KeyboardEvent, index: number) {
 
 /* Tag counter styling */
 .tag-counter {
-  @apply text-xs text-right text-fv-neutral-500 dark:text-fv-neutral-400 mt-1;
+  @apply text-sm text-fv-neutral-600 dark:text-fv-neutral-400;
 }
 
 /* Responsive adjustments */

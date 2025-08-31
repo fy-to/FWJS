@@ -1,4 +1,4 @@
-import { hasFW, getPrefix } from './fws-wrapper';
+import { hasFW, getPrefix, getLocale } from './fws-wrapper';
 import type { BackendModule, Services, TOptions } from 'i18next';
 
 interface BackendOptions {
@@ -39,7 +39,7 @@ class I18nBackend implements BackendModule<BackendOptions> {
         const newpfx = pfx.replace(/\/l\/[a-z]{2}-[A-Z]{2}/, "/l/" + language) || "/l/" + language;
 
         fetch(newpfx + "/_special/locale.json")
-            .catch(() => fetch("/_special/locale/" + language + ".json"))
+            .catch(() => fetch("/l/"+getLocale+"/_special/locale.json"))
             .then(res => {
                 if (!res.ok) {
                     const retry = res.status >= 500 && res.status < 600;
