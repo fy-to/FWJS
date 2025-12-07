@@ -17,6 +17,7 @@ import UserProfileStrict from './components/fws/UserProfileStrict.vue'
 import { ClientOnly } from './components/ssr/ClientOnly'
 import DefaultBreadcrumb from './components/ui/DefaultBreadcrumb.vue'
 import DefaultConfirm from './components/ui/DefaultConfirm.vue'
+import DefaultConfirmWithInput from './components/ui/DefaultConfirmWithInput.vue'
 import DefaultDropdown from './components/ui/DefaultDropdown.vue'
 
 import DefaultDropdownLink from './components/ui/DefaultDropdownLink.vue'
@@ -103,6 +104,7 @@ export {
   DataTable,
   DefaultBreadcrumb,
   DefaultConfirm,
+  DefaultConfirmWithInput,
   DefaultDropdown,
   DefaultDropdownLink,
   DefaultGallery,

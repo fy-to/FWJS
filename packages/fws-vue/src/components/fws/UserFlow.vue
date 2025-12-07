@@ -139,29 +139,47 @@ async function userFlow(params: paramsType = { initial: false }) {
     },
   )) as UserFlow
   if (response.value?.result === 'success') {
+    // Check if inner data has error result
+    // @ts-expect-error - API can return error inside success response
+    if (response.value.data.result === 'error') {
+      // @ts-expect-error - Cast to APIResult for error handling
+      responseError.value = response.value.data as APIResult
+      if (responseError.value.param) {
+        fieldsError.value[responseError.value.param] = responseError.value.token
+      }
+      eventBus.emit('login-loading', false)
+      return
+    }
     if (response.value.data.complete === true && response.value.data.user) {
       store.setUser(response.value.data.user)
       const actualReturnTo = response.value.data.redirect
         ? response.value.data.redirect
         : returnTo.value
       session.value = null
-      if (isExternalUrl(actualReturnTo)) {
-        if (props.onSuccess) {
-          await props.onSuccess()
+      try {
+        if (isExternalUrl(actualReturnTo)) {
+          if (props.onSuccess) {
+            await props.onSuccess()
+          }
+          else {
+            window.location.href = actualReturnTo
+          }
         }
         else {
-          window.location.href = actualReturnTo
+          if (props.onSuccess) {
+            await props.onSuccess(actualReturnTo)
+          }
+          else {
+            const routeExists = router.resolve(actualReturnTo)
+            if (routeExists.matched.length !== 0) router.push(actualReturnTo)
+            else window.location.href = actualReturnTo
+          }
         }
       }
-      else {
-        if (props.onSuccess) {
-          await props.onSuccess(actualReturnTo)
-        }
-        else {
-          const routeExists = router.resolve(actualReturnTo)
-          if (routeExists.matched.length !== 0) router.push(actualReturnTo)
-          else window.location.href = actualReturnTo
-        }
+      catch (error) {
+        console.error('Error in onSuccess callback:', error)
+        eventBus.emit('login-loading', false)
+        throw error
       }
       return
     }
@@ -207,6 +225,12 @@ async function userFlow(params: paramsType = { initial: false }) {
   }
 
   eventBus.emit('login-loading', false)
+}
+
+function handlePageRefresh() {
+  if (typeof window !== 'undefined') {
+    window.location.reload()
+  }
 }
 
 onMounted(async () => {
@@ -375,17 +399,42 @@ onMounted(async () => {
             </template>
           </template>
 
-          <!-- Error message -->
+          <!-- Error message with token -->
           <div
             v-if="responseError && responseError.token"
             class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm font-medium"
             role="alert"
-            v-html="$t(responseError.token)"
-          />
+          >
+            <div v-html="$t(responseError.token)" />
+            <div v-if="responseError.message && responseError.message !== $t(responseError.token)" class="mt-2 text-xs opacity-90">
+              {{ responseError.message }}
+            </div>
+          </div>
+
+          <!-- General API error with refresh button -->
+          <div
+            v-if="responseError && !responseError.param && !responseError.token"
+            class="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+            role="alert"
+          >
+            <p class="text-red-700 dark:text-red-300 text-sm font-medium mb-3">
+              {{ responseError.message || responseError.error || $t("user_flow_api_error") }}
+            </p>
+            <button
+              type="button"
+              class="w-full flex justify-center py-2 px-4 border border-red-300 dark:border-red-700 rounded-lg
+                     text-red-700 dark:text-red-300 bg-white dark:bg-red-900/30
+                     hover:bg-red-50 dark:hover:bg-red-900/50 transition-all duration-200
+                     focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-600 font-medium"
+              @click="handlePageRefresh"
+            >
+              {{ $t("user_flow_refresh_page") }}
+            </button>
+          </div>
 
           <!-- Password recovery link -->
           <div
-            v-if="responseReq.includes('password') && 0"
+            v-if="responseReq.includes('password') && response?.data?.user"
             class="text-right my-2"
           >
             <button

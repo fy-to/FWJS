@@ -85,6 +85,18 @@ const props = withDefaults(
     imageComponent?: Component | string
     isVideo?: Function
     ranking?: boolean
+    // Edit mode support
+    editEnabled?: boolean
+    editMode?: boolean
+    selectedItems?: Set<string>
+    onBulkAction?: Function
+    getItemId?: Function
+    editButtonText?: string
+    cancelButtonText?: string
+    bulkActionText?: string
+    selectAllText?: string
+    clearSelectionText?: string
+    selectedCountText?: string
   }>(),
   {
     modelValue: 0,
@@ -99,11 +111,23 @@ const props = withDefaults(
     paging: undefined,
     borderColor: undefined,
     ranking: false,
+    // Edit mode defaults
+    editEnabled: false,
+    editMode: false,
+    selectedItems: () => new Set(),
+    onBulkAction: undefined,
+    getItemId: (item: any, index: number) => item.id || item.UUID || index.toString(),
+    editButtonText: 'Edit',
+    cancelButtonText: 'Cancel',
+    bulkActionText: 'Delete Selected',
+    selectAllText: 'Select All',
+    clearSelectionText: 'Clear',
+    selectedCountText: 'selected',
   },
 )
 
 // Emits
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'update:editMode', 'update:selectedItems'])
 
 // Two-way binding for model value
 const modelValue = computed({
@@ -112,6 +136,74 @@ const modelValue = computed({
     emit('update:modelValue', i)
   },
 })
+
+// Edit mode state management
+const localEditMode = computed({
+  get: () => props.editMode,
+  set: value => emit('update:editMode', value),
+})
+
+const localSelectedItems = computed({
+  get: () => props.selectedItems,
+  set: value => emit('update:selectedItems', value),
+})
+
+// Edit mode functions
+function toggleEditMode() {
+  localEditMode.value = !localEditMode.value
+  if (!localEditMode.value) {
+    // Clear selections when exiting edit mode
+    localSelectedItems.value = new Set()
+  }
+}
+
+function toggleItemSelection(item: any, index: number) {
+  const itemId = props.getItemId(item, index)
+  const newSelection = new Set(localSelectedItems.value)
+
+  if (newSelection.has(itemId)) {
+    newSelection.delete(itemId)
+  }
+  else {
+    newSelection.add(itemId)
+  }
+
+  localSelectedItems.value = newSelection
+}
+
+function selectAll() {
+  const newSelection = new Set<string>()
+  props.images.forEach((item, index) => {
+    newSelection.add(props.getItemId(item, index))
+  })
+  localSelectedItems.value = newSelection
+}
+
+function clearSelection() {
+  localSelectedItems.value = new Set()
+}
+
+function handleBulkAction() {
+  if (props.onBulkAction && localSelectedItems.value.size > 0) {
+    props.onBulkAction(Array.from(localSelectedItems.value))
+  }
+}
+
+// Check if an item is selected
+function isItemSelected(item: any, index: number): boolean {
+  const itemId = props.getItemId(item, index)
+  return localSelectedItems.value.has(itemId)
+}
+
+// Handle thumbnail click - either select or open gallery
+function handleThumbnailClick(item: any, index: number) {
+  if (props.editMode) {
+    toggleItemSelection(item, index)
+  }
+  else {
+    eventBus.emit(`${props.id}GalleryImage`, index)
+  }
+}
 
 // Computed values
 const modelValueSrc = computed(() => {
@@ -800,6 +892,59 @@ onUnmounted(() => {
       </div>
     </transition>
 
+    <!-- Edit Mode Controls (only if editEnabled is true) -->
+    <div v-if="editEnabled && images.length > 0 && (mode === 'grid' || mode === 'mason' || mode === 'custom')">
+      <!-- Edit Mode Toggle Button (only show when not in edit mode) -->
+      <div v-if="!localEditMode" class="flex justify-end mb-3">
+        <button
+          class="px-4 py-2 rounded-lg font-medium text-sm transition-colors bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
+          @click="toggleEditMode"
+        >
+          {{ editButtonText }}
+        </button>
+      </div>
+
+      <!-- Bulk Actions Bar TOP (shown when in edit mode) -->
+      <div
+        v-if="localEditMode"
+        class="flex flex-wrap items-center justify-between gap-2 p-3 mb-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-medium">
+            {{ localSelectedItems.size }} {{ selectedCountText }}
+          </span>
+          <button
+            class="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md transition-colors"
+            @click="selectAll"
+          >
+            {{ selectAllText }}
+          </button>
+          <button
+            class="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md transition-colors"
+            @click="clearSelection"
+          >
+            {{ clearSelectionText }}
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="px-4 py-1.5 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors font-medium"
+            @click="toggleEditMode"
+          >
+            {{ cancelButtonText }}
+          </button>
+          <button
+            class="px-4 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium"
+            :disabled="localSelectedItems.size === 0"
+            :class="{ 'opacity-50 cursor-not-allowed': localSelectedItems.size === 0 }"
+            @click="handleBulkAction"
+          >
+            {{ bulkActionText }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Thumbnail Grid/Masonry/Custom Layouts if gallery is not open -->
     <div v-if="mode === 'grid' || mode === 'mason' || mode === 'custom'" class="gallery-grid">
       <div
@@ -823,13 +968,44 @@ onUnmounted(() => {
                 {{ i }}
               </div>
               <template v-for="j in gridHeight" :key="`gi_${id}_${i + j}`">
-                <div class="masonry-item">
+                <div
+                  v-if="i + j - 2 < images.length"
+                  class="masonry-item relative"
+                  :class="{ 'ring-4 ring-blue-500': localEditMode && isItemSelected(images[i + j - 2], i + j - 2) }"
+                >
+                  <!-- Checkbox overlay for edit mode -->
+                  <div
+                    v-if="localEditMode"
+                    class="absolute top-2 left-2 z-20 pointer-events-none"
+                  >
+                    <div
+                      class="w-6 h-6 rounded border-2 bg-white/90 dark:bg-black/90 flex items-center justify-center pointer-events-auto"
+                      :class="isItemSelected(images[i + j - 2], i + j - 2) ? 'bg-blue-500 border-blue-500' : 'border-gray-400'"
+                    >
+                      <svg
+                        v-if="isItemSelected(images[i + j - 2], i + j - 2)"
+                        class="w-4 h-4 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <!-- Selection overlay -->
+                  <div
+                    v-if="localEditMode && isItemSelected(images[i + j - 2], i + j - 2)"
+                    class="absolute inset-0 bg-blue-500/20 pointer-events-none z-10 rounded-lg"
+                  />
+
                   <img
-                    v-if="i + j - 2 < images.length && imageComponent === 'img'"
+                    v-if="imageComponent === 'img'"
                     class="h-auto max-w-full w-full rounded-lg cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 hover:brightness-110 hover:scale-[1.02]"
                     :src="getThumbnailUrl(images[i + j - 2])"
                     :alt="`Gallery image ${i + j - 1}`"
-                    @click="$eventBus.emit(`${id}GalleryImage`, i + j - 2)"
+                    @click="handleThumbnailClick(images[i + j - 2], i + j - 2)"
                   >
                   <component
                     :is="imageComponent"
@@ -844,7 +1020,7 @@ onUnmounted(() => {
                     :show-likes="getThumbnailUrl(images[i + j - 2]).showLikes"
                     :is-author="getThumbnailUrl(images[i + j - 2]).isAuthor"
                     :user-uuid="getThumbnailUrl(images[i + j - 2]).userUUID"
-                    @click="$eventBus.emit(`${id}GalleryImage`, i + j - 2)"
+                    @click="handleThumbnailClick(images[i + j - 2], i + j - 2)"
                   />
                 </div>
               </template>
@@ -854,13 +1030,43 @@ onUnmounted(() => {
             <div v-if="ranking" class="img-gallery-ranking">
               {{ i }}
             </div>
-            <div class="overflow-hidden rounded-lg">
+            <div
+              class="overflow-hidden rounded-lg relative"
+              :class="{ 'ring-4 ring-blue-500': localEditMode && isItemSelected(images[i - 1], i - 1) }"
+            >
+              <!-- Checkbox overlay for edit mode -->
+              <div
+                v-if="localEditMode"
+                class="absolute top-2 left-2 z-20 pointer-events-none"
+              >
+                <div
+                  class="w-6 h-6 rounded border-2 bg-white/90 dark:bg-black/90 flex items-center justify-center pointer-events-auto"
+                  :class="isItemSelected(images[i - 1], i - 1) ? 'bg-blue-500 border-blue-500' : 'border-gray-400'"
+                >
+                  <svg
+                    v-if="isItemSelected(images[i - 1], i - 1)"
+                    class="w-4 h-4 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Selection overlay -->
+              <div
+                v-if="localEditMode && isItemSelected(images[i - 1], i - 1)"
+                class="absolute inset-0 bg-blue-500/20 pointer-events-none z-10"
+              />
+
               <img
                 v-if="imageComponent === 'img'"
                 class="h-auto max-w-full w-full rounded-lg cursor-pointer shadow-md transition-all duration-300 group-hover:brightness-110 group-hover:scale-[1.03]"
                 :src="getThumbnailUrl(images[i - 1])"
                 :alt="`Gallery image ${i}`"
-                @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+                @click="handleThumbnailClick(images[i - 1], i - 1)"
               >
               <component
                 :is="imageComponent"
@@ -875,11 +1081,52 @@ onUnmounted(() => {
                 :show-likes="getThumbnailUrl(images[i - 1]).showLikes"
                 :is-author="getThumbnailUrl(images[i - 1]).isAuthor"
                 :user-uuid="getThumbnailUrl(images[i - 1]).userUUID"
-                @click="$eventBus.emit(`${id}GalleryImage`, i - 1)"
+                @click="handleThumbnailClick(images[i - 1], i - 1)"
               />
             </div>
           </div>
         </template>
+      </div>
+    </div>
+
+    <!-- Bulk Actions Bar BOTTOM (duplicate bar below gallery when in edit mode) -->
+    <div v-if="editEnabled && localEditMode && images.length > 0 && (mode === 'grid' || mode === 'mason' || mode === 'custom')" class="mt-3">
+      <div
+        class="flex flex-wrap items-center justify-between gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-medium">
+            {{ localSelectedItems.size }} {{ selectedCountText }}
+          </span>
+          <button
+            class="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md transition-colors"
+            @click="selectAll"
+          >
+            {{ selectAllText }}
+          </button>
+          <button
+            class="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md transition-colors"
+            @click="clearSelection"
+          >
+            {{ clearSelectionText }}
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="px-4 py-1.5 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors font-medium"
+            @click="toggleEditMode"
+          >
+            {{ cancelButtonText }}
+          </button>
+          <button
+            class="px-4 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium"
+            :disabled="localSelectedItems.size === 0"
+            :class="{ 'opacity-50 cursor-not-allowed': localSelectedItems.size === 0 }"
+            @click="handleBulkAction"
+          >
+            {{ bulkActionText }}
+          </button>
+        </div>
       </div>
     </div>
 
