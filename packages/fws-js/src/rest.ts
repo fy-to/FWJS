@@ -3,8 +3,19 @@ export interface RestParams {
     [key: string]: any;
 }
 
+// Configurable base URL for rest calls (default: empty = relative URL)
+let restBaseUrl: string = "";
+
+export function setRestBaseUrl(url: string): void {
+    restBaseUrl = url;
+}
+
+export function getRestBaseUrl(): string {
+    return restBaseUrl;
+}
+
 function getRestURL(path: string): string {
-    return "/_special/rest/" + path;
+    return restBaseUrl + "/_special/rest/" + path;
 }
 
 function getTzPad(number: number, length: number): string {

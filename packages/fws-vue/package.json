@@ -1,6 +1,6 @@
 {
   "name": "@fy-/fws-vue",
-  "version": "2.3.83",
+  "version": "2.4.3",
   "author": "Florian 'Fy' Gasquez <m@fy.to>",
   "license": "MIT",
   "homepage": "https://github.com/fy-to/FWJS#readme",
@@ -37,9 +37,9 @@
   "peerDependencies": {
     "@fy-/fws-js": "^x.x.x",
     "@fy-/fws-types": "^x.x.x",
-    "@unhead/schema-org": "1.9.x",
-    "@unhead/ssr": "^1.9.x",
-    "@unhead/vue": "^1.9.x",
+    "@unhead/schema-org": "^1.9.x",
+    "@unhead/ssr": "^1.x.x",
+    "@unhead/vue": "^1.x.x",
     "@vuelidate/core": "^2.x.x",
     "@vuelidate/validators": "^2.x.x",
     "@vueuse/core": "^x.x.x",

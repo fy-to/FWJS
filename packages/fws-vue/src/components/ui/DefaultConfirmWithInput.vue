@@ -139,11 +139,19 @@ onUnmounted(() => {
 
         <!-- Input field -->
         <div class="mb-6">
+          <!-- Label uses v-html so entity-escaped strings render decoded. -->
+          <label
+            v-if="inputLabel"
+            for="confirmInput"
+            class="block mb-2 text-sm font-medium text-fv-neutral-900 dark:text-white"
+            :class="{ 'text-red-600 dark:text-red-400': inputError }"
+            v-html="inputLabel"
+          />
           <DefaultInput
             id="confirmInput"
             v-model="inputValue"
             type="text"
-            :label="inputLabel"
+            :show-label="false"
             :placeholder="inputPlaceholder"
             :error="inputError"
             autocomplete="off"

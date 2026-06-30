@@ -1,8 +1,10 @@
+import type { TFunction } from 'i18next'
 import type { Emitter } from 'mitt'
 import type { App, Plugin } from 'vue'
 import type { Events } from './composables/event-bus'
 import i18next from 'i18next'
 import mitt from 'mitt'
+import { shallowRef } from 'vue'
 import CmsArticleBoxed from './components/fws/CmsArticleBoxed.vue'
 import CmsArticleSingle from './components/fws/CmsArticleSingle.vue'
 import DataTable from './components/fws/DataTable.vue'
@@ -70,15 +72,40 @@ function createFWS(): Plugin {
   // @ts-expect-error: Emitter<Events> is not assignable to Emitter<Events>
   const eventBus: Emitter<Events> = mitt<Events>()
 
+  // i18next's `t` is NOT reactive. If a component renders a key during a window
+  // where the resource isn't loaded yet (cold deep-link, client-nav before a late
+  // locale fetch, hydration race) it paints the RAW token and Vue never re-renders
+  // — nothing reactive changed, so the miss sticks. Wrap `t` so it depends on a
+  // tick bumped by i18next's own events: any raw key then self-heals the instant
+  // resources land, and `changeLanguage` live-updates every string. Client-only:
+  // on the server strings are already resolved by the `await i18nextPromise` before
+  // render, and `install()` runs per-request there — adding listeners to the global
+  // i18next singleton each request would leak. So SSR keeps the plain `t`.
+  let translate: TFunction = i18next.t
+  if (typeof window !== 'undefined') {
+    const tick = shallowRef(0)
+    const bump = (): void => {
+      tick.value++
+    }
+    i18next.on('loaded', bump)
+    i18next.on('added', bump)
+    i18next.on('languageChanged', bump)
+    const rawT = i18next.t as unknown as (...a: unknown[]) => unknown
+    translate = ((...args: Parameters<typeof i18next.t>) => {
+      void tick.value
+      return rawT(...args)
+    }) as unknown as TFunction
+  }
+
   return {
     install(app: App) {
       if (app.config.globalProperties) {
         app.config.globalProperties.$eventBus = eventBus
         app.provide('fwsVueEventBus', eventBus)
 
-        // i18next
-        app.config.globalProperties.$t = i18next.t
-        app.provide('fwsVueTranslate', i18next.t)
+        // i18next (reactive wrapper — see note above)
+        app.config.globalProperties.$t = translate
+        app.provide('fwsVueTranslate', translate)
 
         // Templating
         app.config.globalProperties.$cropText = cropText

@@ -1,6 +1,6 @@
 {
     "name": "@fy-/fws-js",
-    "version": "0.1.6",
+    "version": "0.1.8",
     "description": "FWJS is a framework for building web applications FWS",
     "scripts": {
         "build": "tsc && node copyPackage.js"
@@ -8,7 +8,7 @@
     "author": "Florian 'Fy' Gasquez <m@fy.to>",
     "license": "MIT",
     "peerDependencies": {
-        "@fy-/fws-types": "0.0.x"
+        "@fy-/fws-types": "^0.1.x"
     },
     "devDependencies": {
         "@fy-/fws-types": "workspace:*",

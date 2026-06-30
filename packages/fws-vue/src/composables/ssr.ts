@@ -63,8 +63,9 @@ export async function initVueServer(
     },
   }
 
-  if (url !== serverRouter.route.fullPath) {
-    result.redirect = serverRouter.route.value.fullPath
+  const resolvedRoute = serverRouter.route
+  if (resolvedRoute && url !== resolvedRoute.fullPath) {
+    result.redirect = resolvedRoute.fullPath
     result.statusCode = 307
     callback(result)
     return result

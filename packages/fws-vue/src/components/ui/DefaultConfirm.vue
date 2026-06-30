@@ -19,10 +19,11 @@ interface ConfirmModalData {
 }
 
 const _onConfirm = useDebounceFn(async () => {
-  if (onConfirm.value) {
-    await onConfirm.value()
+  const callback = onConfirm.value
+  resetConfirm() // Close modal immediately so loading can show
+  if (callback) {
+    await callback()
   }
-  resetConfirm()
 }, 300)
 
 function resetConfirm() {

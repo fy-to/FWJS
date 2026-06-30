@@ -30,12 +30,18 @@ export const useServerRouter = defineStore('routerStore', {
     },
     push(path: any, status = 302) {
       this.status = status
-      if (status !== 302) this.redirect = path
+      if (status !== 302) {
+        // Resolve path to string if it's a route location object
+        this.redirect = typeof path === 'string' ? path : this._router?.resolve(path)?.fullPath || path
+      }
       return this._router?.push(path)
     },
     replace(path: any, status = 302) {
       this.status = status
-      if (status !== 302) this.redirect = path
+      if (status !== 302) {
+        // Resolve path to string if it's a route location object
+        this.redirect = typeof path === 'string' ? path : this._router?.resolve(path)?.fullPath || path
+      }
       return this._router?.replace(path)
     },
     go(delta: number) {

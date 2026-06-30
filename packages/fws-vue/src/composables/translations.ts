@@ -27,6 +27,7 @@ const defaultI18nextConfig = {
   debug: false,
   load: 'currentOnly' as const,
   initImmediate: false,
+  showSupportNotice: false,
 }
 
 export function i18nextPromise(

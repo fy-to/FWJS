@@ -3,7 +3,7 @@ import type { KlbFlowData, KlbUserFlowField } from '@fy-/fws-types'
 import type { APIResult } from '../../composables/rest'
 import { EnvelopeIcon } from '@heroicons/vue/24/solid'
 import { useSessionStorage } from '@vueuse/core'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEventBus } from '../../composables/event-bus'
 import { useRest } from '../../composables/rest'
@@ -61,6 +61,12 @@ const formData = ref<Record<string, any>>({
   action: props.forceAction ? props.forceAction : undefined,
 })
 const completed = ref(false)
+
+const isMessageOnly = computed(() => {
+  return !!responseMessage.value
+    && responseFields.value.length > 0
+    && responseFields.value.every(f => f.cat === 'label')
+})
 
 function autocompleteValue(fieldName: string): string | undefined {
   switch (fieldName) {
@@ -255,7 +261,7 @@ onMounted(async () => {
           id="login-title"
           class="text-lg font-medium text-fv-neutral-700 dark:text-fv-neutral-300"
         >
-          {{ responseMessage }}
+          {{ $t(responseMessage) }}
         </h2>
       </div>
 
@@ -378,7 +384,7 @@ onMounted(async () => {
                   "
                   :error="fieldsError[field.name]"
                   :type="field.type"
-                  :req="responseReq.includes(field.name)"
+                  :req="responseReq ? responseReq.includes(field.name) : false"
                   :autocomplete="autocompleteValue(field.name)"
                 />
               </template>
@@ -393,7 +399,7 @@ onMounted(async () => {
                 :label="field.label"
                 :error="fieldsError[field.name]"
                 :type="field.type"
-                :req="responseReq.includes(field.name)"
+                :req="responseReq ? responseReq.includes(field.name) : false"
                 :link-icon="field.link"
               />
             </template>
@@ -434,7 +440,7 @@ onMounted(async () => {
 
           <!-- Password recovery link -->
           <div
-            v-if="responseReq.includes('password') && response?.data?.user"
+            v-if="responseReq ? responseReq.includes('password') && response?.data?.user : false"
             class="text-right my-2"
           >
             <button
@@ -451,8 +457,9 @@ onMounted(async () => {
             </button>
           </div>
 
-          <!-- Submit button -->
+          <!-- Submit button (hidden when message-only, e.g. magic link sent) -->
           <button
+            v-if="!isMessageOnly"
             type="submit"
             class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm
                    text-white bg-fv-primary-600 hover:bg-fv-primary-700 dark:bg-fv-primary-700 dark:hover:bg-fv-primary-800

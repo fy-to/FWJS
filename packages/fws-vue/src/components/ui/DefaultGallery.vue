@@ -97,6 +97,13 @@ const props = withDefaults(
     selectAllText?: string
     clearSelectionText?: string
     selectedCountText?: string
+    // Save order support
+    saveOrderText?: string
+    reorderButtonText?: string
+    onSaveOrder?: Function
+    showSaveOrder?: boolean
+    getItemPosition?: Function
+    onPositionChange?: Function
   }>(),
   {
     modelValue: 0,
@@ -123,6 +130,13 @@ const props = withDefaults(
     selectAllText: 'Select All',
     clearSelectionText: 'Clear',
     selectedCountText: 'selected',
+    // Save order defaults
+    saveOrderText: 'Save Order',
+    reorderButtonText: 'Reorder',
+    onSaveOrder: undefined,
+    showSaveOrder: false,
+    getItemPosition: (item: any, index: number) => item.UserIndex ?? index,
+    onPositionChange: undefined,
   },
 )
 
@@ -143,6 +157,22 @@ const localEditMode = computed({
   set: value => emit('update:editMode', value),
 })
 
+// Reorder mode - separate from delete mode
+const localReorderMode = ref(false)
+
+function toggleReorderMode() {
+  localReorderMode.value = !localReorderMode.value
+  if (localReorderMode.value) {
+    // Exit delete mode when entering reorder mode
+    localEditMode.value = false
+    localSelectedItems.value = new Set()
+  }
+}
+
+function exitReorderMode() {
+  localReorderMode.value = false
+}
+
 const localSelectedItems = computed({
   get: () => props.selectedItems,
   set: value => emit('update:selectedItems', value),
@@ -151,6 +181,10 @@ const localSelectedItems = computed({
 // Edit mode functions
 function toggleEditMode() {
   localEditMode.value = !localEditMode.value
+  if (localEditMode.value) {
+    // Exit reorder mode when entering delete mode
+    localReorderMode.value = false
+  }
   if (!localEditMode.value) {
     // Clear selections when exiting edit mode
     localSelectedItems.value = new Set()
@@ -764,7 +798,7 @@ onUnmounted(() => {
               <div
                 v-if="infoPanel && images[modelValue]"
                 ref="infoPanelRef"
-                class="w-full px-4 py-3 backdrop-blur-md bg-fv-neutral-900/80 border-t border-fv-neutral-800"
+                class="w-full px-4 py-1 md:py-2 backdrop-blur-md bg-fv-neutral-900/80 border-t border-fv-neutral-800"
               >
                 <slot :value="images[modelValue]" />
               </div>
@@ -894,13 +928,20 @@ onUnmounted(() => {
 
     <!-- Edit Mode Controls (only if editEnabled is true) -->
     <div v-if="editEnabled && images.length > 0 && (mode === 'grid' || mode === 'mason' || mode === 'custom')">
-      <!-- Edit Mode Toggle Button (only show when not in edit mode) -->
-      <div v-if="!localEditMode" class="flex justify-end mb-3">
+      <!-- Mode Toggle Buttons (only show when not in any edit mode) -->
+      <div v-if="!localEditMode && !localReorderMode" class="flex justify-end mb-3 gap-2">
         <button
           class="px-4 py-2 rounded-lg font-medium text-sm transition-colors bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
           @click="toggleEditMode"
         >
           {{ editButtonText }}
+        </button>
+        <button
+          v-if="showSaveOrder"
+          class="px-4 py-2 rounded-lg font-medium text-sm transition-colors bg-blue-600 hover:bg-blue-700 text-white"
+          @click="toggleReorderMode"
+        >
+          {{ reorderButtonText }}
         </button>
       </div>
 
@@ -940,6 +981,33 @@ onUnmounted(() => {
             @click="handleBulkAction"
           >
             {{ bulkActionText }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Reorder Mode Bar TOP (shown when in reorder mode) -->
+      <div
+        v-if="localReorderMode"
+        class="flex flex-wrap items-center justify-between gap-2 p-3 mb-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-300 dark:border-blue-700"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-medium text-blue-800 dark:text-blue-200">
+            Set position numbers on images (lower = earlier)
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="px-4 py-1.5 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors font-medium"
+            @click="exitReorderMode"
+          >
+            {{ cancelButtonText }}
+          </button>
+          <button
+            v-if="onSaveOrder"
+            class="px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium"
+            @click="onSaveOrder()"
+          >
+            {{ saveOrderText }}
           </button>
         </div>
       </div>
@@ -1055,6 +1123,22 @@ onUnmounted(() => {
                 </div>
               </div>
 
+              <!-- Position input for reorder mode -->
+              <div
+                v-if="localReorderMode && onPositionChange"
+                class="absolute top-2 right-2 z-20"
+              >
+                <input
+                  type="number"
+                  min="-1"
+                  :value="getItemPosition(images[i - 1], i - 1)"
+                  class="w-24 h-10 text-sm text-center rounded border-2 border-blue-400 bg-white/95 dark:bg-black/95 dark:text-white font-bold"
+                  @blur="(e: Event) => onPositionChange ? onPositionChange(images[i - 1], parseInt((e.target as HTMLInputElement).value)) : () => {}"
+                  @click.stop
+                  @keydown.enter="(e: Event) => { (e.target as HTMLInputElement).blur() }"
+                >
+              </div>
+
               <!-- Selection overlay -->
               <div
                 v-if="localEditMode && isItemSelected(images[i - 1], i - 1)"
@@ -1125,6 +1209,34 @@ onUnmounted(() => {
             @click="handleBulkAction"
           >
             {{ bulkActionText }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reorder Mode Bar BOTTOM -->
+    <div v-if="editEnabled && localReorderMode && images.length > 0 && (mode === 'grid' || mode === 'mason' || mode === 'custom')" class="mt-3">
+      <div
+        class="flex flex-wrap items-center justify-between gap-2 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-300 dark:border-blue-700"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-medium text-blue-800 dark:text-blue-200">
+            Set position numbers on images (lower = earlier)
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="px-4 py-1.5 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors font-medium"
+            @click="exitReorderMode"
+          >
+            {{ cancelButtonText }}
+          </button>
+          <button
+            v-if="onSaveOrder"
+            class="px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium"
+            @click="onSaveOrder()"
+          >
+            {{ saveOrderText }}
           </button>
         </div>
       </div>

@@ -279,7 +279,7 @@ defineExpose({ focus, blur, getInputRef })
           >
             {{ label }}
           </label>
-          <div class="grow-wrap">
+          <div class="grow-wrap" :data-replicated-value="model?.toString() || ''">
             <!-- @vue-skip -->
             <textarea
               :id="id"
@@ -342,7 +342,7 @@ defineExpose({ focus, blur, getInputRef })
                    rounded-lg border border-fv-neutral-300 focus:ring-2 focus:ring-fv-primary-300 focus:border-fv-primary-500
                    dark:bg-fv-neutral-700 dark:border-fv-neutral-600 dark:placeholder-fv-neutral-300
                    dark:text-white dark:focus:ring-fv-primary-800 dark:focus:border-fv-primary-500
-                   transition-colors duration-200 shadow-sm min-h-[100px]"
+                   transition-colors duration-200 shadow-sm min-h-[100px] max-h-[50vh] overflow-y-auto"
             @focus="handleFocus"
             @blur="handleBlur"
           />
@@ -560,10 +560,13 @@ input[type="range"]:focus::-moz-range-thumb {
   content: attr(data-replicated-value) " ";
   white-space: pre-wrap;
   visibility: hidden;
+  max-height: 50vh;
+  overflow: hidden;
 }
 .grow-wrap > textarea {
   resize: none;
-  overflow: hidden;
+  overflow-y: auto;
+  max-height: 50vh;
 }
 .grow-wrap > textarea,
 .grow-wrap::after {
